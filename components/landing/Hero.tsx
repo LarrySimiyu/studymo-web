@@ -22,17 +22,17 @@ export default function Hero() {
 
         <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
           <Link
-            href="/sign-in"
+            href="/onboarding"
             className="rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow hover:opacity-90 transition-opacity"
           >
-            Get started free
+            Get Started
           </Link>
-          <a
-            href="#features"
+          <Link
+            href="/sign-in"
             className="rounded-lg border border-border px-6 py-3 text-base font-semibold text-foreground hover:bg-muted transition-colors"
           >
-            Learn more
-          </a>
+            Sign In
+          </Link>
         </div>
       </div>
     </section>
