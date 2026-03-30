@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import { marked } from 'marked';
 import {
   documentsApi,
   notesApi,
@@ -38,31 +39,53 @@ interface QuizQuestion {
 function convertNoteToHTML(content: string): string {
   try {
     const notes = JSON.parse(content);
-    let html = '';
-    if (notes.summary) html += `<h2>Summary</h2><p>${notes.summary}</p>`;
+    let md = '';
+    if (notes.summary) md += `## Summary\n\n${notes.summary}\n\n`;
     if (notes.sections) {
       for (const s of notes.sections) {
-        html += `<h2>${s.heading}</h2>`;
-        for (const p of (s.content as string).split(/\n\n+/).filter(Boolean)) {
-          html += `<p>${p.replace(/\n/g, '<br/>')}</p>`;
-        }
+        md += `## ${s.heading}\n\n${s.content}\n\n`;
       }
     }
     if (notes.keyTerms?.length) {
-      html += '<h2>Key Terms</h2>';
+      md += `## Key Terms\n\n`;
       for (const kt of notes.keyTerms) {
-        html += `<p><strong>${kt.term}</strong>: ${kt.definition}</p>`;
+        md += `**${kt.term}**: ${kt.definition}\n\n`;
       }
     }
     if (notes.keyTakeaways?.length) {
-      html += '<h2>Key Takeaways</h2><ul>';
-      for (const kt of notes.keyTakeaways) html += `<li>${kt}</li>`;
-      html += '</ul>';
+      md += `## Key Takeaways\n\n`;
+      for (const kt of notes.keyTakeaways) md += `- ${kt}\n`;
     }
-    return html;
+    return marked(md) as string;
   } catch {
-    return content;
+    return marked(content) as string;
   }
+}
+
+function GeneratePrompt({ icon, label, description, onGenerate }: {
+  icon: string; label: string; description: string; onGenerate: () => Promise<void>;
+}) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: '#9747FF20' }}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-white font-medium">{label}</p>
+        <p className="text-gray-500 text-sm mt-1 max-w-xs">{description}</p>
+      </div>
+      <button
+        onClick={async () => { setLoading(true); await onGenerate(); setLoading(false); }}
+        disabled={loading}
+        className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+        style={{ backgroundColor: '#9747FF' }}
+      >
+        {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+        {loading ? 'Generating…' : label}
+      </button>
+    </div>
+  );
 }
 
 export default function DocumentDetailPage() {
@@ -92,6 +115,8 @@ export default function DocumentDetailPage() {
   const [showGeneratePodcast, setShowGeneratePodcast] = useState(false);
   const [showNoteTagDropdown, setShowNoteTagDropdown] = useState(false);
   const [showDocTagDropdown, setShowDocTagDropdown] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
 
@@ -222,6 +247,7 @@ export default function DocumentDetailPage() {
 
   // TipTap editor
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: 'Your notes will appear here…' }),
@@ -229,7 +255,7 @@ export default function DocumentDetailPage() {
     content: note ? convertNoteToHTML(note.content) : '',
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] text-gray-200',
+        class: 'prose prose-invert prose-headings:text-white prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-gray-300 prose-p:leading-relaxed prose-strong:text-white prose-li:text-gray-300 prose-ul:my-2 max-w-none focus:outline-none min-h-[400px]',
       },
     },
     onUpdate: ({ editor }) => {
@@ -322,7 +348,48 @@ export default function DocumentDetailPage() {
             🎓 Study with Tutor
           </button>
         )}
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="p-2 rounded-xl border border-white/10 text-white/30 hover:text-red-400 hover:border-red-400/30 transition-all flex-shrink-0"
+          title="Delete document"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-sm p-6">
+            <div className="flex flex-col items-center text-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: '#EF444420' }}>🗑</div>
+              <div>
+                <p className="text-white font-semibold">Delete this document?</p>
+                <p className="text-white/40 text-sm mt-1">All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 disabled:opacity-40 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  await documentsApi.delete(id);
+                  router.push('/dashboard/library');
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#EF4444' }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {doc.status !== 'complete' ? null : (
         <>
@@ -464,7 +531,15 @@ export default function DocumentDetailPage() {
           {tab === 'flashcards' && (
             <div>
               {flashcards.length === 0 ? (
-                <p className="text-gray-500 text-center py-10">No flashcards generated yet.</p>
+                <GeneratePrompt
+                  icon="🗂"
+                  label="Generate Flashcards"
+                  description="Create a set of flashcards from your notes to help you memorize key concepts."
+                  onGenerate={async () => {
+                    const { data } = await flashcardsApi.generate(id);
+                    if (data) setFlashcards(data);
+                  }}
+                />
               ) : (
                 <div className="flex flex-col items-center gap-6">
                   <p className="text-sm text-gray-500">{flashcards.length} Flashcards · Space to flip · ← → to navigate</p>
@@ -523,7 +598,15 @@ export default function DocumentDetailPage() {
           {tab === 'quiz' && (
             <div>
               {!quiz || questions.length === 0 ? (
-                <p className="text-gray-500 text-center py-10">No quiz generated yet.</p>
+                <GeneratePrompt
+                  icon="❓"
+                  label="Generate Quiz"
+                  description="Create a quiz from your notes to test your understanding of the material."
+                  onGenerate={async () => {
+                    const { data } = await quizzesApi.generate(id);
+                    if (data) setQuiz(data);
+                  }}
+                />
               ) : !quizStarted ? (
                 <div className="flex flex-col items-center gap-4 py-10">
                   <p className="text-white font-medium">{questions.length} questions</p>

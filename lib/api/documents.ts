@@ -106,10 +106,12 @@ export const notesApi = {
 
 export const flashcardsApi = {
   getByDocument: (documentId: string) => api.get<Flashcard[]>(`/flashcards/${documentId}`),
+  generate: (documentId: string) => api.post<Flashcard[]>(`/flashcards/${documentId}/generate`, {}),
 };
 
 export const quizzesApi = {
   getByDocument: (documentId: string) => api.get<Quiz>(`/quizzes/${documentId}`),
+  generate: (documentId: string) => api.post<Quiz>(`/quizzes/${documentId}/generate`, {}),
   submitAttempt: (id: string, score: number, answers: object) =>
     api.post<QuizAttempt>(`/quizzes/${id}/attempt`, { score, answers }),
 };
