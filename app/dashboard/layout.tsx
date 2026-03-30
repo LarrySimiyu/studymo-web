@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/dashboard/Sidebar';
 import { StudyTimerProvider } from '@/context/StudyTimerContext';
@@ -30,12 +30,40 @@ function DashboardHeader() {
 }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { currentUser, loading, subscriptionStatus } = useAuth();
+  const { currentUser, loading, subscriptionStatus, refreshSubscription } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [portalLoading, setPortalLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // After Stripe checkout, session_id lands in the URL. Refresh subscription
+  // status before deciding whether to bounce the user back to /subscribe.
+  useEffect(() => {
+    if (loading || !currentUser) return;
+    const sessionId = searchParams.get('session_id');
+    if (!sessionId) return;
+
+    setRefreshing(true);
+    // Give the webhook a moment to process, then refresh up to 5 times.
+    let attempts = 0;
+    const poll = async () => {
+      await refreshSubscription();
+      attempts++;
+      const { data } = await import('@/lib/api/billing').then(m => m.billingApi.getStatus());
+      if (data?.hasAccess || attempts >= 5) {
+        setRefreshing(false);
+        // Clean session_id from URL
+        router.replace('/dashboard');
+      } else {
+        setTimeout(poll, 1500);
+      }
+    };
+    setTimeout(poll, 1000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, currentUser]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || refreshing) return;
     if (!currentUser) {
       router.replace('/onboarding');
       return;
@@ -43,7 +71,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     if (subscriptionStatus && !subscriptionStatus.hasAccess) {
       router.replace('/subscribe');
     }
-  }, [currentUser, loading, subscriptionStatus, router]);
+  }, [currentUser, loading, subscriptionStatus, refreshing, router]);
 
   // Cmd+K / Ctrl+K global shortcut
   const { toggleOpen } = useAssistant();
@@ -58,10 +86,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', handler);
   }, [toggleOpen]);
 
-  if (loading) {
+  if (loading || refreshing) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#111111' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: '#111111' }}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
+        {refreshing && <p className="text-sm text-gray-500">Activating your subscription…</p>}
       </div>
     );
   }
