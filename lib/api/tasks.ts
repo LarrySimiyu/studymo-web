@@ -105,5 +105,7 @@ export const studySessionsApi = {
     }
   ) => api.post<StudySession>(`/study-sessions/${id}/end`, data),
   abandon: (id: string) => api.post<StudySession>(`/study-sessions/${id}/abandon`, {}),
+  addTask: (id: string, title: string) =>
+    api.post<SessionTaskEntry>(`/study-sessions/${id}/add-task`, { title }),
   getAll: () => api.get<StudySession[]>('/study-sessions'),
 };

@@ -5,6 +5,19 @@ import { useRouter } from 'next/navigation';
 import { practiceExamsApi, PracticeExam, ExamContent } from '@/lib/api/organization';
 import { documentsApi } from '@/lib/api/documents';
 
+const QUESTION_TYPES = [
+  { value: 'multiple_choice', label: 'Multiple Choice' },
+  { value: 'short_answer', label: 'Short Answer' },
+  { value: 'true_false', label: 'True / False' },
+];
+
+const DURATIONS = [
+  { value: 10, label: '10 min', sub: 'Quick review' },
+  { value: 25, label: '25 min', sub: 'Standard' },
+  { value: 45, label: '45 min', sub: 'In-depth' },
+  { value: 60, label: '1 hour', sub: 'Full exam' },
+];
+
 export default function PracticeExamsPage() {
   const router = useRouter();
   const [exams, setExams] = useState<PracticeExam[]>([]);
@@ -12,6 +25,8 @@ export default function PracticeExamsPage() {
   const [showModal, setShowModal] = useState(false);
   const [examTitle, setExamTitle] = useState('');
   const [examDocIds, setExamDocIds] = useState<string[]>([]);
+  const [questionTypes, setQuestionTypes] = useState<string[]>(['multiple_choice', 'short_answer']);
+  const [durationMinutes, setDurationMinutes] = useState<number>(25);
   const [generating, setGenerating] = useState(false);
   const [allDocs, setAllDocs] = useState<{ id: string; title: string; status: string }[]>([]);
 
@@ -27,10 +42,18 @@ export default function PracticeExamsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const toggleType = (t: string) =>
+    setQuestionTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+
   const handleGenerate = async () => {
-    if (!examTitle.trim() || !examDocIds.length || generating) return;
+    if (!examTitle.trim() || !examDocIds.length || !questionTypes.length || generating) return;
     setGenerating(true);
-    const { data, error } = await practiceExamsApi.create({ title: examTitle.trim(), documentIds: examDocIds });
+    const { data, error } = await practiceExamsApi.create({
+      title: examTitle.trim(),
+      documentIds: examDocIds,
+      questionTypes,
+      durationMinutes,
+    });
     setGenerating(false);
     if (error || !data) { alert(error || 'Failed to generate exam'); return; }
     setShowModal(false);
@@ -43,6 +66,14 @@ export default function PracticeExamsPage() {
     load();
   };
 
+  const openModal = () => {
+    setExamTitle('');
+    setExamDocIds([]);
+    setQuestionTypes(['multiple_choice', 'short_answer']);
+    setDurationMinutes(25);
+    setShowModal(true);
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -50,9 +81,9 @@ export default function PracticeExamsPage() {
           <h1 className="text-2xl font-bold text-white">Practice Exams</h1>
           <p className="text-white/40 text-sm mt-1">{exams.length} exam{exams.length !== 1 ? 's' : ''} generated</p>
         </div>
-        <button onClick={() => { setExamTitle(''); setExamDocIds([]); setShowModal(true); }}
+        <button onClick={openModal}
           className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-[#9747FF] hover:bg-[#8535ee] transition-colors">
-          Generate New Exam
+          New Exam
         </button>
       </div>
 
@@ -64,8 +95,8 @@ export default function PracticeExamsPage() {
         <div className="text-center py-20">
           <div className="text-5xl mb-4">📝</div>
           <p className="text-white/50 mb-2">No practice exams yet</p>
-          <p className="text-white/30 text-sm mb-6">Generate a comprehensive exam from your study notes</p>
-          <button onClick={() => { setExamTitle(''); setExamDocIds([]); setShowModal(true); }}
+          <p className="text-white/30 text-sm mb-6">Generate an exam from your study documents</p>
+          <button onClick={openModal}
             className="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-[#9747FF] hover:bg-[#8535ee]">
             Generate Your First Exam
           </button>
@@ -87,11 +118,11 @@ export default function PracticeExamsPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium text-sm">{exam.title}</p>
                   <p className="text-white/30 text-xs mt-0.5">
-                    {examData.totalPoints ?? 100} pts · ~{examData.estimatedMinutes ?? 60} min
+                    ~{examData.estimatedMinutes ?? '?'} min · {examData.totalPoints ?? '?'} pts
                   </p>
                   {examDocs.length > 0 && (
                     <p className="text-white/20 text-xs mt-0.5 truncate">
-                      From: {examDocs.map(d => d.title).join(', ')}
+                      {examDocs.map(d => d.title).join(', ')}
                     </p>
                   )}
                   <p className="text-white/20 text-xs mt-0.5">{new Date(exam.createdAt).toLocaleDateString()}</p>
@@ -112,24 +143,58 @@ export default function PracticeExamsPage() {
         </div>
       )}
 
-      {/* Generate Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md p-6">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between mb-5">
               <h3 className="font-semibold text-white">Generate Practice Exam</h3>
               <button onClick={() => setShowModal(false)} className="text-white/40 hover:text-white text-xl leading-none">×</button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <label className="text-xs text-white/50 mb-1 block">Exam Title *</label>
                 <input value={examTitle} onChange={e => setExamTitle(e.target.value)}
                   placeholder="e.g. Midterm Practice Exam"
                   className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50" />
               </div>
+
+              <div>
+                <label className="text-xs text-white/50 mb-2 block">Question Types *</label>
+                <div className="flex flex-wrap gap-2">
+                  {QUESTION_TYPES.map(({ value, label }) => (
+                    <button key={value} onClick={() => toggleType(value)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                      style={{
+                        backgroundColor: questionTypes.includes(value) ? '#9747FF20' : 'transparent',
+                        borderColor: questionTypes.includes(value) ? '#9747FF' : '#333',
+                        color: questionTypes.includes(value) ? '#fff' : '#666',
+                      }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-white/50 mb-2 block">Exam Duration *</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {DURATIONS.map(({ value, label, sub }) => (
+                    <button key={value} onClick={() => setDurationMinutes(value)}
+                      className="p-2 rounded-lg border text-center transition-all"
+                      style={{
+                        backgroundColor: durationMinutes === value ? '#9747FF20' : 'transparent',
+                        borderColor: durationMinutes === value ? '#9747FF' : '#333',
+                      }}>
+                      <p className="text-xs font-medium" style={{ color: durationMinutes === value ? '#fff' : '#888' }}>{label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: durationMinutes === value ? '#9747FF' : '#555' }}>{sub}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs text-white/50 mb-1 block">Select Documents *</label>
-                <div className="space-y-1.5 max-h-52 overflow-y-auto">
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {allDocs.filter(d => d.status === 'complete').map(d => (
                     <label key={d.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer">
                       <input type="checkbox" checked={examDocIds.includes(d.id)}
@@ -143,6 +208,7 @@ export default function PracticeExamsPage() {
                   )}
                 </div>
               </div>
+
               {generating && (
                 <div className="flex items-center gap-3 text-white/50 text-sm py-1">
                   <div className="w-4 h-4 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
@@ -154,7 +220,7 @@ export default function PracticeExamsPage() {
               <button onClick={() => setShowModal(false)}
                 className="flex-1 py-2 rounded-lg border border-white/10 text-white/50 text-sm">Cancel</button>
               <button onClick={handleGenerate}
-                disabled={generating || !examTitle.trim() || !examDocIds.length}
+                disabled={generating || !examTitle.trim() || !examDocIds.length || !questionTypes.length}
                 className="flex-1 py-2 rounded-lg bg-[#9747FF] text-white text-sm disabled:opacity-40">
                 {generating ? 'Generating…' : 'Generate Exam'}
               </button>

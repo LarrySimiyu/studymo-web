@@ -27,30 +27,16 @@ function timeAgo(date: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-function buildWelcome(mode: 'helper' | 'tutor', name: string, noteCount: number): string {
-  if (mode === 'tutor') {
-    return `Hi ${name}! 🎓 Ready to study? I have ${noteCount} note${noteCount !== 1 ? 's' : ''} loaded.\n\nI won't give you direct answers — instead I'll ask you questions to help you think through the material yourself. This is proven to help you retain information much better.\n\nLet's start: What topic from your notes would you like to work on?`;
-  }
-  return `Hi ${name}! 👋 I'm your study helper. I have ${noteCount} note${noteCount !== 1 ? 's' : ''} loaded as context.\nAsk me anything about your material and I'll answer directly.\n\nYou can also ask me things like:\n• "Summarize the key points from these notes"\n• "What are the most important concepts to know?"\n• "Explain [concept] in simple terms"`;
+function buildWelcome(name: string, noteCount: number): string {
+  return `Hi ${name}! 🎓 Ready to study? I have ${noteCount} note${noteCount !== 1 ? 's' : ''} loaded.\n\nI won't give you direct answers — instead I'll ask you questions to help you think through the material yourself. This is proven to help you retain information much better.\n\nLet's start: What topic from your notes would you like to work on?`;
 }
 
 let msgIdCounter = 0;
-function nextId() { return String(++msgIdCounter); }
+function nextId() { return `local-${++msgIdCounter}`; }
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
-function ModeBadge({ mode }: { mode: string }) {
-  return (
-    <span
-      className="px-2 py-0.5 rounded-full text-xs font-medium"
-      style={mode === 'tutor'
-        ? { backgroundColor: '#9747FF20', color: '#9747FF' }
-        : { backgroundColor: '#2A2A2A', color: '#6B7280' }}
-    >
-      {mode === 'tutor' ? '🎓 Tutor' : '💬 Helper'}
-    </span>
-  );
-}
+// ModeBadge shelved with helper mode
 
 // ─── main page ───────────────────────────────────────────────────────────────
 
@@ -66,7 +52,7 @@ export default function TutorPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [showContextPanel, setShowContextPanel] = useState(false);
-  const [showNewMenu, setShowNewMenu] = useState(false);
+  // const [showNewMenu, setShowNewMenu] = useState(false);
   const [noteSearch, setNoteSearch] = useState('');
   const [allNotes, setAllNotes] = useState<{ id: string; summary: string | null; document: { title: string } }[]>([]);
   const [creatingSession, setCreatingSession] = useState(false);
@@ -117,21 +103,20 @@ export default function TutorPage() {
     const { data } = await tutorApi.getSession(id);
     if (!data) return;
     setActiveSession(data);
-    const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(data.mode as 'helper' | 'tutor', userName, data.notes.length) };
+    const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data.notes.length) };
     setMessages([welcome, ...data.messages]);
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  async function createSession(mode: 'helper' | 'tutor') {
+  async function createSession() {
     if (creatingSession) return;
     setCreatingSession(true);
-    setShowNewMenu(false);
     try {
-      const { data } = await tutorApi.createSession({ mode });
+      const { data } = await tutorApi.createSession({ mode: 'tutor' });
       if (!data) return;
-      setSessions(prev => [{ id: data.id, title: data.title, mode: data.mode as 'helper' | 'tutor', noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
+      setSessions(prev => [{ id: data.id, title: data.title, mode: 'tutor', noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
       setActiveSession(data);
-      const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(mode, userName, data.notes.length) };
+      const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data.notes.length) };
       setMessages([welcome]);
       setTimeout(() => inputRef.current?.focus(), 100);
     } finally {
@@ -170,22 +155,7 @@ export default function TutorPage() {
     }
   }
 
-  async function toggleMode() {
-    if (!activeSession) return;
-    const newMode = activeSession.mode === 'tutor' ? 'helper' : 'tutor';
-    const { data } = await tutorApi.updateMode(activeSession.id, newMode);
-    if (!data) return;
-    setActiveSession({ ...activeSession, mode: newMode });
-    setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, mode: newMode } : s));
-    const sysMsg: UIMessage = {
-      id: nextId(),
-      role: 'system',
-      content: newMode === 'tutor'
-        ? '🎓 Tutor mode activated — I\'ll guide you with questions now'
-        : '💬 Helper mode activated — ask me anything directly',
-    };
-    setMessages(prev => [...prev, sysMsg]);
-  }
+  // async function toggleMode() { /* shelved — helper mode disabled */ }
 
   async function deleteSession(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -243,39 +213,21 @@ export default function TutorPage() {
       <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: '#111111', borderRight: '1px solid #2A2A2A' }}>
         <div className="flex items-center justify-between px-4 py-4 shrink-0" style={{ borderBottom: '1px solid #2A2A2A' }}>
           <h2 className="text-sm font-semibold text-white">AI Tutor</h2>
-          <div className="relative">
-            <button
-              onClick={() => setShowNewMenu(v => !v)}
-              disabled={creatingSession}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-              style={{ backgroundColor: '#9747FF', color: 'white' }}
-            >
-              {creatingSession ? (
-                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M6 1v10M1 6h10" strokeLinecap="round" />
-                </svg>
-              )}
-              New
-            </button>
-            {showNewMenu && (
-              <div className="absolute right-0 top-full mt-1 z-20 rounded-xl overflow-hidden shadow-xl" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', minWidth: 180 }}>
-                <button
-                  onClick={() => createSession('helper')}
-                  className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"
-                >
-                  💬 Helper Session
-                </button>
-                <button
-                  onClick={() => createSession('tutor')}
-                  className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-white/5 flex items-center gap-2"
-                >
-                  🎓 Study Session (Tutor)
-                </button>
-              </div>
+          <button
+            onClick={createSession}
+            disabled={creatingSession}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+            style={{ backgroundColor: '#9747FF', color: 'white' }}
+          >
+            {creatingSession ? (
+              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2">
+                <path d="M6 1v10M1 6h10" strokeLinecap="round" />
+              </svg>
             )}
-          </div>
+            New
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -287,10 +239,10 @@ export default function TutorPage() {
             <p className="text-xs text-gray-600 text-center py-8 px-4">No sessions yet — start one to begin</p>
           ) : (
             sessions.map(s => (
-              <button
+              <div
                 key={s.id}
                 onClick={() => loadSession(s.id)}
-                className="w-full text-left px-4 py-3 group relative transition-colors hover:bg-white/5"
+                className="w-full text-left px-4 py-3 group relative transition-colors hover:bg-white/5 cursor-pointer"
                 style={activeSession?.id === s.id ? { borderLeft: '2px solid #9747FF', backgroundColor: '#9747FF10' } : { borderLeft: '2px solid transparent' }}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -299,7 +251,6 @@ export default function TutorPage() {
                       <p className="text-xs font-medium text-white truncate">{s.title}</p>
                     </div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <ModeBadge mode={s.mode} />
                       <span className="text-xs text-gray-600">{timeAgo(s.updatedAt)}</span>
                     </div>
                     {s.lastMessage && (
@@ -316,7 +267,7 @@ export default function TutorPage() {
                     </svg>
                   </button>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
@@ -334,24 +285,7 @@ export default function TutorPage() {
                 <p className="text-gray-500 text-sm mt-2">Choose a mode to get started</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 w-full">
-                {/* Helper card */}
-                <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-                  <div>
-                    <div className="text-3xl mb-2">💬</div>
-                    <h3 className="font-semibold text-white text-base mb-1">Helper Mode</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed">Ask questions and get direct answers based on your notes. Great for quick lookups and explanations.</p>
-                  </div>
-                  <button
-                    onClick={() => createSession('helper')}
-                    disabled={creatingSession}
-                    className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
-                  >
-                    {creatingSession ? 'Creating…' : 'Start Helper Session'}
-                  </button>
-                </div>
-
+              <div className="flex flex-col gap-4 w-full max-w-sm">
                 {/* Tutor card */}
                 <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: '#1A0A2E', border: '1px solid #9747FF40' }}>
                   <div>
@@ -360,7 +294,7 @@ export default function TutorPage() {
                     <p className="text-xs text-gray-500 leading-relaxed">I'll guide you with questions instead of giving direct answers. Proven to improve retention and understanding.</p>
                   </div>
                   <button
-                    onClick={() => createSession('tutor')}
+                    onClick={createSession}
                     disabled={creatingSession}
                     className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                     style={{ backgroundColor: '#9747FF' }}
@@ -402,24 +336,6 @@ export default function TutorPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                {/* Mode toggle */}
-                <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-                  <button
-                    onClick={() => activeSession.mode !== 'helper' && toggleMode()}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-                    style={activeSession.mode === 'helper' ? { backgroundColor: '#2A2A2A', color: '#D1D5DB' } : { color: '#6B7280' }}
-                  >
-                    💬 Helper
-                  </button>
-                  <button
-                    onClick={() => activeSession.mode !== 'tutor' && toggleMode()}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-                    style={activeSession.mode === 'tutor' ? { backgroundColor: '#9747FF', color: '#fff' } : { color: '#6B7280' }}
-                  >
-                    🎓 Tutor
-                  </button>
-                </div>
-
                 {/* Delete */}
                 <button
                   onClick={e => deleteSession(activeSession.id, e)}

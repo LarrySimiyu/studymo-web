@@ -32,12 +32,11 @@ export interface PracticeExam {
 
 export interface ExamQuestion {
   number: number;
-  type: 'multiple_choice' | 'short_answer' | 'essay';
+  type: 'multiple_choice' | 'short_answer' | 'true_false';
   question: string;
   options?: string[];
   correctAnswer?: string;
   explanation?: string;
-  rubric?: string;
   points: number;
 }
 
@@ -51,7 +50,6 @@ export interface ExamContent {
   sections: ExamSection[];
   totalPoints: number;
   estimatedMinutes: number;
-  answerKey: { number: number; answer: string; points: number }[];
 }
 
 export const foldersApi = {
@@ -79,8 +77,10 @@ export const noteTagsApi = {
 
 export const practiceExamsApi = {
   getAll: () => api.get<PracticeExam[]>('/practice-exams'),
-  create: (data: { title: string; documentIds: string[] }) =>
+  create: (data: { title: string; documentIds: string[]; questionTypes: string[]; durationMinutes: number }) =>
     api.post<PracticeExam>('/practice-exams', data),
   getById: (id: string) => api.get<PracticeExam>(`/practice-exams/${id}`),
   delete: (id: string) => api.delete<void>(`/practice-exams/${id}`),
+  gradeAnswer: (data: { question: string; correctAnswer: string; userAnswer: string }) =>
+    api.post<{ correct: boolean; partialCredit: number; feedback: string }>('/practice-exams/grade-answer', data),
 };

@@ -9,6 +9,9 @@ import React, {
   useCallback,
 } from 'react';
 import { studySessionsApi, StudySession, SessionTaskEntry } from '@/lib/api/tasks';
+import { auth } from '@/lib/firebase';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 type TimerMode = 'pomodoro' | 'timeblock';
 type TimerStatus = 'idle' | 'running' | 'paused' | 'break';
@@ -43,6 +46,7 @@ interface TimerContextValue extends TimerState {
   setActiveTask: (entryId: string) => void;
   toggleCollapsed: () => void;
   completeTaskEntry: (entryId: string) => void;
+  addTaskToSession: (title: string) => Promise<void>;
 }
 
 const DEFAULT: TimerState = {
@@ -225,6 +229,39 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => () => stopTicking(), [stopTicking]);
 
+  // Warn before tab close / refresh when a session is active
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (ref.current.status === 'idle') return;
+      e.preventDefault();
+      e.returnValue = ''; // triggers native "Leave site?" dialog
+    };
+
+    const handlePageHide = () => {
+      const { session, status } = ref.current;
+      if (!session || status === 'idle') return;
+      // Abandon session via keepalive fetch so it fires even as page unloads
+      auth.currentUser?.getIdToken().then((token) => {
+        fetch(`${API_URL}/study-sessions/${session.id}/abandon`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+          keepalive: true,
+        }).catch(() => {});
+      }).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, []);
+
   const startSession = useCallback(
     async (
       mode: TimerMode,
@@ -316,6 +353,14 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
     [set]
   );
 
+  const addTaskToSession = useCallback(async (title: string): Promise<void> => {
+    const { session } = ref.current;
+    if (!session) return;
+    const { data } = await studySessionsApi.addTask(session.id, title);
+    if (!data) return;
+    set({ taskEntries: [...ref.current.taskEntries, data] });
+  }, [set]);
+
   const toggleCollapsed = useCallback(() => setIsCollapsed((c) => !c), []);
 
   const t = ref.current;
@@ -334,6 +379,7 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
         setActiveTask,
         toggleCollapsed,
         completeTaskEntry,
+        addTaskToSession,
       }}
     >
       {children}
