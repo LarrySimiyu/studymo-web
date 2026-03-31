@@ -79,7 +79,7 @@ export default function PodcastPlayer({ audioUrl, title }: Props) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="rounded-xl p-4" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
+    <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
 
       {/* Play / time row */}
@@ -101,12 +101,12 @@ export default function PodcastPlayer({ audioUrl, title }: Props) {
           )}
         </button>
 
-        <span className="text-xs text-gray-400 w-10 shrink-0">{fmtTime(currentTime)}</span>
+        <span className="text-xs text-[var(--text-2)] w-10 shrink-0">{fmtTime(currentTime)}</span>
 
         {/* Seek bar */}
         <div
           className="flex-1 h-2 rounded-full cursor-pointer relative"
-          style={{ backgroundColor: '#2A2A2A' }}
+          style={{ backgroundColor: 'var(--border)' }}
           onClick={handleSeek}
         >
           <div
@@ -115,7 +115,7 @@ export default function PodcastPlayer({ audioUrl, title }: Props) {
           />
         </div>
 
-        <span className="text-xs text-gray-400 w-10 shrink-0 text-right">{fmtTime(duration)}</span>
+        <span className="text-xs text-[var(--text-2)] w-10 shrink-0 text-right">{fmtTime(duration)}</span>
       </div>
 
       {/* Controls row */}
@@ -147,7 +147,7 @@ export default function PodcastPlayer({ audioUrl, title }: Props) {
               style={
                 speed === s
                   ? { backgroundColor: '#9747FF', color: 'white' }
-                  : { color: '#6B7280', backgroundColor: '#1A1A1A' }
+                  : { color: 'var(--text-3)', backgroundColor: 'var(--bg-input)' }
               }
             >
               {s}x
@@ -159,7 +159,7 @@ export default function PodcastPlayer({ audioUrl, title }: Props) {
         <a
           href={audioUrl}
           download={`${title}.mp3`}
-          className="ml-auto flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+          className="ml-auto flex items-center gap-1.5 text-xs text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />

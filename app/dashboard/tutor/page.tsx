@@ -210,9 +210,9 @@ export default function TutorPage() {
     <div className="flex h-full gap-0 -m-6 overflow-hidden" style={{ height: 'calc(100vh - 48px)' }}>
 
       {/* ── Left sidebar ── */}
-      <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: '#111111', borderRight: '1px solid #2A2A2A' }}>
-        <div className="flex items-center justify-between px-4 py-4 shrink-0" style={{ borderBottom: '1px solid #2A2A2A' }}>
-          <h2 className="text-sm font-semibold text-white">AI Tutor</h2>
+      <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)', borderRight: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-4 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+          <h2 className="text-sm font-semibold text-[var(--text-1)]">AI Tutor</h2>
           <button
             onClick={createSession}
             disabled={creatingSession}
@@ -236,30 +236,30 @@ export default function TutorPage() {
               <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#9747FF', borderTopColor: 'transparent' }} />
             </div>
           ) : sessions.length === 0 ? (
-            <p className="text-xs text-gray-600 text-center py-8 px-4">No sessions yet — start one to begin</p>
+            <p className="text-xs text-[var(--text-3)] text-center py-8 px-4">No sessions yet — start one to begin</p>
           ) : (
             sessions.map(s => (
               <div
                 key={s.id}
                 onClick={() => loadSession(s.id)}
-                className="w-full text-left px-4 py-3 group relative transition-colors hover:bg-white/5 cursor-pointer"
-                style={activeSession?.id === s.id ? { borderLeft: '2px solid #9747FF', backgroundColor: '#9747FF10' } : { borderLeft: '2px solid transparent' }}
+                className="w-full text-left px-4 py-3 group relative transition-colors hover:bg-black/5 cursor-pointer"
+                style={activeSession?.id === s.id ? { borderLeft: '2px solid #9747FF', backgroundColor: 'var(--brand-subtle)' } : { borderLeft: '2px solid transparent' }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <p className="text-xs font-medium text-white truncate">{s.title}</p>
+                      <p className="text-xs font-medium text-[var(--text-1)] truncate">{s.title}</p>
                     </div>
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs text-gray-600">{timeAgo(s.updatedAt)}</span>
+                      <span className="text-xs text-[var(--text-3)]">{timeAgo(s.updatedAt)}</span>
                     </div>
                     {s.lastMessage && (
-                      <p className="text-xs text-gray-600 truncate">{s.lastMessage}</p>
+                      <p className="text-xs text-[var(--text-3)] truncate">{s.lastMessage}</p>
                     )}
                   </div>
                   <button
                     onClick={e => deleteSession(s.id, e)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all shrink-0 mt-0.5"
+                    className="opacity-0 group-hover:opacity-100 text-[var(--text-3)] hover:text-red-400 transition-all shrink-0 mt-0.5"
                     title="Delete session"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -281,17 +281,17 @@ export default function TutorPage() {
             <div className="flex flex-col items-center gap-8 max-w-xl w-full text-center">
               <div>
                 <div className="text-6xl mb-4">🎓</div>
-                <h1 className="text-2xl font-bold text-white">Welcome to AI Tutor</h1>
-                <p className="text-gray-500 text-sm mt-2">Choose a mode to get started</p>
+                <h1 className="text-2xl font-bold text-[var(--text-1)]">Welcome to AI Tutor</h1>
+                <p className="text-[var(--text-2)] text-sm mt-2">Choose a mode to get started</p>
               </div>
 
               <div className="flex flex-col gap-4 w-full max-w-sm">
                 {/* Tutor card */}
-                <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: '#1A0A2E', border: '1px solid #9747FF40' }}>
+                <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
                   <div>
                     <div className="text-3xl mb-2">🎓</div>
-                    <h3 className="font-semibold text-white text-base mb-1">Tutor Mode</h3>
-                    <p className="text-xs text-gray-500 leading-relaxed">I'll guide you with questions instead of giving direct answers. Proven to improve retention and understanding.</p>
+                    <h3 className="font-semibold text-[var(--text-1)] text-base mb-1">Tutor Mode</h3>
+                    <p className="text-xs text-[var(--text-2)] leading-relaxed">I'll guide you with questions instead of giving direct answers. Proven to improve retention and understanding.</p>
                   </div>
                   <button
                     onClick={createSession}
@@ -304,14 +304,14 @@ export default function TutorPage() {
                 </div>
               </div>
 
-              <p className="text-xs text-gray-600">You can switch modes at any time during a session</p>
+              <p className="text-xs text-[var(--text-3)]">You can switch modes at any time during a session</p>
             </div>
           </div>
         ) : (
           // ── Chat view ──
           <>
             {/* Top bar */}
-            <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: '1px solid #2A2A2A' }}>
+            <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {editingTitle ? (
                   <input
@@ -321,13 +321,13 @@ export default function TutorPage() {
                     onChange={e => setTitleDraft(e.target.value)}
                     onBlur={saveTitle}
                     onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
-                    className="text-sm font-semibold text-white bg-transparent border-b focus:outline-none flex-1 min-w-0"
+                    className="text-sm font-semibold text-[var(--text-1)] bg-transparent border-b focus:outline-none flex-1 min-w-0"
                     style={{ borderColor: '#9747FF' }}
                   />
                 ) : (
                   <button
                     onClick={() => { setTitleDraft(activeSession.title); setEditingTitle(true); }}
-                    className="text-sm font-semibold text-white truncate hover:text-gray-300 transition-colors max-w-xs"
+                    className="text-sm font-semibold text-[var(--text-1)] truncate hover:text-[var(--text-2)] transition-colors max-w-xs"
                     title="Click to rename"
                   >
                     {activeSession.title}
@@ -339,7 +339,7 @@ export default function TutorPage() {
                 {/* Delete */}
                 <button
                   onClick={e => deleteSession(activeSession.id, e)}
-                  className="text-gray-600 hover:text-red-400 transition-colors p-1"
+                  className="text-[var(--text-3)] hover:text-red-400 transition-colors p-1"
                   title="Delete session"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -355,7 +355,7 @@ export default function TutorPage() {
                 if (msg.role === 'system') {
                   return (
                     <div key={msg.id} className="flex justify-center">
-                      <p className="text-xs text-gray-500 italic px-3 py-1 rounded-full" style={{ backgroundColor: '#1A1A1A' }}>
+                      <p className="text-xs text-[var(--text-2)] italic px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--bg-card)' }}>
                         {msg.content}
                       </p>
                     </div>
@@ -364,10 +364,10 @@ export default function TutorPage() {
                 if (msg.role === 'assistant') {
                   return (
                     <div key={msg.id} className="flex items-start gap-2 max-w-[80%]">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: '#9747FF20' }}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'var(--bg-input)' }}>
                         <span className="text-sm">🎓</span>
                       </div>
-                      <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-gray-200 whitespace-pre-wrap leading-relaxed" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+                      <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-[var(--text-1)] whitespace-pre-wrap leading-relaxed" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         {msg.content}
                         {'isStreaming' in msg && msg.isStreaming && (
                           <span className="inline-block w-1 h-3 ml-0.5 rounded-sm animate-pulse" style={{ backgroundColor: '#9747FF' }} />
@@ -397,13 +397,13 @@ export default function TutorPage() {
 
             {/* Context panel (slides up) */}
             {showContextPanel && (
-              <div className="shrink-0 mx-4 mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', maxHeight: 280 }}>
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #2A2A2A' }}>
+              <div className="shrink-0 mx-4 mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: 280 }}>
+                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white">Loaded Notes</span>
-                    <span className="text-xs text-gray-500">{activeSession.noteIds.length} / 15</span>
+                    <span className="text-sm font-semibold text-[var(--text-1)]">Loaded Notes</span>
+                    <span className="text-xs text-[var(--text-2)]">{activeSession.noteIds.length} / 15</span>
                   </div>
-                  <button onClick={() => setShowContextPanel(false)} className="text-gray-500 hover:text-white transition-colors">
+                  <button onClick={() => setShowContextPanel(false)} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M18 6 6 18M6 6l12 12" />
                     </svg>
@@ -412,15 +412,15 @@ export default function TutorPage() {
                 <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
                   {/* Loaded notes */}
                   {activeSession.notes.length === 0 ? (
-                    <p className="text-xs text-gray-600 px-4 py-3">No notes loaded. Add notes below.</p>
+                    <p className="text-xs text-[var(--text-3)] px-4 py-3">No notes loaded. Add notes below.</p>
                   ) : (
                     activeSession.notes.map((n: TutorNoteMeta) => (
-                      <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-white/5">
+                      <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-black/5">
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-white truncate">{n.document.title}</p>
-                          {n.summary && <p className="text-xs text-gray-500 truncate">{n.summary}</p>}
+                          <p className="text-xs font-medium text-[var(--text-1)] truncate">{n.document.title}</p>
+                          {n.summary && <p className="text-xs text-[var(--text-2)] truncate">{n.summary}</p>}
                         </div>
-                        <button onClick={() => removeNote(n.id)} className="ml-3 text-gray-600 hover:text-red-400 transition-colors shrink-0" title="Remove">
+                        <button onClick={() => removeNote(n.id)} className="ml-3 text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0" title="Remove">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M18 6 6 18M6 6l12 12" />
                           </svg>
@@ -429,27 +429,27 @@ export default function TutorPage() {
                     ))
                   )}
                   {/* Divider */}
-                  <div className="px-4 py-2" style={{ borderTop: '1px solid #2A2A2A' }}>
+                  <div className="px-4 py-2" style={{ borderTop: '1px solid var(--border)' }}>
                     <input
                       type="text"
                       value={noteSearch}
                       onChange={e => setNoteSearch(e.target.value)}
                       placeholder="Search your notes…"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-white placeholder-gray-600 focus:outline-none"
-                      style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none"
+                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
                     />
                   </div>
                   {availableNotes.map(n => (
-                    <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-white/5">
+                    <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-black/5">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-white truncate">{n.document.title}</p>
-                        {n.summary && <p className="text-xs text-gray-500 truncate">{n.summary}</p>}
+                        <p className="text-xs font-medium text-[var(--text-1)] truncate">{n.document.title}</p>
+                        {n.summary && <p className="text-xs text-[var(--text-2)] truncate">{n.summary}</p>}
                       </div>
                       <button
                         onClick={() => addNote(n.id)}
                         disabled={activeSession.noteIds.length >= 15}
                         className="ml-3 text-xs px-2 py-1 rounded-lg transition-colors disabled:opacity-40"
-                        style={{ backgroundColor: '#9747FF20', color: '#9747FF' }}
+                        style={{ backgroundColor: 'var(--bg-input)', color: '#9747FF' }}
                         title={activeSession.noteIds.length >= 15 ? 'Max reached' : 'Add note'}
                       >
                         {activeSession.noteIds.length >= 15 ? 'Max' : 'Add'}
@@ -457,7 +457,7 @@ export default function TutorPage() {
                     </div>
                   ))}
                   {availableNotes.length === 0 && noteSearch && (
-                    <p className="text-xs text-gray-600 px-4 py-2">No notes match your search.</p>
+                    <p className="text-xs text-[var(--text-3)] px-4 py-2">No notes match your search.</p>
                   )}
                 </div>
               </div>
@@ -470,9 +470,9 @@ export default function TutorPage() {
                 onClick={() => setShowContextPanel(v => !v)}
                 className="mb-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-colors hover:opacity-80"
                 style={{
-                  backgroundColor: activeSession.noteIds.length > 0 ? '#9747FF15' : '#1A1A1A',
-                  border: `1px solid ${activeSession.noteIds.length > 0 ? '#9747FF40' : '#2A2A2A'}`,
-                  color: activeSession.noteIds.length > 0 ? '#9747FF' : '#6B7280',
+                  backgroundColor: activeSession.noteIds.length > 0 ? 'var(--brand-subtle)' : 'var(--bg-card)',
+                  border: `1px solid ${activeSession.noteIds.length > 0 ? 'var(--brand-border)' : 'var(--border)'}`,
+                  color: activeSession.noteIds.length > 0 ? '#9747FF' : 'var(--text-2)',
                 }}
               >
                 📚 {activeSession.noteIds.length > 0 ? `${activeSession.noteIds.length} note${activeSession.noteIds.length !== 1 ? 's' : ''} loaded` : 'No notes loaded — add notes for better answers'}
@@ -487,10 +487,10 @@ export default function TutorPage() {
                   onKeyDown={handleKeyDown}
                   disabled={isStreaming}
                   placeholder={isStreaming ? 'Thinking…' : 'Message your tutor…'}
-                  className="flex-1 px-4 py-3 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none resize-none disabled:opacity-50"
+                  className="flex-1 px-4 py-3 rounded-xl text-sm text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none resize-none disabled:opacity-50"
                   style={{
-                    backgroundColor: '#1A1A1A',
-                    border: '1px solid #2A2A2A',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
                     minHeight: 48,
                     maxHeight: 120,
                   }}

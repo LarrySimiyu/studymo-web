@@ -67,8 +67,8 @@ export default function StudyPlanPage() {
     <div className="max-w-4xl mx-auto py-2">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Study Plans</h1>
-          <p className="text-gray-400 text-sm mt-0.5">AI-generated day-by-day schedules for your upcoming tests</p>
+          <h1 className="text-2xl font-bold text-[var(--text-1)]">Study Plans</h1>
+          <p className="text-[var(--text-2)] text-sm mt-0.5">AI-generated day-by-day schedules for your upcoming tests</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -82,14 +82,14 @@ export default function StudyPlanPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-28 rounded-xl animate-pulse" style={{ backgroundColor: '#1A1A1A' }} />
+            <div key={i} className="h-28 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-card)' }} />
           ))}
         </div>
       ) : plans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: '#9747FF20' }}>📅</div>
-          <h2 className="text-lg font-semibold text-white mb-1">No study plans yet</h2>
-          <p className="text-gray-400 text-sm mb-6 max-w-xs">Create a plan by selecting your study materials and test date. AI will generate a day-by-day schedule.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: 'var(--bg-input)' }}>📅</div>
+          <h2 className="text-lg font-semibold text-[var(--text-1)] mb-1">No study plans yet</h2>
+          <p className="text-[var(--text-2)] text-sm mb-6 max-w-xs">Create a plan by selecting your study materials and test date. AI will generate a day-by-day schedule.</p>
           <button
             onClick={() => setShowCreate(true)}
             className="px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -106,25 +106,25 @@ export default function StudyPlanPage() {
             const done = entries.filter(d => d.completed).length;
             const pct = entries.length > 0 ? Math.round((done / entries.length) * 100) : 0;
             return (
-              <div key={plan.id} className="rounded-xl p-5" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+              <div key={plan.id} className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-semibold text-white truncate">{plan.title}</h3>
+                      <h3 className="text-base font-semibold text-[var(--text-1)] truncate">{plan.title}</h3>
                       {days >= 0 && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
                           {days === 0 ? 'Today!' : `${days}d left`}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="text-xs text-[var(--text-2)] mb-3">
                       Test date: {new Date(plan.testDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                       &nbsp;&middot;&nbsp;{entries.length} days &middot; {done} completed
                     </p>
-                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2A2A2A' }}>
+                    <div className="h-1.5 rounded-full" style={{ backgroundColor: 'var(--border)' }}>
                       <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#9747FF' }} />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{pct}% complete</p>
+                    <p className="text-xs text-[var(--text-2)] mt-1">{pct}% complete</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <a
@@ -136,8 +136,8 @@ export default function StudyPlanPage() {
                     </a>
                     <button
                       onClick={() => handleDelete(plan.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-white/5 transition-colors"
-                      style={{ color: '#EF4444', border: '1px solid #EF444440' }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                      style={{ color: '#EF4444', border: '1px solid var(--danger-border)' }}
                     >
                       Delete
                     </button>
@@ -151,57 +151,57 @@ export default function StudyPlanPage() {
 
       {/* Create Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-          <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-            <h2 className="text-lg font-semibold text-white mb-5">Create Study Plan</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
+          <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <h2 className="text-lg font-semibold text-[var(--text-1)] mb-5">Create Study Plan</h2>
 
             {creating ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-12 h-12 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mb-4" />
-                <p className="text-white font-medium">Generating your plan...</p>
-                <p className="text-gray-400 text-sm mt-1">AI is creating a day-by-day schedule</p>
+                <p className="text-[var(--text-1)] font-medium">Generating your plan...</p>
+                <p className="text-[var(--text-2)] text-sm mt-1">AI is creating a day-by-day schedule</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Plan Title</label>
+                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Plan Title</label>
                   <input
                     value={form.title}
                     onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g., Biology Midterm Prep"
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:ring-1"
-                    style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', '--tw-ring-color': '#9747FF' } as any}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] placeholder-[var(--text-3)] outline-none focus:ring-1"
+                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', '--tw-ring-color': '#9747FF' } as any}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Test Date</label>
+                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Test Date</label>
                   <input
                     type="date"
                     value={form.testDate}
                     min={minDateStr}
                     onChange={e => setForm(f => ({ ...f, testDate: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white outline-none focus:ring-1"
-                    style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', colorScheme: 'dark' } as any}
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] outline-none focus:ring-1"
+                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', colorScheme: 'light' } as any}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Study Materials ({form.documentIds.length} selected)</label>
+                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Study Materials ({form.documentIds.length} selected)</label>
                   {documents.length === 0 ? (
-                    <p className="text-xs text-gray-500 py-2">No documents available. Upload documents in your Library first.</p>
+                    <p className="text-xs text-[var(--text-2)] py-2">No documents available. Upload documents in your Library first.</p>
                   ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg p-2" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
+                    <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg p-2" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
                       {documents.map(doc => (
                         <button
                           key={doc.id}
                           onClick={() => toggleDoc(doc.id)}
-                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-white/5 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-black/5 transition-colors"
                         >
-                          <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: form.documentIds.includes(doc.id) ? '#9747FF' : '#2A2A2A', border: form.documentIds.includes(doc.id) ? 'none' : '1px solid #3A3A3A' }}>
+                          <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: form.documentIds.includes(doc.id) ? '#9747FF' : 'var(--bg-card)', border: form.documentIds.includes(doc.id) ? 'none' : '1px solid var(--border-md)' }}>
                             {form.documentIds.includes(doc.id) && <span className="text-white text-xs leading-none">✓</span>}
                           </div>
-                          <span className="text-sm text-white truncate">{doc.title}</span>
+                          <span className="text-sm text-[var(--text-1)] truncate">{doc.title}</span>
                         </button>
                       ))}
                     </div>
@@ -211,8 +211,8 @@ export default function StudyPlanPage() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => { setShowCreate(false); setForm({ title: '', testDate: '', documentIds: [] }); }}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    style={{ border: '1px solid #2A2A2A' }}
+                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-black/5"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
                   >
                     Cancel
                   </button>

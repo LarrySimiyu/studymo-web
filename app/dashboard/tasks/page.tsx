@@ -97,42 +97,45 @@ function TaskModal({ task, tags, onClose, onSave }: TaskModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md p-6">
+      <div className="border rounded-2xl w-full max-w-md p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-white">{task ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><XIcon /></button>
+          <h2 className="text-lg font-semibold text-[var(--text-1)]">{task ? 'Edit Task' : 'New Task'}</h2>
+          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors"><XIcon /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs text-white/50 mb-1">Title *</label>
+            <label className="block text-xs text-[var(--text-2)] mb-1">Title *</label>
             <input
               autoFocus
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50"
+              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
+              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
               placeholder="Task title"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-white/50 mb-1">Description</label>
+            <label className="block text-xs text-[var(--text-2)] mb-1">Description</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={2}
-              className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50 resize-none"
+              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 resize-none"
+              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
               placeholder="Optional description"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-white/50 mb-1">Estimated duration</label>
+              <label className="block text-xs text-[var(--text-2)] mb-1">Estimated duration</label>
               <select
                 value={estimatedMins}
                 onChange={e => setEstimatedMins(Number(e.target.value))}
-                className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50"
+                className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
+                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
               >
                 {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map(m => (
                   <option key={m} value={m}>
@@ -142,22 +145,24 @@ function TaskModal({ task, tags, onClose, onSave }: TaskModalProps) {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-white/50 mb-1">Due Date</label>
+              <label className="block text-xs text-[var(--text-2)] mb-1">Due Date</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
-                className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50"
+                className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
+                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs text-white/50 mb-1">Subject Tag</label>
+            <label className="block text-xs text-[var(--text-2)] mb-1">Subject Tag</label>
             <select
               value={subjectTagId}
               onChange={e => setSubjectTagId(e.target.value)}
-              className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50"
+              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
+              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
             >
               <option value="">No tag</option>
               {tags.map(t => (
@@ -172,7 +177,8 @@ function TaskModal({ task, tags, onClose, onSave }: TaskModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-white/10 text-white/60 text-sm hover:border-white/20 transition-colors"
+              className="flex-1 py-2 rounded-lg text-sm transition-colors"
+              style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
             >
               Cancel
             </button>
@@ -232,22 +238,23 @@ function TagManager({ tags, onClose, onChange }: TagManagerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md p-6">
+      <div className="border rounded-2xl w-full max-w-md p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-white">Manage Subject Tags</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors"><XIcon /></button>
+          <h2 className="text-lg font-semibold text-[var(--text-1)]">Manage Subject Tags</h2>
+          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors"><XIcon /></button>
         </div>
 
         {/* Create new */}
-        <div className="mb-4 p-3 bg-[#2A2A2A] rounded-xl">
-          <p className="text-xs text-white/50 mb-2">New Tag</p>
+        <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-input)' }}>
+          <p className="text-xs text-[var(--text-2)] mb-2">New Tag</p>
           <div className="flex gap-2">
             <input
               value={newName}
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && createTag()}
               placeholder="Tag name"
-              className="flex-1 bg-[#1A1A1A] border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:border-[#9747FF]/50"
+              className="flex-1 border rounded-lg px-3 py-1.5 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
             />
             <button
               onClick={createTag}
@@ -272,17 +279,18 @@ function TagManager({ tags, onClose, onChange }: TagManagerProps) {
         {/* Existing tags */}
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {tags.length === 0 && (
-            <p className="text-white/30 text-sm text-center py-4">No tags yet</p>
+            <p className="text-[var(--text-3)] text-sm text-center py-4">No tags yet</p>
           )}
           {tags.map(tag => (
-            <div key={tag.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5">
+            <div key={tag.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-black/5">
               {editId === tag.id ? (
                 <>
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: editColor }} />
                   <input
                     value={editName}
                     onChange={e => setEditName(e.target.value)}
-                    className="flex-1 bg-[#2A2A2A] border border-white/10 rounded px-2 py-1 text-sm text-white outline-none"
+                    className="flex-1 border rounded px-2 py-1 text-sm text-[var(--text-1)] outline-none"
+                    style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
                   />
                   <div className="flex gap-1">
                     {TAG_COLORS.map(c => (
@@ -295,19 +303,19 @@ function TagManager({ tags, onClose, onChange }: TagManagerProps) {
                     ))}
                   </div>
                   <button onClick={() => saveEdit(tag.id)} className="text-[#9747FF] text-xs">Save</button>
-                  <button onClick={() => setEditId(null)} className="text-white/40 text-xs">Cancel</button>
+                  <button onClick={() => setEditId(null)} className="text-[var(--text-3)] text-xs">Cancel</button>
                 </>
               ) : (
                 <>
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
-                  <span className="flex-1 text-sm text-white">{tag.name}</span>
+                  <span className="flex-1 text-sm text-[var(--text-1)]">{tag.name}</span>
                   <button
                     onClick={() => { setEditId(tag.id); setEditName(tag.name); setEditColor(tag.color); }}
-                    className="text-white/30 hover:text-white/60 transition-colors"
+                    className="text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors"
                   >
                     <EditIcon />
                   </button>
-                  <button onClick={() => deleteTag(tag.id)} className="text-white/30 hover:text-red-400 transition-colors">
+                  <button onClick={() => deleteTag(tag.id)} className="text-[var(--text-3)] hover:text-red-400 transition-colors">
                     <TrashIcon />
                   </button>
                 </>
@@ -334,18 +342,24 @@ function TaskRow({ task, onEdit, onDelete, onToggle }: TaskRowProps) {
   const progress = estimated > 0 ? Math.min(1, elapsed / estimated) : 0;
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${task.completed ? 'border-white/5 opacity-50' : 'border-white/10 hover:border-white/20'} bg-[#1A1A1A]`}>
+    <div
+      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${task.completed ? 'opacity-50' : ''}`}
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: `1px solid ${task.completed ? 'var(--border)' : 'var(--border-md)'}`,
+      }}
+    >
       {/* Checkbox */}
       <button
         onClick={() => onToggle(task)}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-[#9747FF] border-[#9747FF]' : 'border-white/30 hover:border-[#9747FF]'}`}
+        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-[#9747FF] border-[#9747FF]' : 'border-[var(--border-md)] hover:border-[#9747FF]'}`}
       >
         {task.completed && <CheckIcon />}
       </button>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-white/40' : 'text-white'}`}>
+        <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-[var(--text-3)]' : 'text-[var(--text-1)]'}`}>
           {task.title}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
@@ -355,7 +369,7 @@ function TaskRow({ task, onEdit, onDelete, onToggle }: TaskRowProps) {
             </span>
           )}
           {task.dueDate && (
-            <span className="text-xs text-white/30">
+            <span className="text-xs text-[var(--text-3)]">
               Due {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           )}
@@ -364,12 +378,12 @@ function TaskRow({ task, onEdit, onDelete, onToggle }: TaskRowProps) {
 
       {/* Progress / time */}
       <div className="flex-shrink-0 text-right min-w-[80px]">
-        <div className="flex items-center gap-1 justify-end text-xs text-white/40">
+        <div className="flex items-center gap-1 justify-end text-xs text-[var(--text-3)]">
           <TimerIcon />
           <span>{elapsed}m / {estimated}m</span>
         </div>
         {!task.completed && (
-          <div className="w-20 h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
+          <div className="w-20 h-1 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
             <div className="h-full bg-[#9747FF] rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
           </div>
         )}
@@ -377,10 +391,10 @@ function TaskRow({ task, onEdit, onDelete, onToggle }: TaskRowProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
-        <button onClick={() => onEdit(task)} className="p-1.5 text-white/30 hover:text-white/70 rounded-lg hover:bg-white/5 transition-all">
+        <button onClick={() => onEdit(task)} className="p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] rounded-lg hover:bg-black/5 transition-all">
           <EditIcon />
         </button>
-        <button onClick={() => onDelete(task.id)} className="p-1.5 text-white/30 hover:text-red-400 rounded-lg hover:bg-white/5 transition-all">
+        <button onClick={() => onDelete(task.id)} className="p-1.5 text-[var(--text-3)] hover:text-red-400 rounded-lg hover:bg-black/5 transition-all">
           <TrashIcon />
         </button>
       </div>
@@ -468,15 +482,16 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Tasks</h1>
-          <p className="text-sm text-white/40 mt-1">
+          <h1 className="text-2xl font-bold text-[var(--text-1)]">Tasks</h1>
+          <p className="text-sm text-[var(--text-2)] mt-1">
             {activeTasks.length} active · {completedCount} completed · ~{Math.round(totalEstimated / 60)}h estimated
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowTagManager(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-white/60 text-sm hover:border-white/20 hover:text-white transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
           >
             <TagIcon />
             Tags
@@ -484,7 +499,8 @@ export default function TasksPage() {
           {activeTasks.length > 0 && (
             <button
               onClick={() => handleStartTimer(activeTasks.map(t => t.id))}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#9747FF]/30 text-[#9747FF] text-sm hover:bg-[#9747FF]/10 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all"
+              style={{ border: '1px solid var(--brand-border)', color: '#9747FF' }}
             >
               <TimerIcon />
               {status === 'idle' ? 'Start Session' : 'View Timer'}
@@ -502,12 +518,12 @@ export default function TasksPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-3 mb-5">
-        <div className="flex bg-[#1A1A1A] border border-white/10 rounded-xl p-1">
+        <div className="flex border rounded-xl p-1" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           {(['all', 'active', 'completed'] as FilterTab[]).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-all ${filter === f ? 'bg-[#9747FF] text-white' : 'text-white/40 hover:text-white/70'}`}
+              className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-all ${filter === f ? 'bg-[#9747FF] text-white' : 'text-[var(--text-2)] hover:text-[var(--text-1)]'}`}
             >
               {f}
             </button>
@@ -518,7 +534,8 @@ export default function TasksPage() {
           <select
             value={tagFilter}
             onChange={e => setTagFilter(e.target.value)}
-            className="bg-[#1A1A1A] border border-white/10 rounded-xl px-3 py-2 text-sm text-white/60 outline-none focus:border-white/20"
+            className="border rounded-xl px-3 py-2 text-sm outline-none"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
           >
             <option value="">All Tags</option>
             {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -533,12 +550,12 @@ export default function TasksPage() {
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className="text-center py-20">
-          <div className="w-16 h-16 bg-[#1A1A1A] rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--bg-card)' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="1.5">
               <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
             </svg>
           </div>
-          <p className="text-white/40 text-sm">
+          <p className="text-[var(--text-2)] text-sm">
             {filter === 'completed' ? 'No completed tasks yet' : 'No tasks yet. Create one to get started!'}
           </p>
         </div>
@@ -548,8 +565,8 @@ export default function TasksPage() {
             <div key={group.label}>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: group.color }} />
-                <span className="text-xs font-medium text-white/40 uppercase tracking-wider">{group.label}</span>
-                <span className="text-xs text-white/20">({group.tasks.length})</span>
+                <span className="text-xs font-medium text-[var(--text-2)] uppercase tracking-wider">{group.label}</span>
+                <span className="text-xs text-[var(--text-3)]">({group.tasks.length})</span>
               </div>
               <div className="space-y-2">
                 {group.tasks.map(task => (

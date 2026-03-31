@@ -24,7 +24,7 @@ export default function NotesPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Notes</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-1)]">Notes</h1>
         <Link
           href="/dashboard/library"
           className="text-xs px-3 py-1.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
@@ -41,7 +41,7 @@ export default function NotesPage() {
       ) : notes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="text-4xl mb-4">📝</div>
-          <p className="text-gray-400 text-sm">No notes yet. Upload a document to generate notes.</p>
+          <p className="text-[var(--text-2)] text-sm">No notes yet. Upload a document to generate notes.</p>
           <Link
             href="/dashboard/library"
             className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -57,16 +57,16 @@ export default function NotesPage() {
               key={note.id}
               href={`/dashboard/library/${note.document.id}`}
               className="block p-4 rounded-xl transition-colors hover:border-purple-500/50"
-              style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm truncate">{note.document.title}</p>
+                  <p className="text-[var(--text-1)] font-medium text-sm truncate">{note.document.title}</p>
                   {note.summary && (
-                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{note.summary}</p>
+                    <p className="text-[var(--text-2)] text-xs mt-1 line-clamp-2">{note.summary}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-600 shrink-0">View →</span>
+                <span className="text-xs text-[var(--text-3)] shrink-0">View →</span>
               </div>
             </Link>
           ))}

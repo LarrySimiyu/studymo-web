@@ -46,28 +46,28 @@ function streakMessage(days: number): string {
 // ─── Skeleton ───────────────────────────────────────────────────────────────
 
 function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`rounded-lg animate-pulse ${className}`} style={{ backgroundColor: '#2A2A2A' }} />;
+  return <div className={`rounded-lg animate-pulse ${className}`} style={{ backgroundColor: 'var(--bg-input)' }} />;
 }
 
 // ─── Section wrapper ────────────────────────────────────────────────────────
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+    <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
       {children}
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-sm font-semibold text-white mb-4">{children}</h2>;
+  return <h2 className="text-sm font-semibold text-[var(--text-1)] mb-4">{children}</h2>;
 }
 
 // ─── Progress bar ───────────────────────────────────────────────────────────
 
 function ProgressBar({ pct, color = '#9747FF', height = 6 }: { pct: number; color?: string; height?: number }) {
   return (
-    <div className="rounded-full overflow-hidden" style={{ backgroundColor: '#2A2A2A', height }}>
+    <div className="rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-input)', height }}>
       <div
         className="h-full rounded-full transition-all duration-500"
         style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }}
@@ -146,8 +146,8 @@ export default function AnalyticsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Last updated just now</p>
+        <h1 className="text-2xl font-bold text-[var(--text-1)]">Analytics</h1>
+        <p className="text-[var(--text-2)] text-sm mt-0.5">Last updated just now</p>
       </div>
 
       {/* ── Section 1: Overview stats ──────────────────────────────────────── */}
@@ -184,12 +184,12 @@ export default function AnalyticsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p
-                  className="text-2xl font-bold text-white mt-1"
+                  className="text-2xl font-bold text-[var(--text-1)] mt-1"
                   style={stat.valueColor ? { color: stat.valueColor } : {}}
                 >
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+                <p className="text-xs text-[var(--text-2)] mt-1">{stat.label}</p>
               </div>
               <span className="text-xl">{stat.icon}</span>
             </div>
@@ -203,27 +203,27 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-3">
             <span className="text-4xl">🔥</span>
             <div>
-              <p className="text-3xl font-bold text-white leading-none">
+              <p className="text-3xl font-bold text-[var(--text-1)] leading-none">
                 {overview?.currentStreak ?? 0}
-                <span className="text-sm font-normal text-gray-400 ml-1">day streak</span>
+                <span className="text-sm font-normal text-[var(--text-2)] ml-1">day streak</span>
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--text-2)] mt-1">
                 {streakMessage(overview?.currentStreak ?? 0)}
               </p>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xs text-gray-500 mb-0.5">Personal best</p>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-xs text-[var(--text-2)] mb-0.5">Personal best</p>
+            <p className="text-2xl font-bold text-[var(--text-1)]">
               {overview?.longestStreak ?? 0}
-              <span className="text-xs font-normal text-gray-400 ml-1">days</span>
+              <span className="text-xs font-normal text-[var(--text-2)] ml-1">days</span>
             </p>
           </div>
         </div>
         <ProgressBar
           pct={overview?.longestStreak ? ((overview.currentStreak / overview.longestStreak) * 100) : 0}
         />
-        <p className="text-xs text-gray-600 mt-2">
+        <p className="text-xs text-[var(--text-3)] mt-2">
           Last studied: {daysAgo(overview?.lastStudyDate ?? null)}
         </p>
       </Card>
@@ -240,11 +240,11 @@ export default function AnalyticsPage() {
             >
               {overview?.avgQuizScore ?? 0}%
             </span>
-            <span className="text-gray-500 text-sm mb-1">average score</span>
+            <span className="text-[var(--text-2)] text-sm mb-1">average score</span>
           </div>
           <div className="space-y-3">
             <div>
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <div className="flex justify-between text-xs text-[var(--text-2)] mb-1">
                 <span>Accuracy</span>
                 <span>{overview?.avgQuizScore ?? 0}%</span>
               </div>
@@ -254,13 +254,13 @@ export default function AnalyticsPage() {
               />
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#111111' }}>
-                <p className="text-lg font-bold text-white">{overview?.totalQuizzesTaken ?? 0}</p>
-                <p className="text-xs text-gray-500">Quizzes taken</p>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
+                <p className="text-lg font-bold text-[var(--text-1)]">{overview?.totalQuizzesTaken ?? 0}</p>
+                <p className="text-xs text-[var(--text-2)]">Quizzes taken</p>
               </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#111111' }}>
-                <p className="text-lg font-bold text-white">{overview?.bestQuizScore ?? 0}%</p>
-                <p className="text-xs text-gray-500">Best score</p>
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
+                <p className="text-lg font-bold text-[var(--text-1)]">{overview?.bestQuizScore ?? 0}%</p>
+                <p className="text-xs text-[var(--text-2)]">Best score</p>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function AnalyticsPage() {
         <Card>
           <SectionTitle>Score Improvement</SectionTitle>
           {!quizHistory?.byQuiz.length ? (
-            <p className="text-sm text-gray-500 py-6 text-center">
+            <p className="text-sm text-[var(--text-2)] py-6 text-center">
               Take quizzes multiple times to track your improvement
             </p>
           ) : (
@@ -278,22 +278,22 @@ export default function AnalyticsPage() {
               {quizHistory.byQuiz.slice(0, 5).map(q => (
                 <div key={q.quizId} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">{q.documentTitle}</p>
-                    <p className="text-xs text-gray-600">{q.attempts} attempt{q.attempts !== 1 ? 's' : ''}</p>
+                    <p className="text-xs font-medium text-[var(--text-1)] truncate">{q.documentTitle}</p>
+                    <p className="text-xs text-[var(--text-3)]">{q.attempts} attempt{q.attempts !== 1 ? 's' : ''}</p>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs shrink-0">
-                    <span className="text-gray-400">{q.firstScore}%</span>
-                    <span className="text-gray-600">→</span>
+                    <span className="text-[var(--text-2)]">{q.firstScore}%</span>
+                    <span className="text-[var(--text-3)]">→</span>
                     <span style={{ color: scoreColor(q.latestScore) }}>{q.latestScore}%</span>
                   </div>
                   <span
                     className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0"
                     style={
                       q.improvement > 0
-                        ? { backgroundColor: '#22C55E20', color: '#22C55E' }
+                        ? { backgroundColor: 'var(--success-subtle)', color: '#22C55E' }
                         : q.improvement < 0
-                        ? { backgroundColor: '#EF444420', color: '#EF4444' }
-                        : { backgroundColor: '#2A2A2A', color: '#6B7280' }
+                        ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
+                        : { backgroundColor: 'var(--bg-input)', color: '#6B7280' }
                     }
                   >
                     {q.improvement > 0 ? `+${q.improvement}%` : q.improvement < 0 ? `${q.improvement}%` : 'No change'}
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
       <Card>
         <SectionTitle>Time by Subject</SectionTitle>
         {!timeBySubject?.bySubject.length && !timeBySubject?.untagged.totalMins ? (
-          <p className="text-sm text-gray-500 text-center py-6">
+          <p className="text-sm text-[var(--text-2)] text-center py-6">
             Create subject tags and assign them to tasks to see your time breakdown
           </p>
         ) : (
@@ -319,9 +319,9 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.subjectTagColor }} />
-                    <span className="text-sm text-white">{s.subjectTagName}</span>
+                    <span className="text-sm text-[var(--text-1)]">{s.subjectTagName}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-[var(--text-2)]">
                     <span>{fmtMins(s.totalMins)}</span>
                     <span className="w-8 text-right">{s.percentage}%</span>
                   </div>
@@ -334,9 +334,9 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: '#4B5563' }} />
-                    <span className="text-sm text-gray-400">Untagged</span>
+                    <span className="text-sm text-[var(--text-2)]">Untagged</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-[var(--text-2)]">
                     <span>{fmtMins(timeBySubject!.untagged.totalMins)}</span>
                     <span className="w-8 text-right">{timeBySubject!.untagged.percentage}%</span>
                   </div>
@@ -352,7 +352,7 @@ export default function AnalyticsPage() {
       <Card>
         <SectionTitle>Weekly Activity</SectionTitle>
         {weeks.every(w => w.totalMins === 0) ? (
-          <p className="text-sm text-gray-500 text-center py-6">
+          <p className="text-sm text-[var(--text-2)] text-center py-6">
             Complete study sessions to see your weekly activity
           </p>
         ) : (
@@ -367,8 +367,8 @@ export default function AnalyticsPage() {
                     className="w-full rounded-lg transition-all duration-500"
                     style={{
                       height: barH,
-                      backgroundColor: isCurrent ? '#9747FF' : '#2A2A2A',
-                      border: isCurrent ? '1px solid #9747FF' : '1px solid #333',
+                      backgroundColor: isCurrent ? '#9747FF' : 'var(--bg-input)',
+                      border: isCurrent ? '1px solid #9747FF' : '1px solid var(--border-md)',
                       minHeight: 4,
                     }}
                   />
@@ -377,8 +377,8 @@ export default function AnalyticsPage() {
                     <p className="text-xs font-medium" style={{ color: isCurrent ? '#9747FF' : '#9CA3AF' }}>
                       {fmtMins(week.totalMins)}
                     </p>
-                    <p className="text-xs text-gray-600">{week.sessionCount} sess.</p>
-                    <p className="text-xs text-gray-600 mt-0.5" style={{ fontSize: '10px' }}>
+                    <p className="text-xs text-[var(--text-3)]">{week.sessionCount} sess.</p>
+                    <p className="text-xs text-[var(--text-3)] mt-0.5" style={{ fontSize: '10px' }}>
                       {week.weekLabel.split(' - ')[0]}
                     </p>
                   </div>
@@ -394,7 +394,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center justify-between mb-4">
           <SectionTitle>Weak Topics</SectionTitle>
           {(weakSummary?.total ?? 0) > 0 && (
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-[var(--text-2)]">
               {weakSummary!.resolved} / {weakSummary!.total} resolved
             </span>
           )}
@@ -402,7 +402,7 @@ export default function AnalyticsPage() {
 
         {(weakSummary?.total ?? 0) > 0 && (
           <div className="mb-4">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <div className="flex justify-between text-xs text-[var(--text-2)] mb-1">
               <span>Resolution rate</span>
               <span>{weakSummary!.resolutionRate}%</span>
             </div>
@@ -411,7 +411,7 @@ export default function AnalyticsPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 p-1 rounded-lg w-fit" style={{ backgroundColor: '#111111' }}>
+        <div className="flex gap-1 mb-4 p-1 rounded-lg w-fit" style={{ backgroundColor: 'var(--bg-input)' }}>
           {(['needs', 'resolved'] as const).map(t => (
             <button
               key={t}
@@ -427,21 +427,21 @@ export default function AnalyticsPage() {
         {weakTab === 'needs' && (() => {
           const groups = weakSummary?.byDocument.filter(d => d.topics.some(t => !t.resolved)) ?? [];
           if (!groups.length) {
-            return <p className="text-sm text-gray-500 text-center py-6">No topics need review right now</p>;
+            return <p className="text-sm text-[var(--text-2)] text-center py-6">No topics need review right now</p>;
           }
           return (
             <div className="space-y-5">
               {groups.map(doc => (
                 <div key={doc.documentId}>
-                  <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-[var(--text-2)] mb-2 flex items-center gap-1.5">
                     <span>📄</span>{doc.documentTitle}
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => !t.resolved).map(topic => (
-                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
+                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{topic.topic}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">
+                          <p className="text-sm text-[var(--text-1)] truncate">{topic.topic}</p>
+                          <p className="text-xs text-[var(--text-3)] mt-0.5">
                             Last missed: {new Date(topic.lastMissedAt).toLocaleDateString()}
                           </p>
                         </div>
@@ -449,10 +449,10 @@ export default function AnalyticsPage() {
                           className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0"
                           style={
                             topic.missedCount >= 3
-                              ? { backgroundColor: '#EF444420', color: '#EF4444' }
+                              ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
                               : topic.missedCount === 2
-                              ? { backgroundColor: '#F59E0B20', color: '#F59E0B' }
-                              : { backgroundColor: '#2A2A2A', color: '#9CA3AF' }
+                              ? { backgroundColor: 'var(--warning-subtle)', color: '#F59E0B' }
+                              : { backgroundColor: 'var(--bg-input)', color: '#9CA3AF' }
                           }
                         >
                           missed {topic.missedCount}×
@@ -467,7 +467,7 @@ export default function AnalyticsPage() {
                           onClick={() => handleResolve(topic.id)}
                           disabled={resolvingId === topic.id}
                           className="text-xs shrink-0 px-2 py-1 rounded-lg disabled:opacity-50 hover:opacity-90"
-                          style={{ backgroundColor: '#22C55E20', color: '#22C55E' }}
+                          style={{ backgroundColor: 'var(--success-subtle)', color: '#22C55E' }}
                         >
                           {resolvingId === topic.id ? '…' : 'Resolve'}
                         </button>
@@ -483,24 +483,24 @@ export default function AnalyticsPage() {
         {weakTab === 'resolved' && (() => {
           const groups = weakSummary?.byDocument.filter(d => d.topics.some(t => t.resolved)) ?? [];
           if (!groups.length) {
-            return <p className="text-sm text-gray-500 text-center py-6">No resolved topics yet</p>;
+            return <p className="text-sm text-[var(--text-2)] text-center py-6">No resolved topics yet</p>;
           }
           return (
             <div className="space-y-5">
               {groups.map(doc => (
                 <div key={doc.documentId}>
-                  <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-[var(--text-2)] mb-2 flex items-center gap-1.5">
                     <span>📄</span>{doc.documentTitle}
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => t.resolved).map(topic => (
-                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg opacity-70" style={{ backgroundColor: '#111111', border: '1px solid #22C55E30' }}>
+                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg opacity-70" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--success-border)' }}>
                         <span className="text-green-400 shrink-0">✓</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white truncate">{topic.topic}</p>
-                          <p className="text-xs text-gray-600 mt-0.5">Resolved</p>
+                          <p className="text-sm text-[var(--text-1)] truncate">{topic.topic}</p>
+                          <p className="text-xs text-[var(--text-3)] mt-0.5">Resolved</p>
                         </div>
-                        <span className="text-xs text-gray-600 shrink-0">
+                        <span className="text-xs text-[var(--text-3)] shrink-0">
                           missed {topic.missedCount}×
                         </span>
                       </div>
@@ -517,36 +517,36 @@ export default function AnalyticsPage() {
       <Card>
         <SectionTitle>Recent Sessions</SectionTitle>
         {!studySessions?.sessions.length ? (
-          <p className="text-sm text-gray-500 text-center py-6">
+          <p className="text-sm text-[var(--text-2)] text-center py-6">
             Complete a study session to see your history here
           </p>
         ) : (
           <div className="space-y-2">
             {studySessions.sessions.slice(0, 10).map(s => (
-              <div key={s.id} className="flex items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
+              <div key={s.id} className="flex items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
                 <span
                   className="text-xs font-medium px-2 py-0.5 rounded shrink-0"
                   style={
                     s.mode === 'pomodoro'
-                      ? { backgroundColor: '#EF444420', color: '#EF4444' }
+                      ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
                       : { backgroundColor: '#3B82F620', color: '#60A5FA' }
                   }
                 >
                   {s.mode === 'pomodoro' ? 'Pomodoro' : 'Time Block'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white">
+                  <p className="text-sm text-[var(--text-1)]">
                     {new Date(s.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     {' at '}
                     {new Date(s.startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                   </p>
                   {s.totalTasks > 0 && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-[var(--text-2)]">
                       {s.tasksCompleted} / {s.totalTasks} tasks completed
                     </p>
                   )}
                 </div>
-                <span className="text-sm font-medium text-white shrink-0">
+                <span className="text-sm font-medium text-[var(--text-1)] shrink-0">
                   {fmtMins(s.totalMins)}
                 </span>
               </div>
@@ -567,22 +567,22 @@ export default function AnalyticsPage() {
             >
               {overview?.taskCompletionRate ?? 0}%
             </span>
-            <span className="text-gray-500 text-sm mb-1">completion rate</span>
+            <span className="text-[var(--text-2)] text-sm mb-1">completion rate</span>
           </div>
           <ProgressBar
             pct={overview?.taskCompletionRate ?? 0}
             color={scoreColor(overview?.taskCompletionRate ?? 0)}
           />
           <div className="grid grid-cols-2 gap-3 mt-3">
-            <div className="p-3 rounded-lg" style={{ backgroundColor: '#111111' }}>
-              <p className="text-lg font-bold text-white">{overview?.totalTasksCompleted ?? 0}</p>
-              <p className="text-xs text-gray-500">Completed</p>
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
+              <p className="text-lg font-bold text-[var(--text-1)]">{overview?.totalTasksCompleted ?? 0}</p>
+              <p className="text-xs text-[var(--text-2)]">Completed</p>
             </div>
-            <div className="p-3 rounded-lg" style={{ backgroundColor: '#111111' }}>
-              <p className="text-lg font-bold text-white">
+            <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
+              <p className="text-lg font-bold text-[var(--text-1)]">
                 {(overview?.totalTasksCreated ?? 0) - (overview?.totalTasksCompleted ?? 0)}
               </p>
-              <p className="text-xs text-gray-500">Remaining</p>
+              <p className="text-xs text-[var(--text-2)]">Remaining</p>
             </div>
           </div>
         </Card>
@@ -591,7 +591,7 @@ export default function AnalyticsPage() {
         <Card>
           <SectionTitle>Tasks by Subject</SectionTitle>
           {!timeBySubject?.bySubject.length ? (
-            <p className="text-sm text-gray-500 text-center py-6">
+            <p className="text-sm text-[var(--text-2)] text-center py-6">
               Create subject tags to see tasks by subject
             </p>
           ) : (
@@ -601,9 +601,9 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.subjectTagColor }} />
-                      <span className="text-xs text-white">{s.subjectTagName}</span>
+                      <span className="text-xs text-[var(--text-1)]">{s.subjectTagName}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{s.tasksCompleted} done</span>
+                    <span className="text-xs text-[var(--text-2)]">{s.tasksCompleted} done</span>
                   </div>
                   <ProgressBar
                     pct={s.tasksCompleted > 0 ? 100 : 0}
@@ -617,9 +617,9 @@ export default function AnalyticsPage() {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4B5563' }} />
-                      <span className="text-xs text-gray-400">Untagged</span>
+                      <span className="text-xs text-[var(--text-2)]">Untagged</span>
                     </div>
-                    <span className="text-xs text-gray-500">{timeBySubject.untagged.tasksCompleted} done</span>
+                    <span className="text-xs text-[var(--text-2)]">{timeBySubject.untagged.tasksCompleted} done</span>
                   </div>
                   <ProgressBar pct={50} color="#4B5563" height={4} />
                 </div>

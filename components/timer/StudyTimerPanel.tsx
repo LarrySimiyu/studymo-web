@@ -12,7 +12,7 @@ function fmt(secs: number) {
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
   if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '00')}`;
 }
 
 function fmtMins(mins: number) {
@@ -39,16 +39,16 @@ function CollapsedPill({ onExpand }: { onExpand: () => void }) {
   return (
     <button
       onClick={onExpand}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl text-white text-sm font-medium transition-all hover:scale-105"
-      style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl text-[var(--text-1)] text-sm font-medium transition-all hover:scale-105"
+      style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dot }} />
       {status !== 'idle' && (
-        <span className="text-xs text-gray-400 mr-1">{mode === 'pomodoro' ? '🍅' : '⏱'}</span>
+        <span className="text-xs text-[var(--text-2)] mr-1">{mode === 'pomodoro' ? '🍅' : '⏱'}</span>
       )}
       <span>{label}</span>
       {status !== 'idle' && (
-        <span className="text-xs text-gray-500">{fmtMins(totalElapsedMins)} studied</span>
+        <span className="text-xs text-[var(--text-2)]">{fmtMins(totalElapsedMins)} studied</span>
       )}
     </button>
   );
@@ -102,9 +102,9 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#2A2A2A' }}>
-        <h3 className="text-white font-semibold">Study Timer</h3>
-        <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
+      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <h3 className="text-[var(--text-1)] font-semibold">Study Timer</h3>
+        <button onClick={onClose} className="text-[var(--text-2)] hover:text-[var(--text-1)] text-xl leading-none">×</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -115,7 +115,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               key={m}
               onClick={() => setMode(m)}
               className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors capitalize"
-              style={mode === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: '#2A2A2A', color: '#888' }}
+              style={mode === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
             >
               {m === 'pomodoro' ? '🍅 Pomodoro' : '⏱ Time Block'}
             </button>
@@ -126,14 +126,14 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
         {mode === 'pomodoro' && (
           <div className="space-y-3">
             <div>
-              <p className="text-xs text-gray-400 mb-2">Work interval</p>
+              <p className="text-xs text-[var(--text-2)] mb-2">Work interval</p>
               <div className="flex gap-2 flex-wrap">
                 {WORK_PRESETS.map((m) => (
                   <button
                     key={m}
                     onClick={() => setWorkMins(m)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={workMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: '#2A2A2A', color: '#888' }}
+                    style={workMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
                   >
                     {m}m
                   </button>
@@ -141,14 +141,14 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-2">Break interval</p>
+              <p className="text-xs text-[var(--text-2)] mb-2">Break interval</p>
               <div className="flex gap-2">
                 {BREAK_PRESETS.map((m) => (
                   <button
                     key={m}
                     onClick={() => setBreakMins(m)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={breakMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: '#2A2A2A', color: '#888' }}
+                    style={breakMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
                   >
                     {m}m
                   </button>
@@ -160,7 +160,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
 
         {/* Task selection */}
         <div>
-          <p className="text-xs text-gray-400 mb-2 flex items-center justify-between">
+          <p className="text-xs text-[var(--text-2)] mb-2 flex items-center justify-between">
             <span>Select tasks</span>
             {mode === 'timeblock' && selectedIds.size > 0 && (
               <span className="text-purple-400">Total: {fmtMins(totalEstimated)}</span>
@@ -171,7 +171,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               <label
                 key={task.id}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer"
-                style={{ backgroundColor: selectedIds.has(task.id) ? '#9747FF15' : '#2A2A2A' }}
+                style={{ backgroundColor: selectedIds.has(task.id) ? 'var(--brand-subtle)' : 'var(--bg-input)' }}
               >
                 <input
                   type="checkbox"
@@ -187,7 +187,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                 {task.subjectTag && (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.subjectTag.color }} />
                 )}
-                <span className="text-sm text-gray-200 flex-1 truncate">{task.title}</span>
+                <span className="text-sm text-[var(--text-1)] flex-1 truncate">{task.title}</span>
                 {mode === 'timeblock' && (
                   <select
                     value={task.estimatedMins}
@@ -200,10 +200,10 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                         prev.map((t) => t.id === task.id ? { ...t, estimatedMins: mins } : t)
                       );
                     }}
-                    className="text-xs shrink-0 bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-gray-400 hover:border-[#9747FF]/50 hover:text-white focus:outline-none focus:border-[#9747FF] cursor-pointer transition-colors"
+                    className="text-xs shrink-0 bg-transparent border border-black/10 rounded px-1.5 py-0.5 text-[var(--text-2)] hover:border-[#9747FF]/50 hover:text-[var(--text-1)] focus:outline-none focus:border-[#9747FF] cursor-pointer transition-colors"
                   >
                     {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map((m) => (
-                      <option key={m} value={m} style={{ backgroundColor: '#1A1A1A' }}>
+                      <option key={m} value={m} style={{ backgroundColor: 'var(--bg-card)' }}>
                         {m < 60 ? `${m}m` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ''}`}
                       </option>
                     ))}
@@ -220,8 +220,8 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateTask()}
               placeholder="Quick add task…"
-              className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none"
-              style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+              className="flex-1 px-3 py-1.5 rounded-lg text-sm text-[var(--text-1)] focus:outline-none"
+              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
             />
             <button
               onClick={handleCreateTask}
@@ -237,7 +237,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
         {error && <p className="text-red-400 text-xs">{error}</p>}
       </div>
 
-      <div className="p-4 border-t" style={{ borderColor: '#2A2A2A' }}>
+      <div className="p-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={handleStart}
           disabled={loading}
@@ -271,8 +271,8 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#2A2A2A' }}>
-        <span className="text-sm text-gray-400">🍅 Pomodoro</span>
+      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <span className="text-sm text-[var(--text-2)]">🍅 Pomodoro</span>
         <button onClick={onEndRequest} className="text-xs text-red-400 hover:text-red-300">End Session</button>
       </div>
 
@@ -281,7 +281,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
         <div className="flex flex-col items-center mb-4">
           <div className="relative w-36 h-36">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 128 128">
-              <circle cx="64" cy="64" r={radius} fill="none" stroke="#2A2A2A" strokeWidth="8" />
+              <circle cx="64" cy="64" r={radius} fill="none" stroke="var(--border)" strokeWidth="8" />
               <circle
                 cx="64" cy="64" r={radius} fill="none"
                 stroke={currentInterval === 'work' ? '#9747FF' : '#60a5fa'}
@@ -292,8 +292,8 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold text-white font-mono">{fmt(intervalSecondsRemaining)}</span>
-              <span className="text-xs text-gray-500">{currentInterval === 'work' ? 'Focus' : 'Break'}</span>
+              <span className="text-2xl font-bold text-[var(--text-1)] font-mono">{fmt(intervalSecondsRemaining)}</span>
+              <span className="text-xs text-[var(--text-2)]">{currentInterval === 'work' ? 'Focus' : 'Break'}</span>
             </div>
           </div>
 
@@ -309,24 +309,24 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
         {/* Tasks */}
         {taskEntries.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-xs text-gray-500 mb-2">Tasks</p>
+            <p className="text-xs text-[var(--text-2)] mb-2">Tasks</p>
             {taskEntries.map((entry) => (
               <div
                 key={entry.id}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                style={{ backgroundColor: '#2A2A2A', opacity: entry.completed ? 0.5 : 1 }}
+                style={{ backgroundColor: 'var(--bg-input)', opacity: entry.completed ? 0.5 : 1 }}
               >
                 <button
                   onClick={() => !entry.completed && completeTaskEntry(entry.id)}
                   className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
-                  style={{ borderColor: entry.completed ? '#4ade80' : '#555', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
+                  style={{ borderColor: entry.completed ? '#4ade80' : 'var(--border-md)', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
                 >
                   {entry.completed && <span className="text-green-400 text-xs">✓</span>}
                 </button>
                 {entry.task.subjectTag && (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.subjectTag.color }} />
                 )}
-                <span className={`text-sm flex-1 truncate ${entry.completed ? 'line-through text-gray-500' : 'text-gray-200'}`}>
+                <span className={`text-sm flex-1 truncate ${entry.completed ? 'line-through text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>
                   {entry.task.title}
                 </span>
               </div>
@@ -352,8 +352,8 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
                 if (e.key === 'Escape') setAdding(false);
               }}
               placeholder="Task title…"
-              className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none"
-              style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+              className="flex-1 px-3 py-1.5 rounded-lg text-sm text-[var(--text-1)] focus:outline-none"
+              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
             />
             <button
               disabled={saving || !newTitle.trim()}
@@ -374,7 +374,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className="mt-3 w-full py-2 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-colors"
+            className="mt-3 w-full py-2 rounded-lg text-xs text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-black/5 transition-colors"
           >
             + Add Task
           </button>
@@ -396,16 +396,16 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: '#2A2A2A' }}>
-        <span className="text-sm text-gray-400">⏱ Time Block</span>
+      <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <span className="text-sm text-[var(--text-2)]">⏱ Time Block</span>
         <button onClick={onEndRequest} className="text-xs text-red-400 hover:text-red-300">End Session</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {/* Total remaining */}
         <div className="text-center py-2">
-          <p className="text-3xl font-bold font-mono text-white">{fmt(totalSecondsRemaining)}</p>
-          <p className="text-xs text-gray-500 mt-1">total remaining</p>
+          <p className="text-3xl font-bold font-mono text-[var(--text-1)]">{fmt(totalSecondsRemaining)}</p>
+          <p className="text-xs text-[var(--text-2)] mt-1">total remaining</p>
           <button
             onClick={isRunning ? pauseTimer : resumeTimer}
             className="mt-3 px-6 py-2 rounded-lg text-white text-sm font-medium hover:opacity-80 transition-opacity"
@@ -427,8 +427,8 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                 onClick={() => !entry.completed && setActiveTask(entry.id)}
                 className="p-3 rounded-xl cursor-pointer transition-all"
                 style={{
-                  backgroundColor: isActive ? '#9747FF15' : '#2A2A2A',
-                  border: `1px solid ${isActive ? '#9747FF' : '#333'}`,
+                  backgroundColor: isActive ? 'var(--brand-subtle)' : 'var(--bg-input)',
+                  border: `1px solid ${isActive ? '#9747FF' : 'var(--border-md)'}`,
                   opacity: entry.completed ? 0.5 : 1,
                 }}
               >
@@ -436,22 +436,22 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                   <button
                     onClick={(e) => { e.stopPropagation(); if (!entry.completed) completeTaskEntry(entry.id); }}
                     className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
-                    style={{ borderColor: entry.completed ? '#4ade80' : '#555', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
+                    style={{ borderColor: entry.completed ? '#4ade80' : 'var(--border-md)', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
                   >
                     {entry.completed && <span className="text-green-400 text-xs">✓</span>}
                   </button>
                   {entry.task.subjectTag && (
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.subjectTag.color }} />
                   )}
-                  <span className={`text-sm flex-1 truncate font-medium ${entry.completed ? 'line-through text-gray-500' : 'text-white'}`}>
+                  <span className={`text-sm flex-1 truncate font-medium ${entry.completed ? 'line-through text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>
                     {entry.task.title}
                   </span>
-                  <span className="text-xs font-mono shrink-0" style={{ color: isActive ? '#9747FF' : '#666' }}>
+                  <span className="text-xs font-mono shrink-0" style={{ color: isActive ? '#9747FF' : 'var(--text-3)' }}>
                     {fmt(taskRemaining)}
                   </span>
                 </div>
                 {isActive && (
-                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#333' }}>
+                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border-md)' }}>
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
@@ -484,12 +484,12 @@ function EndConfirmModal({
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
     >
-      <div className="w-full max-w-sm p-6 rounded-2xl" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-        <h3 className="text-white font-semibold mb-2">End Session?</h3>
-        <p className="text-gray-400 text-sm mb-1">Time studied: {fmtMins(totalElapsedMins)}</p>
-        <p className="text-gray-400 text-sm mb-5">
+      <div className="w-full max-w-sm p-6 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+        <h3 className="text-[var(--text-1)] font-semibold mb-2">End Session?</h3>
+        <p className="text-[var(--text-2)] text-sm mb-1">Time studied: {fmtMins(totalElapsedMins)}</p>
+        <p className="text-[var(--text-2)] text-sm mb-5">
           Tasks completed: {completed} / {taskEntries.length}
         </p>
         <div className="flex gap-3">
@@ -502,8 +502,8 @@ function EndConfirmModal({
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-lg text-white font-medium text-sm hover:opacity-90"
-            style={{ backgroundColor: '#2A2A2A' }}
+            className="flex-1 py-2.5 rounded-lg text-[var(--text-1)] font-medium text-sm hover:opacity-90"
+            style={{ backgroundColor: 'var(--bg-input)' }}
           >
             Cancel
           </button>
@@ -543,8 +543,8 @@ export default function StudyTimerPanel() {
       <div
         className="fixed bottom-6 right-6 z-50 w-80 rounded-2xl shadow-2xl flex flex-col"
         style={{
-          backgroundColor: '#1A1A1A',
-          border: '1px solid #2A2A2A',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border)',
           maxHeight: '80vh',
         }}
       >
@@ -564,7 +564,7 @@ export default function StudyTimerPanel() {
         />
         <button
           onClick={toggleCollapsed}
-          className="mx-4 mb-3 py-1.5 rounded-lg text-xs text-gray-600 hover:text-gray-400 hover:bg-white/5 transition-colors"
+          className="mx-4 mb-3 py-1.5 rounded-lg text-xs text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-black/5 transition-colors"
         >
           Collapse ↓
         </button>

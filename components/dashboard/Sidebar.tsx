@@ -1,26 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { foldersApi, Folder } from '@/lib/api/organization';
+import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
+import { documentsApi } from '@/lib/api/documents';
+import { podcastsApi } from '@/lib/api/podcasts';
 
-const NAV_ITEMS = [
-  { label: 'Home', href: '/dashboard', icon: '⌂' },
-  { label: 'Library', href: '/dashboard/library', icon: '📚' },
-  { label: 'Flashcards', href: '/dashboard/flashcards', icon: '🗂' },
-  { label: 'Quizzes', href: '/dashboard/quizzes', icon: '❓' },
-  { label: 'Weak Topics', href: '/dashboard/weak-topics', icon: '⚠' },
-  { label: 'Practice Exams', href: '/dashboard/practice-exams', icon: '📋' },
-  { label: 'Tasks', href: '/dashboard/tasks', icon: '✓' },
-  { label: 'Study Plan', href: '/dashboard/study-plan', icon: '📅' },
-  { label: 'AI Tutor', href: '/dashboard/tutor', icon: '🎓' },
-  { label: 'Podcasts', href: '/dashboard/podcasts', icon: '🎙️' },
-  { label: 'Analytics', href: '/dashboard/analytics', icon: '📊' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
-];
+interface Counts {
+  notes: number;
+  flashcardDecks: number;
+  quizDecks: number;
+  exams: number;
+  podcasts: number;
+}
 
 function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number })[] {
   const result: (Folder & { depth: number })[] = [];
@@ -31,22 +26,133 @@ function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number
   return result;
 }
 
+function CountBadge({ n }: { n: number | undefined }) {
+  if (!n) return null;
+  return (
+    <span
+      className="ml-auto shrink-0 text-[10px] font-medium px-1.5 rounded leading-5 min-w-[18px] text-center"
+      style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-3)' }}
+    >
+      {n}
+    </span>
+  );
+}
+
+function Divider() {
+  return <div className="mx-2 my-1.5" style={{ height: 1, backgroundColor: 'var(--border)' }} />;
+}
+
+function SectionHeader({
+  label, collapsed, open, onToggle,
+}: { label: string; collapsed: boolean; open: boolean; onToggle: () => void }) {
+  if (collapsed) return <Divider />;
+  return (
+    <button onClick={onToggle} className="w-full flex items-center gap-1 px-2.5 pt-3 pb-1">
+      <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
+        {label}
+      </span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+        style={{ color: 'var(--text-3)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+        <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}
+
+function NavLink({ href, icon, label, count, isActive, collapsed }: {
+  href: string; icon: string; label: string; count?: number; isActive: boolean; collapsed: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      title={collapsed ? label : undefined}
+      className={cn(
+        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body font-medium transition-colors',
+        collapsed ? 'justify-center' : '',
+        isActive
+          ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
+          : 'text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
+      )}
+    >
+      <span className="text-sm leading-none shrink-0">{icon}</span>
+      {!collapsed && (
+        <>
+          <span className="truncate flex-1">{label}</span>
+          <CountBadge n={count} />
+        </>
+      )}
+    </Link>
+  );
+}
+
 export default function Sidebar() {
-  const { signOut, currentUser, dbUser } = useAuth();
+  const { currentUser, dbUser } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
+
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [counts, setCounts] = useState<Partial<Counts>>({});
+  const [unfiledCount, setUnfiledCount] = useState(0);
+  const [sectionOpen, setSectionOpen] = useState({ notes: true, study: true, tools: true });
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('sidebar-collapsed') === 'true';
+    return false;
+  });
 
   const isLibraryActive = pathname.startsWith('/dashboard/library');
   const selectedFolder = searchParams.get('folder') ?? 'all';
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('sidebar-collapsed', String(next));
+  }
+
+  function toggleSection(key: keyof typeof sectionOpen) {
+    setSectionOpen(s => ({ ...s, [key]: !s[key] }));
+  }
+
+  function isActive(href: string, exact = false) {
+    return exact ? pathname === href : pathname.startsWith(href);
+  }
+
+  function isFolderActive(value: string) {
+    if (!isLibraryActive || pathname !== '/dashboard/library') return false;
+    return selectedFolder === value;
+  }
+
+  function folderHref(value: string) {
+    return value === 'all' ? '/dashboard/library' : `/dashboard/library?folder=${value}`;
+  }
+
+  useEffect(() => {
+    async function load() {
+      const [foldersRes, docsRes, podcastsRes, examsRes] = await Promise.all([
+        foldersApi.getAll(),
+        documentsApi.getAll(),
+        podcastsApi.getAll(),
+        practiceExamsApi.getAll(),
+      ]);
+      if (foldersRes.data) setFolders(foldersRes.data);
+      const docs = docsRes.data ?? [];
+      const completeDocs = docs.filter(d => d.status === 'complete');
+      setUnfiledCount(completeDocs.filter(d => !d.folderId).length);
+      setCounts({
+        notes: docs.length,
+        flashcardDecks: completeDocs.length,
+        quizDecks: completeDocs.length,
+        exams: examsRes.data?.length ?? 0,
+        podcasts: podcastsRes.data?.length ?? 0,
+      });
+    }
+    load();
+  }, []);
 
   useEffect(() => {
     if (!isLibraryActive) return;
     foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
   }, [isLibraryActive]);
 
-  // Refresh folders when library signals a change (e.g. after create/delete)
   useEffect(() => {
     if (!isLibraryActive) return;
     const handler = () => foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
@@ -56,127 +162,180 @@ export default function Sidebar() {
 
   const displayName = dbUser?.name ?? currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'User';
   const initials = displayName.slice(0, 2).toUpperCase();
-
   const flat = flattenFolders(folders);
 
-  function folderHref(value: string) {
-    return value === 'all' ? '/dashboard/library' : `/dashboard/library?folder=${value}`;
-  }
-
-  function isFolderActive(value: string) {
-    if (!isLibraryActive) return false;
-    // Only match exact library path (not /dashboard/library/[id]) for folder selection
-    const onListPage = pathname === '/dashboard/library';
-    if (!onListPage) return false;
-    return selectedFolder === value;
-  }
-
   return (
-    <aside className="w-60 shrink-0 flex flex-col" style={{ backgroundColor: '#1A1A1A', borderRight: '1px solid #2A2A2A' }}>
-      {/* Logo */}
-      <div className="p-5" style={{ borderBottom: '1px solid #2A2A2A' }}>
-        <span className="text-lg font-bold text-white tracking-tight">Studymo</span>
+    <aside
+      className="shrink-0 flex flex-col transition-all duration-200"
+      style={{ width: collapsed ? 52 : 220, backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
+    >
+      {/* Logo + collapse + global upload */}
+      <div
+        className="flex items-center justify-between px-3 py-3.5 shrink-0"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        {!collapsed && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:open-upload'))}
+              title="New note"
+              className="flex items-center justify-center w-5 h-5 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+              style={{ color: 'var(--text-3)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M6 1v10M1 6h10" />
+              </svg>
+            </button>
+          </div>
+        )}
+        <button
+          onClick={toggleCollapsed}
+          className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--bg-hover)]', collapsed && 'mx-auto')}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+            style={{ color: 'var(--text-3)', transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {/* Collapsed: show + button centered */}
+        {collapsed && (
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('app:open-upload'))}
+            title="New note"
+            className="absolute left-0 right-0 mx-auto mt-10 hidden"
+          />
+        )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-3 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === '/dashboard'
-            ? pathname === '/dashboard'
-            : pathname.startsWith(item.href);
+      {/* Nav */}
+      <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-0.5">
+        <NavLink href="/dashboard" icon="⌂" label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
+        <NavLink href="/dashboard/tutor" icon="🎓" label="AI Tutor" isActive={isActive('/dashboard/tutor')} collapsed={collapsed} />
 
-          return (
-            <div key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                )}
-                style={isActive ? { backgroundColor: '#9747FF20', color: '#9747FF' } : {}}
-              >
-                <span className="text-base leading-none">{item.icon}</span>
-                {item.label}
-              </Link>
+        {/* ── NOTES ── */}
+        <SectionHeader label="Notes" collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
 
-              {/* Library folder expansion */}
-              {item.href === '/dashboard/library' && isLibraryActive && (
-                <div className="ml-3 mt-0.5 mb-1 space-y-0.5">
-                  {/* All Documents */}
+        {sectionOpen.notes && (
+          <>
+            <NavLink
+              href="/dashboard/library"
+              icon="📝"
+              label="Notes"
+              count={counts.notes}
+              isActive={isLibraryActive && selectedFolder === 'all'}
+              collapsed={collapsed}
+            />
+
+            {!collapsed && isLibraryActive && (
+              <div className="ml-3 mt-0.5 mb-1 space-y-0.5 border-l pl-2" style={{ borderColor: 'var(--border)' }}>
+                <Link
+                  href={folderHref('none')}
+                  className={cn(
+                    'flex items-center gap-2 px-2 py-1 rounded-md text-body-sm transition-colors',
+                    isFolderActive('none')
+                      ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
+                      : 'text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]'
+                  )}
+                >
+                  <span className="shrink-0 text-xs">📭</span>
+                  <span className="truncate flex-1">Unfiled</span>
+                  <CountBadge n={unfiledCount} />
+                </Link>
+
+                {flat.map((f) => (
                   <Link
-                    href={folderHref('all')}
+                    key={f.id}
+                    href={folderHref(f.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors',
-                      isFolderActive('all') ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                      'flex items-center gap-2 py-1 rounded-md text-body-sm transition-colors',
+                      isFolderActive(f.id)
+                        ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
+                        : 'text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]'
                     )}
-                    style={isFolderActive('all') ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}}
+                    style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                   >
-                    <span>📚</span> All Documents
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
+                    <span className="truncate flex-1">{f.name}</span>
+                    <CountBadge n={f._count?.documents} />
                   </Link>
+                ))}
 
-                  {/* Unfiled */}
-                  <Link
-                    href={folderHref('none')}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors',
-                      isFolderActive('none') ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                    )}
-                    style={isFolderActive('none') ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}}
-                  >
-                    <span>📭</span> Unfiled
-                  </Link>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
+                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-body-sm transition-colors text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]"
+                >
+                  <span className="text-xs opacity-60">+</span>
+                  <span>New Folder</span>
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
-                  {/* User folders */}
-                  {flat.map((f) => (
-                    <Link
-                      key={f.id}
-                      href={folderHref(f.id)}
-                      className={cn(
-                        'flex items-center gap-2 py-1.5 rounded-lg text-xs transition-colors',
-                        isFolderActive(f.id) ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                      )}
-                      style={{
-                        paddingLeft: `${12 + f.depth * 12}px`,
-                        paddingRight: '12px',
-                        ...(isFolderActive(f.id) ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}),
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
-                      <span className="truncate">{f.name}</span>
-                    </Link>
-                  ))}
+        {/* ── STUDY MATERIALS ── */}
+        <SectionHeader label="Study Materials" collapsed={collapsed} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
 
-                  {/* New folder */}
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-gray-600 hover:text-gray-400 hover:bg-white/5 transition-colors"
-                  >
-                    + New Folder
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {sectionOpen.study && (
+          <>
+            <NavLink href="/dashboard/flashcards" icon="🗂" label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} collapsed={collapsed} />
+            <NavLink href="/dashboard/quizzes" icon="❓" label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} collapsed={collapsed} />
+            <NavLink href="/dashboard/practice-exams" icon="📋" label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} collapsed={collapsed} />
+            <NavLink href="/dashboard/podcasts" icon="🎙️" label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} collapsed={collapsed} />
+          </>
+        )}
+
+        {/* ── TOOLS ── */}
+        <SectionHeader label="Tools" collapsed={collapsed} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
+
+        {sectionOpen.tools && (
+          <>
+            <NavLink href="/dashboard/weak-topics" icon="⚠" label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} />
+            <NavLink href="/dashboard/tasks" icon="✓" label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} />
+            <NavLink href="/dashboard/study-plan" icon="📅" label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} />
+            <NavLink href="/dashboard/analytics" icon="📊" label="Analytics" isActive={isActive('/dashboard/analytics')} collapsed={collapsed} />
+          </>
+        )}
       </nav>
 
-      {/* User */}
-      <div className="p-3" style={{ borderTop: '1px solid #2A2A2A' }}>
-        <div className="flex items-center gap-3 px-2 py-2 mb-1">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-            style={{ backgroundColor: '#9747FF' }}
+      {/* User footer — click name to go to settings */}
+      <div className="px-1.5 pb-2 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
+        {!collapsed ? (
+          <Link
+            href="/dashboard/settings"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] group"
           >
-            {initials}
-          </div>
-          <p className="text-xs text-gray-400 truncate flex-1">{currentUser?.email}</p>
-        </div>
-        <button
-          onClick={() => signOut()}
-          className="w-full text-left text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
-        >
-          Sign out
-        </button>
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-body-sm font-medium truncate" style={{ color: 'var(--text-1)' }}>
+                {displayName}
+              </p>
+              <p className="text-[10px] truncate" style={{ color: 'var(--text-3)' }}>Settings & account</p>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-3)' }}>
+              <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard/settings"
+            title="Settings"
+            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              {initials}
+            </div>
+          </Link>
+        )}
       </div>
     </aside>
   );

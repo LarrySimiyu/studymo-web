@@ -72,18 +72,18 @@ export default function BillingSettingsPage() {
   return (
     <div className="max-w-2xl mx-auto py-2">
       <div className="mb-6">
-        <a href="/dashboard/settings" className="text-xs text-gray-500 hover:text-gray-300 mb-3 block">
+        <a href="/dashboard/settings" className="text-xs text-[var(--text-3)] hover:text-[var(--text-2)] mb-3 block">
           ← Back to Settings
         </a>
-        <h1 className="text-2xl font-bold text-white">Billing & Subscription</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-1)]">Billing & Subscription</h1>
       </div>
 
-      <div className="rounded-xl p-6" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+      <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         {noSub ? (
           <div className="flex flex-col items-center text-center py-8">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: '#9747FF20' }}>💳</div>
-            <h2 className="text-lg font-semibold text-white mb-1">No active subscription</h2>
-            <p className="text-gray-400 text-sm mb-5">Subscribe to get full access to Studymo</p>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-4" style={{ backgroundColor: 'var(--bg-input)' }}>💳</div>
+            <h2 className="text-lg font-semibold text-[var(--text-1)] mb-1">No active subscription</h2>
+            <p className="text-[var(--text-2)] text-sm mb-5">Subscribe to get full access to Studymo</p>
             <a
               href="/subscribe"
               className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
@@ -98,26 +98,26 @@ export default function BillingSettingsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-base font-semibold text-white">
+                  <h2 className="text-base font-semibold text-[var(--text-1)]">
                     {status.plan ? PLAN_LABELS[status.plan] : 'Studymo Pro'} Plan
                   </h2>
                   <StatusBadge status={status.status} />
                 </div>
                 {status.plan && (
-                  <p className="text-sm text-gray-400">{PLAN_PRICES[status.plan]}</p>
+                  <p className="text-sm text-[var(--text-2)]">{PLAN_PRICES[status.plan]}</p>
                 )}
               </div>
             </div>
 
             {/* Trial info */}
             {status.isTrial && status.trialEnd && (
-              <div className="p-4 rounded-xl" style={{ backgroundColor: '#9747FF10', border: '1px solid #9747FF30' }}>
+              <div className="p-4 rounded-xl" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium" style={{ color: '#9747FF' }}>
                     {status.daysLeftInTrial !== null ? `${status.daysLeftInTrial} days left in your free trial` : 'Free Trial Active'}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-[var(--text-2)]">
                   Your trial ends on {new Date(status.trialEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.
                   You will be charged $99.99 on that date.
                 </p>
@@ -126,14 +126,14 @@ export default function BillingSettingsPage() {
 
             {/* Active info */}
             {status.status === 'active' && status.currentPeriodEnd && !status.cancelAtPeriodEnd && (
-              <div className="p-3 rounded-lg" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
-                <p className="text-xs text-gray-400">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
+                <p className="text-xs text-[var(--text-2)]">
                   Next billing date:{' '}
-                  <span className="text-white font-medium">
+                  <span className="text-[var(--text-1)] font-medium">
                     {new Date(status.currentPeriodEnd).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                   </span>
                   {status.plan && (
-                    <span className="ml-2 text-gray-500">· {PLAN_PRICES[status.plan]}</span>
+                    <span className="ml-2 text-[var(--text-3)]">· {PLAN_PRICES[status.plan]}</span>
                   )}
                 </p>
               </div>
@@ -170,7 +170,7 @@ export default function BillingSettingsPage() {
             )}
 
             {/* Manage button */}
-            <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid #2A2A2A' }}>
+            <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
               <button
                 onClick={handleManage}
                 disabled={portalLoading}
@@ -182,8 +182,8 @@ export default function BillingSettingsPage() {
               <button
                 onClick={handleManage}
                 disabled={portalLoading}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
-                style={{ color: '#9CA3AF', border: '1px solid #2A2A2A' }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-black/5 transition-colors disabled:opacity-50"
+                style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
               >
                 Change Plan
               </button>
