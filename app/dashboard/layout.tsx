@@ -7,6 +7,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { StudyTimerProvider } from '@/context/StudyTimerContext';
 import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
+import UploadModal from '@/components/upload/UploadModal';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -35,6 +36,14 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [portalLoading, setPortalLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showGlobalUpload, setShowGlobalUpload] = useState(false);
+
+  // Listen for global upload trigger (e.g. sidebar + button)
+  useEffect(() => {
+    const handler = () => setShowGlobalUpload(true);
+    window.addEventListener('app:open-upload', handler);
+    return () => window.removeEventListener('app:open-upload', handler);
+  }, []);
 
   // After Stripe checkout, session_id lands in the URL. Refresh subscription
   // status before deciding whether to bounce the user back to /subscribe.
@@ -88,7 +97,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   if (loading || refreshing) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: '#111111' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
         {refreshing && <p className="text-sm text-gray-500">Activating your subscription…</p>}
       </div>
@@ -113,27 +122,37 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const isPastDue = subscriptionStatus?.status === 'past_due';
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: '#111111' }}>
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {isPastDue && (
-          <div className="flex items-center justify-between px-6 py-2.5 text-sm" style={{ backgroundColor: '#EF444415', borderBottom: '1px solid #EF444430' }}>
-            <span style={{ color: '#EF4444' }}>
+          <div className="flex items-center justify-between px-6 py-2.5 text-body" style={{ backgroundColor: 'var(--danger-subtle)', borderBottom: '1px solid var(--danger-border)' }}>
+            <span style={{ color: 'var(--danger)' }}>
               Your payment failed. Please update your payment method to keep access.
             </span>
             <button
               onClick={handleUpdatePayment}
               disabled={portalLoading}
-              className="ml-4 px-3 py-1 rounded-lg text-xs font-medium text-white shrink-0 disabled:opacity-50"
-              style={{ backgroundColor: '#EF4444' }}
+              className="btn btn-sm ml-4 shrink-0"
+              style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
             >
               {portalLoading ? 'Loading…' : 'Update Payment'}
             </button>
           </div>
         )}
-        {/* <DashboardHeader /> */}
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
+
+      {showGlobalUpload && (
+        <UploadModal
+          onClose={() => setShowGlobalUpload(false)}
+          onSuccess={() => {
+            setShowGlobalUpload(false);
+            // Notify library page to refetch if it's open
+            window.dispatchEvent(new CustomEvent('library:refetch'));
+          }}
+        />
+      )}
     </div>
   );
 }

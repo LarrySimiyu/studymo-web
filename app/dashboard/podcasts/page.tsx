@@ -64,8 +64,8 @@ export default function PodcastsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Podcasts</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{podcasts.length} podcast{podcasts.length !== 1 ? 's' : ''} generated</p>
+          <h1 className="text-2xl font-bold text-[var(--text-1)]">Podcasts</h1>
+          <p className="text-[var(--text-2)] text-sm mt-0.5">{podcasts.length} podcast{podcasts.length !== 1 ? 's' : ''} generated</p>
         </div>
         <Link
           href="/dashboard/library"
@@ -80,13 +80,13 @@ export default function PodcastsPage() {
       {podcasts.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-6">
           {/* Status filter */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             {(['all', 'complete', 'generating', 'failed'] as StatusFilter[]).map(s => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
                 className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                style={statusFilter === s ? { backgroundColor: '#9747FF', color: 'white' } : { color: '#6B7280' }}
+                style={statusFilter === s ? { backgroundColor: '#9747FF', color: 'white' } : { color: 'var(--text-2)' }}
               >
                 {STATUS_LABELS[s]}
               </button>
@@ -94,13 +94,13 @@ export default function PodcastsPage() {
           </div>
 
           {/* Length filter */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
             {(['all', 5, 10, 15] as (number | 'all')[]).map(l => (
               <button
                 key={l}
                 onClick={() => setLengthFilter(l)}
                 className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                style={lengthFilter === l ? { backgroundColor: '#9747FF', color: 'white' } : { color: '#6B7280' }}
+                style={lengthFilter === l ? { backgroundColor: '#9747FF', color: 'white' } : { color: 'var(--text-2)' }}
               >
                 {l === 'all' ? 'All lengths' : `${l} min`}
               </button>
@@ -113,8 +113,8 @@ export default function PodcastsPage() {
       {podcasts.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4">🎙️</div>
-          <h2 className="text-white font-semibold text-lg mb-2">No podcasts yet</h2>
-          <p className="text-gray-500 text-sm mb-6">
+          <h2 className="text-[var(--text-1)] font-semibold text-lg mb-2">No podcasts yet</h2>
+          <p className="text-[var(--text-2)] text-sm mb-6">
             Open any document in your library and click the Podcast tab to generate an audio lecture.
           </p>
           <Link
@@ -126,14 +126,14 @@ export default function PodcastsPage() {
           </Link>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-gray-500 text-center py-10">No podcasts match your filters.</p>
+        <p className="text-[var(--text-2)] text-center py-10">No podcasts match your filters.</p>
       ) : (
         <div className="space-y-4">
           {filtered.map(podcast => (
-            <div key={podcast.id} className="rounded-xl p-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+            <div key={podcast.id} className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm truncate">{podcast.title}</p>
+                  <p className="text-[var(--text-1)] font-medium text-sm truncate">{podcast.title}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {podcast.document && (
                       <Link
@@ -143,13 +143,13 @@ export default function PodcastsPage() {
                         {podcast.document.title}
                       </Link>
                     )}
-                    <span className="text-xs text-gray-600">·</span>
-                    <span className="text-xs text-gray-500">{podcast.lengthMins} min · {podcast.voice}</span>
-                    <span className="text-xs text-gray-600">·</span>
-                    <span className="text-xs text-gray-500">{new Date(podcast.createdAt).toLocaleDateString()}</span>
+                    <span className="text-xs text-[var(--text-3)]">·</span>
+                    <span className="text-xs text-[var(--text-2)]">{podcast.lengthMins} min · {podcast.voice}</span>
+                    <span className="text-xs text-[var(--text-3)]">·</span>
+                    <span className="text-xs text-[var(--text-2)]">{new Date(podcast.createdAt).toLocaleDateString()}</span>
                     {podcast.status === 'generating' && (
                       <>
-                        <span className="text-xs text-gray-600">·</span>
+                        <span className="text-xs text-[var(--text-3)]">·</span>
                         <span className="text-xs text-yellow-400 flex items-center gap-1">
                           <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
                           Generating
@@ -158,7 +158,7 @@ export default function PodcastsPage() {
                     )}
                     {podcast.status === 'failed' && (
                       <>
-                        <span className="text-xs text-gray-600">·</span>
+                        <span className="text-xs text-[var(--text-3)]">·</span>
                         <span className="text-xs text-red-400">Failed</span>
                       </>
                     )}
@@ -166,7 +166,7 @@ export default function PodcastsPage() {
                 </div>
                 <button
                   onClick={() => handleDelete(podcast.id)}
-                  className="ml-3 text-gray-600 hover:text-red-400 transition-colors shrink-0"
+                  className="ml-3 text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0"
                   title="Delete podcast"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

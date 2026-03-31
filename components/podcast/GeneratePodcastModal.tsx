@@ -101,22 +101,22 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="w-full max-w-lg rounded-2xl p-6 flex flex-col gap-5"
-        style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', maxHeight: '90vh', overflowY: 'auto' }}
+        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Generate Podcast</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h2 className="text-lg font-semibold text-[var(--text-1)]">Generate Podcast</h2>
+            <p className="text-xs text-[var(--text-2)] mt-0.5">
               Step {step} of 2 — {step === 1 ? 'Choose length' : 'Choose voice'}
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -132,12 +132,12 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
                 onClick={() => setLengthMins(l.mins)}
                 className="w-full text-left rounded-xl p-4 transition-all"
                 style={{
-                  backgroundColor: lengthMins === l.mins ? '#1A0A2E' : '#1A1A1A',
-                  border: `1px solid ${lengthMins === l.mins ? '#9747FF' : '#2A2A2A'}`,
+                  backgroundColor: lengthMins === l.mins ? 'var(--brand-subtle)' : 'var(--bg-input)',
+                  border: `1px solid ${lengthMins === l.mins ? '#9747FF' : 'var(--border)'}`,
                 }}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-white">{l.label}</span>
+                  <span className="font-semibold text-[var(--text-1)]">{l.label}</span>
                   {lengthMins === l.mins && (
                     <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#9747FF' }}>
                       <svg width="10" height="10" viewBox="0 0 12 12" fill="white">
@@ -146,7 +146,7 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{l.desc}</p>
+                <p className="text-xs text-[var(--text-2)] mt-1">{l.desc}</p>
               </button>
             ))}
 
@@ -180,16 +180,16 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
                     onClick={() => setVoice(v.id)}
                     className="text-left rounded-xl p-3 transition-all"
                     style={{
-                      backgroundColor: isSelected ? '#1A0A2E' : '#1A1A1A',
-                      border: `1px solid ${isSelected ? '#9747FF' : '#2A2A2A'}`,
+                      backgroundColor: isSelected ? 'var(--brand-subtle)' : 'var(--bg-input)',
+                      border: `1px solid ${isSelected ? '#9747FF' : 'var(--border)'}`,
                     }}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-white">{v.name}</span>
+                      <span className="font-medium text-sm text-[var(--text-1)]">{v.name}</span>
                       <button
                         onClick={e => { e.stopPropagation(); playPreview(v.id); }}
                         className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
-                        style={{ backgroundColor: isPlaying ? '#9747FF' : '#2A2A2A' }}
+                        style={{ backgroundColor: isPlaying ? '#9747FF' : 'var(--border)' }}
                         title={isPlaying ? 'Stop preview' : 'Play preview'}
                       >
                         {isLoadingPreview ? (
@@ -208,7 +208,7 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
                         )}
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500">{v.description}</p>
+                    <p className="text-xs text-[var(--text-3)]">{v.description}</p>
                     <span className="text-xs mt-1 inline-block" style={{ color: '#6B7280' }}>{v.gender}</span>
                   </button>
                 );
@@ -224,7 +224,7 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
                 onClick={() => setStep(1)}
                 disabled={generating}
                 className="flex-1 py-3 rounded-xl font-medium text-sm transition-colors"
-                style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9CA3AF' }}
+                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
               >
                 Back
               </button>

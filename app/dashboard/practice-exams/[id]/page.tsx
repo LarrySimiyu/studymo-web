@@ -31,7 +31,7 @@ function CircularTimer({ totalSeconds, onExpire }: { totalSeconds: number; onExp
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-20 h-20">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 90 90">
-          <circle cx="45" cy="45" r={radius} fill="none" stroke="#2A2A2A" strokeWidth="5" />
+          <circle cx="45" cy="45" r={radius} fill="none" stroke="var(--border)" strokeWidth="5" />
           <circle cx="45" cy="45" r={radius} fill="none"
             stroke={isDone ? '#ef4444' : isLow ? '#f97316' : '#9747FF'}
             strokeWidth="5"
@@ -41,12 +41,12 @@ function CircularTimer({ totalSeconds, onExpire }: { totalSeconds: number; onExp
             style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }} />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white text-xs font-mono font-semibold">
+          <span className="text-[var(--text-1)] text-xs font-mono font-semibold">
             {mins}:{secs.toString().padStart(2, '0')}
           </span>
         </div>
       </div>
-      <span className="text-white/30 text-xs">{isDone ? 'Time up' : 'remaining'}</span>
+      <span className="text-[var(--text-3)] text-xs">{isDone ? 'Time up' : 'remaining'}</span>
     </div>
   );
 }
@@ -108,13 +108,13 @@ export default function PracticeExamPage() {
       </div>
     );
   }
-  if (!exam) return <div className="text-white/50 py-10 text-center">Exam not found.</div>;
+  if (!exam) return <div className="text-[var(--text-2)] py-10 text-center">Exam not found.</div>;
 
   let examContent: ExamContent;
   try {
     examContent = typeof exam.questions === 'string' ? JSON.parse(exam.questions) : exam.questions as ExamContent;
   } catch {
-    return <div className="text-white/50 py-10 text-center">Failed to load exam content.</div>;
+    return <div className="text-[var(--text-2)] py-10 text-center">Failed to load exam content.</div>;
   }
 
   const allQuestions: (ExamQuestion & { sectionTitle: string })[] = [];
@@ -181,10 +181,10 @@ export default function PracticeExamPage() {
     return (
       <div className="max-w-2xl mx-auto py-2">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">← Back</button>
+          <button onClick={() => router.back()} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">← Back</button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">{exam.title}</h1>
-            <p className="text-white/40 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-[var(--text-1)]">{exam.title}</h1>
+            <p className="text-[var(--text-2)] text-sm mt-1">
               {examContent.totalPoints ?? '?'} pts · ~{examContent.estimatedMinutes ?? '?'} min
             </p>
           </div>
@@ -192,17 +192,17 @@ export default function PracticeExamPage() {
 
         <div className="grid grid-cols-3 gap-3 mb-8">
           {sectionTypes.map(s => (
-            <div key={s.title} className="p-4 rounded-xl" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+            <div key={s.title} className="p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               <div className="w-2 h-2 rounded-full mb-2" style={{ backgroundColor: typeColors[s.type ?? ''] ?? '#9747FF' }} />
-              <p className="text-white font-semibold text-lg">{s.count}</p>
-              <p className="text-white/40 text-xs mt-0.5">{s.title}</p>
+              <p className="text-[var(--text-1)] font-semibold text-lg">{s.count}</p>
+              <p className="text-[var(--text-2)] text-xs mt-0.5">{s.title}</p>
             </div>
           ))}
         </div>
 
         {submitted && finalScore && (
-          <div className="mb-6 p-4 rounded-xl text-center" style={{ backgroundColor: '#9747FF15', border: '1px solid #9747FF40' }}>
-            <p className="text-white font-bold text-2xl">{finalScore.earned} / {finalScore.total}</p>
+          <div className="mb-6 p-4 rounded-xl text-center" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
+            <p className="text-[var(--text-1)] font-bold text-2xl">{finalScore.earned} / {finalScore.total}</p>
             <p className="text-[#9747FF] text-sm mt-1">
               {Math.round((finalScore.earned / finalScore.total) * 100)}%
             </p>
@@ -216,7 +216,7 @@ export default function PracticeExamPage() {
           </button>
           {submitted && (
             <button onClick={() => setMode('results')}
-              className="flex-1 py-3 rounded-xl font-medium text-white/80 border border-white/10 hover:border-white/20 transition-colors">
+              className="flex-1 py-3 rounded-xl font-medium text-[var(--text-2)] border hover:border-black/20 transition-colors" style={{ borderColor: 'var(--border)' }}>
               View Results
             </button>
           )}
@@ -231,22 +231,22 @@ export default function PracticeExamPage() {
       <div className="max-w-3xl mx-auto py-2">
         {/* Header with timer */}
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => setMode('select')} className="text-white/40 hover:text-white">← Exit</button>
-          <h1 className="flex-1 text-base font-bold text-white truncate">{exam.title}</h1>
-          <span className="text-white/40 text-sm">{totalAnswered}/{allQuestions.length} answered</span>
+          <button onClick={() => setMode('select')} className="text-[var(--text-2)] hover:text-[var(--text-1)]">← Exit</button>
+          <h1 className="flex-1 text-base font-bold text-[var(--text-1)] truncate">{exam.title}</h1>
+          <span className="text-[var(--text-2)] text-sm">{totalAnswered}/{allQuestions.length} answered</span>
           <CircularTimer totalSeconds={durationSeconds} onExpire={() => setTimeExpired(true)} />
         </div>
 
         {/* Time expired banner */}
         {timeExpired && (
           <div className="mb-6 px-4 py-3 rounded-xl flex items-center gap-3"
-            style={{ backgroundColor: '#ef444420', border: '1px solid #ef444440' }}>
+            style={{ backgroundColor: 'var(--danger-subtle)', border: '1px solid var(--danger-border)' }}>
             <span className="text-red-400 text-sm font-medium">Time is up — but you can keep going and submit when ready.</span>
           </div>
         )}
 
         {/* Progress bar */}
-        <div className="w-full h-1 bg-white/10 rounded-full mb-8 overflow-hidden">
+        <div className="w-full h-1 rounded-full mb-8 overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
           <div className="h-full bg-[#9747FF] rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
         </div>
 
@@ -254,8 +254,8 @@ export default function PracticeExamPage() {
           {(examContent.sections ?? []).map((section: ExamSection) => (
             <div key={section.title}>
               <div className="mb-4">
-                <h2 className="text-white font-semibold text-lg">{section.title}</h2>
-                <p className="text-white/40 text-sm">{section.instructions}</p>
+                <h2 className="text-[var(--text-1)] font-semibold text-lg">{section.title}</h2>
+                <p className="text-[var(--text-2)] text-sm">{section.instructions}</p>
               </div>
               <div className="space-y-4">
                 {section.questions.map((q: ExamQuestion) => (
@@ -268,7 +268,7 @@ export default function PracticeExamPage() {
 
         <div className="mt-8 flex gap-3">
           <button onClick={() => setMode('select')}
-            className="px-6 py-3 rounded-xl text-white/50 border border-white/10 hover:border-white/20 transition-colors">
+            className="px-6 py-3 rounded-xl text-[var(--text-2)] border hover:border-black/20 transition-colors" style={{ borderColor: 'var(--border)' }}>
             Save & Exit
           </button>
           <button onClick={handleSubmit} disabled={grading}
@@ -285,15 +285,15 @@ export default function PracticeExamPage() {
   return (
     <div className="max-w-3xl mx-auto py-2">
       <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => setMode('select')} className="text-white/40 hover:text-white">← Back</button>
-        <h1 className="flex-1 text-lg font-bold text-white truncate">{exam.title} — Results</h1>
+        <button onClick={() => setMode('select')} className="text-[var(--text-2)] hover:text-[var(--text-1)]">← Back</button>
+        <h1 className="flex-1 text-lg font-bold text-[var(--text-1)] truncate">{exam.title} — Results</h1>
       </div>
 
       {finalScore && (
-        <div className="mb-8 p-6 rounded-xl text-center" style={{ backgroundColor: '#9747FF15', border: '1px solid #9747FF40' }}>
-          <p className="text-white font-bold text-4xl">{finalScore.earned} / {finalScore.total}</p>
+        <div className="mb-8 p-6 rounded-xl text-center" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
+          <p className="text-[var(--text-1)] font-bold text-4xl">{finalScore.earned} / {finalScore.total}</p>
           <p className="text-[#9747FF] text-lg mt-1">{Math.round((finalScore.earned / finalScore.total) * 100)}%</p>
-          <p className="text-white/40 text-sm mt-2">
+          <p className="text-[var(--text-2)] text-sm mt-2">
             {finalScore.earned / finalScore.total >= 0.8 ? 'Excellent work! 🎉' :
              finalScore.earned / finalScore.total >= 0.6 ? 'Good effort, keep studying! 📚' :
              'More review needed. 💪'}
@@ -304,7 +304,7 @@ export default function PracticeExamPage() {
       <div className="space-y-8">
         {(examContent.sections ?? []).map((section: ExamSection) => (
           <div key={section.title}>
-            <h2 className="text-white font-semibold text-lg mb-4">{section.title}</h2>
+            <h2 className="text-[var(--text-1)] font-semibold text-lg mb-4">{section.title}</h2>
             <div className="space-y-4">
               {section.questions.map((q: ExamQuestion) => {
                 const result = gradingResults[q.number];
@@ -315,12 +315,12 @@ export default function PracticeExamPage() {
                 return (
                   <div key={q.number} className="p-5 rounded-xl"
                     style={{
-                      backgroundColor: '#1A1A1A',
-                      border: `1px solid ${isCorrect ? '#16a34a40' : isWrong ? '#dc262640' : '#2A2A2A'}`,
+                      backgroundColor: 'var(--bg-card)',
+                      border: `1px solid ${isCorrect ? '#16a34a40' : isWrong ? '#dc262640' : 'var(--border)'}`,
                     }}>
                     <div className="flex items-start justify-between mb-3">
-                      <p className="text-white font-medium text-sm flex-1 pr-4">
-                        <span className="text-white/30 mr-2">{q.number}.</span>{q.question}
+                      <p className="text-[var(--text-1)] font-medium text-sm flex-1 pr-4">
+                        <span className="text-[var(--text-3)] mr-2">{q.number}.</span>{q.question}
                       </p>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {result && (
@@ -328,7 +328,7 @@ export default function PracticeExamPage() {
                             {isCorrect ? '✓' : '✗'}
                           </span>
                         )}
-                        <span className="text-xs text-white/30">{q.points} pts</span>
+                        <span className="text-xs text-[var(--text-3)]">{q.points} pts</span>
                       </div>
                     </div>
 
@@ -340,9 +340,9 @@ export default function PracticeExamPage() {
                           return (
                             <div key={opt} className="px-3 py-2 rounded-lg text-sm flex-1"
                               style={{
-                                backgroundColor: isAnswer ? '#16a34a20' : isUserWrong ? '#dc262620' : '#2A2A2A',
-                                border: `1px solid ${isAnswer ? '#16a34a60' : isUserWrong ? '#dc262660' : '#333'}`,
-                                color: isAnswer ? '#4ade80' : isUserWrong ? '#f87171' : '#888',
+                                backgroundColor: isAnswer ? '#16a34a20' : isUserWrong ? '#dc262620' : 'var(--bg-input)',
+                                border: `1px solid ${isAnswer ? '#16a34a60' : isUserWrong ? '#dc262660' : 'var(--border-md)'}`,
+                                color: isAnswer ? '#4ade80' : isUserWrong ? '#f87171' : 'var(--text-2)',
                               }}>
                               {opt} {isAnswer && '✓'}
                             </div>
@@ -354,20 +354,20 @@ export default function PracticeExamPage() {
                     {q.type === 'short_answer' && (
                       <div className="space-y-2 mb-3">
                         {userAnswer && (
-                          <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: '#2A2A2A' }}>
-                            <p className="text-white/40 text-xs mb-1">Your answer:</p>
-                            <p className="text-white/70">{userAnswer}</p>
+                          <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-input)' }}>
+                            <p className="text-[var(--text-2)] text-xs mb-1">Your answer:</p>
+                            <p className="text-[var(--text-2)]">{userAnswer}</p>
                           </div>
                         )}
                         <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: '#16a34a15', border: '1px solid #16a34a30' }}>
                           <p className="text-green-400 font-medium mb-1">Expected:</p>
-                          <p className="text-white/70">{q.correctAnswer}</p>
+                          <p className="text-[var(--text-2)]">{q.correctAnswer}</p>
                         </div>
                         {result?.feedback && (
-                          <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: '#9747FF15', border: '1px solid #9747FF30' }}>
+                          <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
                             <p className="text-[#9747FF] font-medium mb-1">Feedback:</p>
-                            <p className="text-white/70">{result.feedback}</p>
-                            <p className="text-white/40 text-xs mt-1">
+                            <p className="text-[var(--text-2)]">{result.feedback}</p>
+                            <p className="text-[var(--text-3)] text-xs mt-1">
                               Credit: {Math.round((result.partialCredit ?? 0) * 100)}%
                             </p>
                           </div>
@@ -376,7 +376,7 @@ export default function PracticeExamPage() {
                     )}
 
                     {q.explanation && q.type !== 'short_answer' && (
-                      <p className="text-white/40 text-xs">{q.explanation}</p>
+                      <p className="text-[var(--text-2)] text-xs">{q.explanation}</p>
                     )}
                   </div>
                 );
@@ -400,12 +400,12 @@ function QuestionCard({
   onAnswer: (num: number, val: string) => void;
 }) {
   return (
-    <div className="p-5 rounded-xl" style={{ backgroundColor: '#1A1A1A', border: `1px solid ${answer ? '#9747FF30' : '#2A2A2A'}` }}>
+    <div className="p-5 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: `1px solid ${answer ? '#9747FF30' : 'var(--border)'}` }}>
       <div className="flex items-start justify-between mb-3">
-        <p className="text-white font-medium text-sm flex-1 pr-4">
-          <span className="text-white/30 mr-2">{q.number}.</span>{q.question}
+        <p className="text-[var(--text-1)] font-medium text-sm flex-1 pr-4">
+          <span className="text-[var(--text-3)] mr-2">{q.number}.</span>{q.question}
         </p>
-        <span className="text-xs text-white/30 flex-shrink-0">{q.points} pts</span>
+        <span className="text-xs text-[var(--text-3)] flex-shrink-0">{q.points} pts</span>
       </div>
 
       {q.type === 'multiple_choice' && (
@@ -414,9 +414,9 @@ function QuestionCard({
             <button key={opt} onClick={() => onAnswer(q.number, opt)}
               className="w-full text-left px-3 py-2 rounded-lg text-sm transition-all"
               style={{
-                backgroundColor: answer === opt ? '#9747FF30' : '#2A2A2A',
-                border: `1px solid ${answer === opt ? '#9747FF' : '#333'}`,
-                color: answer === opt ? '#fff' : '#aaa',
+                backgroundColor: answer === opt ? 'var(--brand-subtle)' : 'var(--bg-input)',
+                border: `1px solid ${answer === opt ? '#9747FF' : 'var(--border-md)'}`,
+                color: answer === opt ? 'var(--text-1)' : 'var(--text-2)',
               }}>
               {opt}
             </button>
@@ -430,9 +430,9 @@ function QuestionCard({
             <button key={opt} onClick={() => onAnswer(q.number, opt)}
               className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all"
               style={{
-                backgroundColor: answer === opt ? '#9747FF30' : '#2A2A2A',
-                border: `1px solid ${answer === opt ? '#9747FF' : '#333'}`,
-                color: answer === opt ? '#fff' : '#aaa',
+                backgroundColor: answer === opt ? 'var(--brand-subtle)' : 'var(--bg-input)',
+                border: `1px solid ${answer === opt ? '#9747FF' : 'var(--border-md)'}`,
+                color: answer === opt ? 'var(--text-1)' : 'var(--text-2)',
               }}>
               {opt}
             </button>
@@ -444,7 +444,8 @@ function QuestionCard({
         <textarea rows={3} placeholder="Your answer…"
           value={answer ?? ''}
           onChange={e => onAnswer(q.number, e.target.value)}
-          className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50 resize-none" />
+          className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 resize-none"
+          style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }} />
       )}
     </div>
   );
