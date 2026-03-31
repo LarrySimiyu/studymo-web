@@ -34,16 +34,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export const tutorApi = {
   createSession: (data: { noteIds?: string[]; mode: 'helper' | 'tutor' }) =>
-    api.post<TutorSession>('/tutor/sessions', data),
-  getSessions: () => api.get<TutorSessionSummary[]>('/tutor/sessions'),
-  getSession: (id: string) => api.get<TutorSession>(`/tutor/sessions/${id}`),
+    api.post<TutorSession>('/tutor', data),
+  getSessions: () => api.get<TutorSessionSummary[]>('/tutor'),
+  getSession: (id: string) => api.get<TutorSession>(`/tutor/${id}`),
   updateNotes: (id: string, noteIds: string[]) =>
-    api.patch<TutorSession>(`/tutor/sessions/${id}/notes`, { noteIds }),
+    api.patch<TutorSession>(`/tutor/${id}/notes`, { noteIds }),
   updateMode: (id: string, mode: 'helper' | 'tutor') =>
-    api.patch<TutorSession>(`/tutor/sessions/${id}/mode`, { mode }),
+    api.patch<TutorSession>(`/tutor/${id}/mode`, { mode }),
   updateTitle: (id: string, title: string) =>
-    api.patch<TutorSession>(`/tutor/sessions/${id}/title`, { title }),
-  deleteSession: (id: string) => api.delete<{ success: boolean }>(`/tutor/sessions/${id}`),
+    api.patch<TutorSession>(`/tutor/${id}/title`, { title }),
+  deleteSession: (id: string) => api.delete<{ success: boolean }>(`/tutor/${id}`),
 };
 
 export async function streamTutorChat(
@@ -53,7 +53,7 @@ export async function streamTutorChat(
   onDone: () => void,
   token: string
 ): Promise<void> {
-  const response = await fetch(`${API_URL}/tutor/sessions/${sessionId}/chat`, {
+  const response = await fetch(`${API_URL}/tutor/${sessionId}/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

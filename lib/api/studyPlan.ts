@@ -33,6 +33,7 @@ export interface WeakTopic {
   documentId: string;
   document?: { id: string; title: string };
   topic: string;
+  correctAnswer: string | null;
   missedCount: number;
   lastMissedAt: string;
   resolved: boolean;

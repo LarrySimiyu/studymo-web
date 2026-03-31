@@ -2,16 +2,128 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { documentsApi, flashcardsApi, Document } from '@/lib/api/documents';
+import { documentsApi, flashcardsApi, Document, Flashcard } from '@/lib/api/documents';
 
 interface DeckEntry {
   document: Document;
   count: number;
 }
 
+function FlipCard({ card, index, total, onPrev, onNext }: {
+  card: Flashcard;
+  index: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const [flipped, setFlipped] = useState(false);
+
+  // Reset flip when card changes
+  useEffect(() => { setFlipped(false); }, [card.id]);
+
+  return (
+    <div className="flex flex-col items-center gap-6">
+      {/* Card */}
+      <div
+        className="w-full max-w-xl cursor-pointer select-none"
+        style={{ perspective: '1000px' }}
+        onClick={() => setFlipped(f => !f)}
+      >
+        <div
+          className="relative w-full rounded-2xl transition-transform duration-500"
+          style={{
+            height: 280,
+            transformStyle: 'preserve-3d',
+            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          }}
+        >
+          {/* Front */}
+          <div
+            className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #2A2A2A',
+            }}
+          >
+            <p className="text-xs text-gray-500 mb-4 uppercase tracking-wider">Question</p>
+            <p className="text-white text-base leading-relaxed">{card.front}</p>
+            <p className="text-xs text-gray-600 mt-6">Click to reveal answer</p>
+          </div>
+
+          {/* Back */}
+          <div
+            className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              backgroundColor: '#1A0A2E',
+              border: '1px solid #9747FF40',
+            }}
+          >
+            <p className="text-xs mb-4 uppercase tracking-wider" style={{ color: '#9747FF' }}>Answer</p>
+            <p className="text-white text-base leading-relaxed">{card.back}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div className="flex items-center gap-1">
+        {Array.from({ length: total }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-full transition-all"
+            style={{
+              width: i === index ? 20 : 6,
+              height: 6,
+              backgroundColor: i === index ? '#9747FF' : '#2A2A2A',
+            }}
+          />
+        ))}
+      </div>
+
+      <p className="text-xs text-gray-500">{index + 1} / {total}</p>
+
+      {/* Nav */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onPrev}
+          disabled={index === 0}
+          className="px-5 py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-30"
+          style={{ backgroundColor: '#2A2A2A', color: '#D1D5DB' }}
+        >
+          ← Prev
+        </button>
+        <button
+          onClick={() => setFlipped(f => !f)}
+          className="px-5 py-2 rounded-xl text-sm font-medium"
+          style={{ backgroundColor: '#9747FF20', color: '#9747FF', border: '1px solid #9747FF40' }}
+        >
+          {flipped ? 'Show Question' : 'Reveal Answer'}
+        </button>
+        <button
+          onClick={onNext}
+          disabled={index === total - 1}
+          className="px-5 py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-30"
+          style={{ backgroundColor: '#2A2A2A', color: '#D1D5DB' }}
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function FlashcardsPage() {
   const [decks, setDecks] = useState<DeckEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Study mode state
+  const [activeDeck, setActiveDeck] = useState<{ doc: Document; cards: Flashcard[] } | null>(null);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [deckLoading, setDeckLoading] = useState(false);
 
   useEffect(() => {
     documentsApi.getAll().then(async ({ data: docs }) => {
@@ -28,6 +140,58 @@ export default function FlashcardsPage() {
     });
   }, []);
 
+  async function openDeck(doc: Document) {
+    setDeckLoading(true);
+    const { data } = await flashcardsApi.getByDocument(doc.id);
+    if (data && data.length > 0) {
+      setActiveDeck({ doc, cards: data });
+      setCardIndex(0);
+    }
+    setDeckLoading(false);
+  }
+
+  // Study mode overlay
+  if (activeDeck) {
+    const { doc, cards } = activeDeck;
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center gap-3 mb-8">
+          <button
+            onClick={() => setActiveDeck(null)}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            ← Back
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-white">{doc.title}</h1>
+            <p className="text-xs text-gray-500">{cards.length} cards</p>
+          </div>
+        </div>
+
+        <FlipCard
+          card={cards[cardIndex]}
+          index={cardIndex}
+          total={cards.length}
+          onPrev={() => setCardIndex(i => Math.max(0, i - 1))}
+          onNext={() => setCardIndex(i => Math.min(cards.length - 1, i + 1))}
+        />
+
+        {cardIndex === cards.length - 1 && (
+          <div className="mt-8 text-center">
+            <p className="text-gray-400 text-sm mb-3">All cards reviewed!</p>
+            <button
+              onClick={() => setCardIndex(0)}
+              className="px-5 py-2 rounded-xl text-sm font-medium text-white"
+              style={{ backgroundColor: '#9747FF' }}
+            >
+              Start Over
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -41,7 +205,7 @@ export default function FlashcardsPage() {
         </Link>
       </div>
 
-      {loading ? (
+      {loading || deckLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#9747FF' }} />
         </div>
@@ -60,10 +224,10 @@ export default function FlashcardsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {decks.map(({ document: doc, count }) => (
-            <Link
+            <button
               key={doc.id}
-              href={`/dashboard/library/${doc.id}`}
-              className="block p-5 rounded-xl transition-colors hover:border-purple-500/50"
+              onClick={() => openDeck(doc)}
+              className="block p-5 rounded-xl transition-colors hover:border-purple-500/50 text-left"
               style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
             >
               <div className="flex items-start gap-3">
@@ -78,7 +242,7 @@ export default function FlashcardsPage() {
                   <p className="text-gray-500 text-xs mt-0.5">{count} cards</p>
                 </div>
               </div>
-            </Link>
+            </button>
           ))}
         </div>
       )}

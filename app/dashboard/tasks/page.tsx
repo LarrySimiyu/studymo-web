@@ -128,14 +128,18 @@ function TaskModal({ task, tags, onClose, onSave }: TaskModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-white/50 mb-1">Estimated (mins)</label>
-              <input
-                type="number"
-                min={1}
+              <label className="block text-xs text-white/50 mb-1">Estimated duration</label>
+              <select
                 value={estimatedMins}
                 onChange={e => setEstimatedMins(Number(e.target.value))}
                 className="w-full bg-[#2A2A2A] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-[#9747FF]/50"
-              />
+              >
+                {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map(m => (
+                  <option key={m} value={m}>
+                    {m < 60 ? `${m} min` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ''}`}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-white/50 mb-1">Due Date</label>

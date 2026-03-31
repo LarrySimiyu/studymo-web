@@ -7,27 +7,27 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import { StudyTimerProvider } from '@/context/StudyTimerContext';
 import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
-import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
-import AssistantPanel from '@/components/assistant/AssistantPanel';
+// import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
+// import AssistantPanel from '@/components/assistant/AssistantPanel';
 
-function DashboardHeader() {
-  const { openAssistant, isTutoringMode } = useAssistant();
-  return (
-    <div className="flex items-center justify-end px-6 py-3 shrink-0" style={{ borderBottom: '1px solid #1A1A1A' }}>
-      <button
-        onClick={openAssistant}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-        style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-        </svg>
-        Ask AI
-        {isTutoringMode && <span className="text-xs">🎓</span>}
-      </button>
-    </div>
-  );
-}
+// function DashboardHeader() {
+//   const { openAssistant, isTutoringMode } = useAssistant();
+//   return (
+//     <div className="flex items-center justify-end px-6 py-3 shrink-0" style={{ borderBottom: '1px solid #1A1A1A' }}>
+//       <button
+//         onClick={openAssistant}
+//         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+//         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
+//       >
+//         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+//           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+//         </svg>
+//         Ask AI
+//         {isTutoringMode && <span className="text-xs">🎓</span>}
+//       </button>
+//     </div>
+//   );
+// }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const { currentUser, loading, subscriptionStatus, refreshSubscription } = useAuth();
@@ -73,18 +73,18 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser, loading, subscriptionStatus, refreshing, router]);
 
-  // Cmd+K / Ctrl+K global shortcut
-  const { toggleOpen } = useAssistant();
-  useEffect(() => {
-    function handler(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        toggleOpen();
-      }
-    }
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [toggleOpen]);
+  // Cmd+K / Ctrl+K global shortcut — shelved with assistant panel
+  // const { toggleOpen } = useAssistant();
+  // useEffect(() => {
+  //   function handler(e: KeyboardEvent) {
+  //     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+  //       e.preventDefault();
+  //       toggleOpen();
+  //     }
+  //   }
+  //   window.addEventListener('keydown', handler);
+  //   return () => window.removeEventListener('keydown', handler);
+  // }, [toggleOpen]);
 
   if (loading || refreshing) {
     return (
@@ -131,7 +131,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <DashboardHeader />
+        {/* <DashboardHeader /> */}
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
@@ -141,11 +141,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <StudyTimerProvider>
-      <AssistantProvider>
+      {/* AssistantProvider and AssistantPanel shelved — will restore when re-enabling */}
+      {/* <AssistantProvider> */}
         <DashboardInner>{children}</DashboardInner>
         <StudyTimerPanel />
-        <AssistantPanel />
-      </AssistantProvider>
+        {/* <AssistantPanel /> */}
+      {/* </AssistantProvider> */}
     </StudyTimerProvider>
   );
 }

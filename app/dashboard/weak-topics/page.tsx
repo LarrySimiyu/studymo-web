@@ -141,7 +141,12 @@ export default function WeakTopicsPage() {
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white">{topic.topic}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      {topic.correctAnswer && (
+                        <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={{ backgroundColor: '#22C55E15', color: '#22C55E' }}>
+                          ✓ {topic.correctAnswer}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1">
                         <span className="text-xs text-gray-500">
                           Missed <span className="font-medium" style={{ color: topic.missedCount >= 5 ? '#EF4444' : topic.missedCount >= 3 ? '#F59E0B' : '#9CA3AF' }}>{topic.missedCount}×</span>
                         </span>
@@ -152,17 +157,6 @@ export default function WeakTopicsPage() {
                           <span className="text-xs" style={{ color: '#22C55E' }}>Resolved {new Date(topic.resolvedAt).toLocaleDateString()}</span>
                         )}
                       </div>
-                    </div>
-
-                    {/* Miss count bar */}
-                    <div className="hidden sm:flex items-center gap-1">
-                      {Array.from({ length: Math.min(topic.missedCount, 10) }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="w-1.5 h-5 rounded-sm"
-                          style={{ backgroundColor: i < 3 ? '#F59E0B' : '#EF4444' }}
-                        />
-                      ))}
                     </div>
 
                     {!topic.resolved && (

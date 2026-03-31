@@ -188,7 +188,27 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.subjectTag.color }} />
                 )}
                 <span className="text-sm text-gray-200 flex-1 truncate">{task.title}</span>
-                <span className="text-xs text-gray-500 shrink-0">{fmtMins(task.estimatedMins)}</span>
+                {mode === 'timeblock' && (
+                  <select
+                    value={task.estimatedMins}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={async (e) => {
+                      e.stopPropagation();
+                      const mins = Number(e.target.value);
+                      await tasksApi.update(task.id, { estimatedMins: mins });
+                      setTasks((prev) =>
+                        prev.map((t) => t.id === task.id ? { ...t, estimatedMins: mins } : t)
+                      );
+                    }}
+                    className="text-xs shrink-0 bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-gray-400 hover:border-[#9747FF]/50 hover:text-white focus:outline-none focus:border-[#9747FF] cursor-pointer transition-colors"
+                  >
+                    {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map((m) => (
+                      <option key={m} value={m} style={{ backgroundColor: '#1A1A1A' }}>
+                        {m < 60 ? `${m}m` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ''}`}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </label>
             ))}
           </div>
@@ -235,11 +255,12 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
 function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
   const {
     status, currentInterval, intervalSecondsRemaining,
-    workMins, breakMins, taskEntries, pauseTimer, resumeTimer, completeTaskEntry,
+    workMins, breakMins, taskEntries, pauseTimer, resumeTimer, completeTaskEntry, addTaskToSession,
   } = useStudyTimer();
 
   const [newTitle, setNewTitle] = useState('');
   const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const isRunning = status === 'running' || status === 'break';
   const radius = 54;
@@ -320,9 +341,11 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
               autoFocus
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newTitle.trim()) {
-                  tasksApi.create({ title: newTitle.trim() }).catch(() => {});
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter' && newTitle.trim() && !saving) {
+                  setSaving(true);
+                  await addTaskToSession(newTitle.trim());
+                  setSaving(false);
                   setNewTitle('');
                   setAdding(false);
                 }
@@ -332,6 +355,21 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
               className="flex-1 px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none"
               style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
             />
+            <button
+              disabled={saving || !newTitle.trim()}
+              onClick={async () => {
+                if (!newTitle.trim() || saving) return;
+                setSaving(true);
+                await addTaskToSession(newTitle.trim());
+                setSaving(false);
+                setNewTitle('');
+                setAdding(false);
+              }}
+              className="px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-40"
+              style={{ backgroundColor: '#9747FF' }}
+            >
+              {saving ? '…' : '+'}
+            </button>
           </div>
         ) : (
           <button
