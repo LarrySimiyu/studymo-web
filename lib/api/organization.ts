@@ -12,14 +12,6 @@ export interface Folder {
   children?: Folder[];
 }
 
-export interface NoteTag {
-  id: string;
-  userId: string;
-  name: string;
-  color: string;
-  createdAt: string;
-}
-
 export interface PracticeExam {
   id: string;
   userId: string;
@@ -61,18 +53,6 @@ export const foldersApi = {
   delete: (id: string) => api.delete<void>(`/folders/${id}`),
   moveDocument: (folderId: string, documentId: string) =>
     api.patch(`/folders/${folderId}/move-document`, { documentId }),
-};
-
-export const noteTagsApi = {
-  getAll: () => api.get<NoteTag[]>('/note-tags'),
-  create: (data: { name: string; color: string }) => api.post<NoteTag>('/note-tags', data),
-  update: (id: string, data: { name?: string; color?: string }) =>
-    api.patch<NoteTag>(`/note-tags/${id}`, data),
-  delete: (id: string) => api.delete<void>(`/note-tags/${id}`),
-  assign: (tagId: string, noteId: string) =>
-    api.post(`/note-tags/${tagId}/assign`, { noteId }),
-  unassign: (tagId: string, noteId: string) =>
-    api.delete(`/note-tags/${tagId}/assign/${noteId}`),
 };
 
 export const practiceExamsApi = {

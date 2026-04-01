@@ -98,9 +98,12 @@ export const documentsApi = {
 };
 
 export const notesApi = {
+  createBlank: (title?: string) => api.post<{ documentId: string; noteId: string }>('/notes/blank', { title }),
   getAll: () => api.get<{ id: string; summary: string | null; updatedAt: string; document: { id: string; title: string } }[]>('/notes'),
   getByDocument: (documentId: string) => api.get<Note>(`/notes/${documentId}`),
   update: (id: string, content: string) => api.patch<Note>(`/notes/${id}`, { content }),
+  append: (id: string, heading: string, content: string) => api.post<Note>(`/notes/${id}/append`, { heading, content }),
+  simplify: (text: string) => api.post<{ options: string[] }>('/notes/simplify', { text }),
   share: (id: string) => api.post<{ shareUrl: string; note: Note }>(`/notes/${id}/share`, {}),
   getShared: (shareToken: string) => api.get<Note>(`/notes/shared/${shareToken}`),
 };

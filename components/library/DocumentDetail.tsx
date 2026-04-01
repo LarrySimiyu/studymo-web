@@ -29,7 +29,6 @@ import {
 } from '@/lib/api/documents';
 import { tasksApi, Task } from '@/lib/api/tasks';
 import { useStudyTimer } from '@/context/StudyTimerContext';
-import { noteTagsApi, NoteTag } from '@/lib/api/organization';
 import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
@@ -40,7 +39,7 @@ import TagDropdown from '@/components/ui/TagDropdown';
 import TutorPanel from '@/components/library/TutorPanel';
 import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Code, Highlighter, Baseline,
+  List, ListOrdered, Quote, Code, Highlighter, Baseline, Wand2,
 } from 'lucide-react';
 
 type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics' | 'transcript';
@@ -164,13 +163,10 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const [shareUrl, setShareUrl] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [docTasks, setDocTasks] = useState<Task[]>([]);
-  const [noteTags, setNoteTags] = useState<{ id: string; name: string; color: string }[]>([]);
-  const [allNoteTags, setAllNoteTags] = useState<NoteTag[]>([]);
   const [allDocTags, setAllDocTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
   const [docWeakTopics, setDocWeakTopics] = useState<WeakTopic[]>([]);
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [showGeneratePodcast, setShowGeneratePodcast] = useState(false);
-  const [showNoteTagDropdown, setShowNoteTagDropdown] = useState(false);
   const [showDocTagDropdown, setShowDocTagDropdown] = useState(false);
   const [showCreateTagModal, setShowCreateTagModal] = useState(false);
   const [newTagName, setNewTagName] = useState('');
@@ -195,9 +191,12 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const noteRef = useRef(note);
   useEffect(() => { noteRef.current = note; }, [note]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null);
+  const [bubblePos, setBubblePos] = useState<{ top: number; left: number; bottom: number } | null>(null);
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  const [simplifyLoading, setSimplifyLoading] = useState(false);
+  const [simplifyOptions, setSimplifyOptions] = useState<string[] | null>(null);
+  const simplifyRangeRef = useRef<{ from: number; to: number } | null>(null);
   const isAudioDoc = doc ? ['audio', 'recording', 'video_url'].includes(doc.type) : false;
   const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics', ...(isAudioDoc ? ['transcript' as Tab] : [])];
   const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
@@ -218,16 +217,13 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   }, [id]);
 
   const loadSideData = useCallback(async () => {
-    const [tasksRes, , allNoteTagsRes, allDocTagsRes, weakRes, podcastsRes] = await Promise.all([
+    const [tasksRes, allDocTagsRes, weakRes, podcastsRes] = await Promise.all([
       tasksApi.getAll({ documentId: id }),
-      note ? noteTagsApi.getAll() : Promise.resolve({ data: null }),
-      noteTagsApi.getAll(),
       docTagsApi.getAll(),
       weakTopicsApi.getAll({ documentId: id }),
       podcastsApi.getByDocument(id),
     ]);
     if (tasksRes.data) setDocTasks(tasksRes.data);
-    if (allNoteTagsRes.data) setAllNoteTags(allNoteTagsRes.data);
     if (allDocTagsRes.data) setAllDocTags(allDocTagsRes.data);
     if (weakRes.data) setDocWeakTopics(weakRes.data);
     if (podcastsRes.data) setPodcasts(podcastsRes.data);
@@ -389,12 +385,14 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         setBubblePos(null);
         setShowTextColorPicker(false);
         setShowHighlightPicker(false);
+        setSimplifyOptions(null);
+        simplifyRangeRef.current = null;
         return;
       }
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) { setBubblePos(null); return; }
       const rect = sel.getRangeAt(0).getBoundingClientRect();
-      setBubblePos({ top: rect.top + window.scrollY - 48, left: rect.left + window.scrollX });
+      setBubblePos({ top: rect.top + window.scrollY - 48, left: rect.left + window.scrollX, bottom: rect.bottom + window.scrollY });
     },
   });
 
@@ -405,9 +403,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
       editor.commands.setContent(convertNoteToHTML(note.content));
       setTimeout(() => { isSettingContent.current = false; }, 100);
     }
-    if (note?.tags) {
-      setNoteTags(note.tags.map(t => t.tag));
-    }
+
   }, [editor, note]);
 
   // Flush pending save immediately
@@ -491,6 +487,32 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     window.addEventListener('mouseup', onUp);
   }
 
+  async function handleSimplify() {
+    if (!editor) return;
+    const { from, to } = editor.state.selection;
+    if (from === to) return;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ');
+    simplifyRangeRef.current = { from, to };
+    setSimplifyOptions(null);
+    setSimplifyLoading(true);
+    setShowTextColorPicker(false);
+    setShowHighlightPicker(false);
+    try {
+      const { data } = await notesApi.simplify(selectedText);
+      if (data?.options) setSimplifyOptions(data.options);
+    } catch { /* ignore */ }
+    finally { setSimplifyLoading(false); }
+  }
+
+  function applySimplify(option: string) {
+    if (!editor || !simplifyRangeRef.current) return;
+    const { from, to } = simplifyRangeRef.current;
+    editor.chain().focus().insertContentAt({ from, to }, option).run();
+    setSimplifyOptions(null);
+    simplifyRangeRef.current = null;
+    setBubblePos(null);
+  }
+
   const TEXT_COLORS = ['#000000', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280'];
   const HIGHLIGHT_COLORS = ['#FEF08A', '#BBF7D0', '#BAE6FD', '#DDD6FE', '#FCA5A5', '#FED7AA', '#F9A8D4'];
 
@@ -567,6 +589,26 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           {mkBtn(<List size={13} />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'), 'Bullet List')}
           {mkBtn(<ListOrdered size={13} />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'), 'Numbered List')}
           {mkBtn(<Quote size={13} />, () => editor.chain().focus().toggleBlockquote().run(), editor.isActive('blockquote'), 'Blockquote')}
+
+          {sep}
+
+          {/* Simplify button */}
+          <button
+            title="Simplify selected text"
+            onClick={handleSimplify}
+            disabled={simplifyLoading}
+            className="p-1.5 rounded transition-colors shrink-0 flex items-center gap-1 disabled:opacity-50"
+            style={{
+              color: (simplifyLoading || simplifyOptions) ? '#9747FF' : 'var(--text-2)',
+              backgroundColor: (simplifyLoading || simplifyOptions) ? 'rgba(151,71,255,0.1)' : 'transparent',
+            }}
+          >
+            {simplifyLoading
+              ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+              : <Wand2 size={13} />
+            }
+            <span className="text-xs font-medium">Simplify</span>
+          </button>
         </div>
 
         {/* Text color swatches */}
@@ -622,6 +664,56 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         )}
       </div>
     )}
+
+    {/* Simplify options panel — separate fixed container anchored below the selection */}
+    {simplifyOptions && bubblePos && (
+      <div
+        style={{
+          position: 'fixed',
+          top: bubblePos.bottom + 8,
+          left: bubblePos.left,
+          zIndex: 50,
+          width: '320px',
+        }}
+        onMouseDown={e => e.preventDefault()}
+      >
+        <div
+          className="rounded-lg shadow-xl overflow-hidden"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+            <span className="text-xs font-medium" style={{ color: '#9747FF' }}>3 simpler versions — click to replace</span>
+            <button
+              onClick={() => { setSimplifyOptions(null); simplifyRangeRef.current = null; }}
+              className="text-xs transition-colors"
+              style={{ color: 'var(--text-3)' }}
+            >
+              ✕
+            </button>
+          </div>
+          {simplifyOptions.map((option, i) => (
+            <button
+              key={i}
+              onClick={() => applySimplify(option)}
+              className="w-full text-left px-3 py-2.5 text-xs"
+              style={{
+                color: 'var(--text-1)',
+                borderBottom: i < 2 ? '1px solid var(--border)' : undefined,
+                backgroundColor: 'transparent',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(151,71,255,0.06)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-wide block mb-0.5" style={{ color: 'var(--text-3)' }}>
+                Option {i + 1}
+              </span>
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+
     <div className="flex h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
     <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
       {/* Path label + action buttons */}

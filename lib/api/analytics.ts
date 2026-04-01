@@ -29,9 +29,9 @@ export interface OverviewStats {
 
 export interface TimeBySubjectData {
   bySubject: {
-    subjectTagId: string;
-    subjectTagName: string;
-    subjectTagColor: string;
+    tagId: string;
+    tagName: string;
+    tagColor: string;
     totalMins: number;
     percentage: number;
     tasksCompleted: number;

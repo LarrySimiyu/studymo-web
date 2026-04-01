@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { documentsApi } from '@/lib/api/documents';
+import { documentsApi, notesApi } from '@/lib/api/documents';
 
-type Tab = 'file' | 'video' | 'record';
+type Tab = 'file' | 'video' | 'record' | 'blank';
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 
 interface Props {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (documentId?: string) => void;
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
@@ -132,7 +132,7 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
     setUploadState('processing');
     stopPollRef.current = await pollDocumentStatus(
       docId,
-      () => { onSuccess(); },
+      () => { onSuccess(docId); },
       () => setUploadState('failed'),
     );
   }
@@ -173,14 +173,14 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
 
             {/* Tabs */}
             <div className="flex gap-1 mb-5 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-page)' }}>
-              {(['file', 'video', 'record'] as Tab[]).map((t) => (
+              {(['file', 'video', 'record', 'blank'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setTab(t); setError(''); }}
-                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors capitalize"
+                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors"
                   style={tab === t ? { backgroundColor: '#9747FF', color: '#fff' } : { color: 'var(--text-2)' }}
                 >
-                  {t === 'file' ? 'Upload File' : t === 'video' ? 'Video URL' : 'Record Audio'}
+                  {t === 'file' ? 'Upload File' : t === 'video' ? 'Video URL' : t === 'record' ? 'Record Audio' : 'Blank Note'}
                 </button>
               ))}
             </div>
@@ -210,6 +210,12 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
                 loading={uploadState === 'uploading'}
                 onStart={handleUploadStart}
                 onSuccess={handleUploadSuccess}
+                onError={handleUploadError}
+              />
+            )}
+            {tab === 'blank' && (
+              <BlankNoteTab
+                onSuccess={(docId) => onSuccess(docId)}
                 onError={handleUploadError}
               />
             )}
@@ -357,6 +363,54 @@ function VideoTab({ loading, onStart, onSuccess, onError }: {
         style={{ backgroundColor: '#9747FF' }}
       >
         {loading ? 'Importing…' : 'Import Video'}
+      </button>
+    </div>
+  );
+}
+
+// ─── Blank note tab ──────────────────────────────────────────────────────────
+function BlankNoteTab({ onSuccess, onError }: {
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleCreate() {
+    setLoading(true);
+    const { data, error } = await notesApi.createBlank(title.trim() || undefined);
+    setLoading(false);
+    if (error || !data) { onError(error ?? 'Failed to create note'); return; }
+    onSuccess(data.documentId);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'var(--bg-page)', border: '2px dashed var(--border-md)' }}>
+        <div className="text-3xl mb-2">📝</div>
+        <p className="text-sm text-[var(--text-1)]">Start with an empty note</p>
+        <p className="text-xs text-[var(--text-2)] mt-1">Write freely — no upload needed</p>
+      </div>
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleCreate()}
+          autoFocus
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+          placeholder="Untitled Note"
+        />
+      </div>
+      <button
+        onClick={handleCreate}
+        disabled={loading}
+        className="w-full py-2.5 rounded-lg font-medium text-white text-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
+        style={{ backgroundColor: '#9747FF' }}
+      >
+        {loading ? 'Creating…' : 'Create Note'}
       </button>
     </div>
   );

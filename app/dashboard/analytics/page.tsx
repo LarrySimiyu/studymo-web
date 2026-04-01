@@ -215,18 +215,18 @@ export default function AnalyticsPage() {
         ) : (
           <div className="space-y-3">
             {timeBySubject?.bySubject.map(s => (
-              <div key={s.subjectTagId}>
+              <div key={s.tagId}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.subjectTagColor }} />
-                    <span className="text-sm text-[var(--text-1)]">{s.subjectTagName}</span>
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: s.tagColor }} />
+                    <span className="text-sm text-[var(--text-1)]">{s.tagName}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-[var(--text-2)]">
                     <span>{fmtMins(s.totalMins)}</span>
                     <span className="w-8 text-right">{s.percentage}%</span>
                   </div>
                 </div>
-                <ProgressBar pct={s.percentage} color={s.subjectTagColor} height={5} />
+                <ProgressBar pct={s.percentage} color={s.tagColor} height={5} />
               </div>
             ))}
             {(timeBySubject?.untagged.totalMins ?? 0) > 0 && (
@@ -464,17 +464,17 @@ export default function AnalyticsPage() {
           ) : (
             <div className="space-y-3">
               {timeBySubject.bySubject.map(s => (
-                <div key={s.subjectTagId}>
+                <div key={s.tagId}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.subjectTagColor }} />
-                      <span className="text-xs text-[var(--text-1)]">{s.subjectTagName}</span>
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.tagColor }} />
+                      <span className="text-xs text-[var(--text-1)]">{s.tagName}</span>
                     </div>
                     <span className="text-xs text-[var(--text-2)]">{s.tasksCompleted} done</span>
                   </div>
                   <ProgressBar
                     pct={s.tasksCompleted > 0 ? 100 : 0}
-                    color={s.subjectTagColor}
+                    color={s.tagColor}
                     height={4}
                   />
                 </div>

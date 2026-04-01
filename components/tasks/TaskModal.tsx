@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { tasksApi, subjectTagsApi, Task, SubjectTag } from '@/lib/api/tasks';
+import { tasksApi, Task } from '@/lib/api/tasks';
+import { docTagsApi } from '@/lib/api/documents';
 
 function XIcon() {
   return (
@@ -21,19 +22,19 @@ interface TaskModalProps {
 }
 
 export default function TaskModal({ task, defaultDueDate, onClose, onSave }: TaskModalProps) {
-  const [tags, setTags] = useState<SubjectTag[]>([]);
+  const [tags, setTags] = useState<{ id: string; name: string; color: string }[]>([]);
   const [title, setTitle] = useState(task?.title ?? '');
   const [description, setDescription] = useState(task?.description ?? '');
   const [estimatedMins, setEstimatedMins] = useState(task?.estimatedMins ?? 45);
   const [dueDate, setDueDate] = useState(
     task?.dueDate ? task.dueDate.split('T')[0] : (defaultDueDate ?? '')
   );
-  const [subjectTagId, setSubjectTagId] = useState(task?.subjectTagId ?? '');
+  const [tagId, setTagId] = useState(task?.tags?.[0]?.tagId ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    subjectTagsApi.getAll().then(({ data }) => { if (data) setTags(data); });
+    docTagsApi.getAll().then(({ data }) => { if (data) setTags(data.map(t => ({ ...t, color: t.color ?? '#9747FF' }))); });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -46,7 +47,7 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
       description: description.trim() || undefined,
       estimatedMins,
       dueDate: dueDate || undefined,
-      subjectTagId: subjectTagId || undefined,
+      tagId: tagId || undefined,
     };
     const { data, error: apiError } = task
       ? await tasksApi.update(task.id, payload)
@@ -122,8 +123,8 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
           <div>
             <label className="block text-xs text-[var(--text-2)] mb-1">Subject Tag</label>
             <select
-              value={subjectTagId}
-              onChange={e => setSubjectTagId(e.target.value)}
+              value={tagId}
+              onChange={e => setTagId(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
               style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
             >

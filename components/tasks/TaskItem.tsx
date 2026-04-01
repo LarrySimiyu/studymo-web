@@ -73,12 +73,12 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
           >
             {task.title}
           </p>
-          {task.subjectTag && (
+          {task.tags[0]?.tag && (
             <span
               className="text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 inline-block"
-              style={{ backgroundColor: task.subjectTag.color + '25', color: task.subjectTag.color }}
+              style={{ backgroundColor: task.tags[0]?.tag.color + '25', color: task.tags[0]?.tag.color }}
             >
-              {task.subjectTag.name}
+              {task.tags[0]?.tag.name}
             </span>
           )}
         </div>
@@ -134,9 +134,9 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
           {task.title}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          {task.subjectTag && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: task.subjectTag.color + '30', color: task.subjectTag.color }}>
-              {task.subjectTag.name}
+          {task.tags[0]?.tag && (
+            <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: task.tags[0]?.tag.color + '30', color: task.tags[0]?.tag.color }}>
+              {task.tags[0]?.tag.name}
             </span>
           )}
           {task.dueDate && (

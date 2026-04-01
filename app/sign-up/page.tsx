@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SignUpPage() {
-  const { signUp, googleSignIn, appleSignIn } = useAuth();
+  const { signUp, googleSignIn, appleSignIn, currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && currentUser) router.replace('/dashboard');
+  }, [currentUser, authLoading, router]);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
