@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { tasksApi, subjectTagsApi, Task, SubjectTag } from '@/lib/api/tasks';
+import { tasksApi, Task, Tag } from '@/lib/api/tasks';
+import { docTagsApi } from '@/lib/api/documents';
 import { useStudyTimer } from '@/context/StudyTimerContext';
 import TaskItem from '@/components/tasks/TaskItem';
 import TaskModal from '@/components/tasks/TaskModal';
@@ -54,7 +55,7 @@ function XIcon() {
 }
 
 interface TagManagerProps {
-  tags: SubjectTag[];
+  tags: Tag[];
   onClose: () => void;
   onChange: () => void;
 }
@@ -75,21 +76,21 @@ function TagManager({ tags, onClose, onChange }: TagManagerProps) {
   const createTag = async () => {
     if (!newName.trim()) return;
     setSaving(true);
-    await subjectTagsApi.create({ name: newName.trim(), color: newColor });
+    await docTagsApi.create({ name: newName.trim(), color: newColor });
     setSaving(false);
     setNewName('');
     onChange();
   };
 
   const saveEdit = async (id: string) => {
-    await subjectTagsApi.update(id, { name: editName, color: editColor });
+    await docTagsApi.update(id, { name: editName, color: editColor });
     setEditId(null);
     onChange();
   };
 
   const deleteTag = async (id: string) => {
     if (!confirm('Delete this tag? Tasks with this tag will be untagged.')) return;
-    await subjectTagsApi.delete(id);
+    await docTagsApi.delete(id);
     onChange();
   };
 
@@ -190,7 +191,7 @@ type FilterTab = 'all' | 'active' | 'completed';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [tags, setTags] = useState<SubjectTag[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterTab>('active');
   const [tagFilter, setTagFilter] = useState('');
@@ -203,10 +204,10 @@ export default function TasksPage() {
   const loadData = useCallback(async () => {
     const [tasksRes, tagsRes] = await Promise.all([
       tasksApi.getAll(),
-      subjectTagsApi.getAll(),
+      docTagsApi.getAll(),
     ]);
     if (tasksRes.data) setTasks(tasksRes.data);
-    if (tagsRes.data) setTags(tagsRes.data);
+    if (tagsRes.data) setTags(tagsRes.data.map(t => ({ ...t, color: t.color ?? '#9747FF' })));
     setLoading(false);
   }, []);
 
@@ -235,7 +236,7 @@ export default function TasksPage() {
   const filteredTasks = tasks.filter(t => {
     if (filter === 'active' && t.completed) return false;
     if (filter === 'completed' && !t.completed) return false;
-    if (tagFilter && t.subjectTagId !== tagFilter) return false;
+    if (tagFilter && !t.tags.some(tt => tt.tagId === tagFilter)) return false;
     return true;
   });
 
@@ -243,7 +244,7 @@ export default function TasksPage() {
   const grouped: { label: string; color: string; tasks: Task[] }[] = [];
   const byTag: Record<string, Task[]> = {};
   for (const t of filteredTasks) {
-    const key = t.subjectTagId ?? '__none__';
+    const key = t.tags[0]?.tagId ?? '__none__';
     if (!byTag[key]) byTag[key] = [];
     byTag[key].push(t);
   }

@@ -527,13 +527,13 @@ export default function LibraryPage() {
             <div className="flex flex-col items-center justify-center h-full text-center gap-3">
               <div className="text-5xl">📝</div>
               <p className="text-body text-[var(--text-2)]">Select a note to view it</p>
-              <p className="text-body-sm text-[var(--text-3)]">Or upload a new note to get started</p>
+              <p className="text-body-sm text-[var(--text-3)]">Or create a new note to get started</p>
               <button
                 onClick={() => setShowUpload(true)}
                 className="mt-2 px-4 py-2 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
                 style={{ backgroundColor: '#9747FF' }}
               >
-                + Upload Document
+                + New Note
               </button>
             </div>
           )}
@@ -541,7 +541,7 @@ export default function LibraryPage() {
       </div>
 
       {/* Modals */}
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={() => { setShowUpload(false); fetchAll(); }} />}
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={(docId) => { setShowUpload(false); fetchAll(); if (docId) selectDoc(docId); }} />}
       {showFolderModal && (
         <FolderModal
           onClose={() => setShowFolderModal(false)}

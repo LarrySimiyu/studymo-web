@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useStudyTimer } from '@/context/StudyTimerContext';
-import { tasksApi, subjectTagsApi, Task, SubjectTag } from '@/lib/api/tasks';
+import { tasksApi, Task } from '@/lib/api/tasks';
 
 const PRESET_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
 
@@ -184,8 +184,8 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                   className="rounded"
                   style={{ accentColor: '#9747FF' }}
                 />
-                {task.subjectTag && (
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.subjectTag.color }} />
+                {task.tags[0]?.tag && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.tags[0]?.tag.color }} />
                 )}
                 <span className="text-sm text-[var(--text-1)] flex-1 truncate">{task.title}</span>
                 {mode === 'timeblock' && (
@@ -323,8 +323,8 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
                 >
                   {entry.completed && <span className="text-green-400 text-xs">✓</span>}
                 </button>
-                {entry.task.subjectTag && (
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.subjectTag.color }} />
+                {entry.task.tags[0]?.tag && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.tags[0]?.tag.color }} />
                 )}
                 <span className={`text-sm flex-1 truncate ${entry.completed ? 'line-through text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>
                   {entry.task.title}
@@ -440,8 +440,8 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                   >
                     {entry.completed && <span className="text-green-400 text-xs">✓</span>}
                   </button>
-                  {entry.task.subjectTag && (
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.subjectTag.color }} />
+                  {entry.task.tags[0]?.tag && (
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.tags[0]?.tag.color }} />
                   )}
                   <span className={`text-sm flex-1 truncate font-medium ${entry.completed ? 'line-through text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>
                     {entry.task.title}

@@ -11,6 +11,7 @@ import {
   TutorSessionSummary,
   TutorMessage,
   TutorNoteMeta,
+  NoteOffer,
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
 import TutorInput from '@/components/tutor/TutorInput';
@@ -43,8 +44,27 @@ function renderMarkdown(text: string): string {
   return marked.parse(collapsed, { breaks: true }) as string;
 }
 
-function buildWelcome(name: string, noteCount: number): string {
-  return `Hi ${name}! 🎓 Ready to study? I have ${noteCount} note${noteCount !== 1 ? 's' : ''} loaded.\n\nI won't give you direct answers — instead I'll ask you questions to help you think through the material yourself. This is proven to help you retain information much better.\n\nLet's start: What topic from your notes would you like to work on?`;
+function buildWelcome(name: string, session: TutorSession): string {
+  const { notes, weakTopicCount } = session;
+  const noteCount = notes.length;
+
+  const greeting = `Hi ${name}! 🎓`;
+
+  const contextLine = noteCount === 0
+    ? "I don't have any notes loaded yet — add some context using the button below, or ask me anything."
+    : noteCount === 1
+      ? `I have **${notes[0].document.title}** loaded.`
+      : `I have **${noteCount} notes** loaded: ${notes.map(n => n.document.title).join(', ')}.`;
+
+  const weakLine = weakTopicCount > 0
+    ? `\n\nI can see you have **${weakTopicCount} weak topic${weakTopicCount !== 1 ? 's' : ''}** from quizzes on this material — I'll make sure we work through those.`
+    : '';
+
+  const prompt = noteCount === 0
+    ? '\n\nWhat would you like to study today?'
+    : '\n\nWhat topic would you like to start with, or should I pick one based on your notes?';
+
+  return `${greeting} ${contextLine}${weakLine}${prompt}`;
 }
 
 let msgIdCounter = 0;
@@ -75,6 +95,10 @@ export default function TutorPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [revealAnswer, setRevealAnswer] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [noteOffer, setNoteOffer] = useState<NoteOffer | null>(null);
+  const [offerSaving, setOfferSaving] = useState(false);
+  const [offerSaved, setOfferSaved] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -127,8 +151,15 @@ export default function TutorPage() {
     const { data } = await tutorApi.getSession(id);
     if (!data) return;
     setActiveSession(data);
-    const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data.notes.length) };
+    const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
     setMessages([welcome, ...data.messages]);
+    setSuggestions([]);
+    // Only show suggestions if the session has no real messages yet
+    if (data.messages.length === 0) {
+      tutorApi.getSuggestions(id).then(({ data: s }) => {
+        if (s?.suggestions) setSuggestions(s.suggestions);
+      }).catch(() => {});
+    }
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
@@ -140,8 +171,12 @@ export default function TutorPage() {
       if (!data) return;
       setSessions(prev => [{ id: data.id, title: data.title, mode: 'tutor', noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
       setActiveSession(data);
-      const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data.notes.length) };
+      const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
       setMessages([welcome]);
+      setSuggestions([]);
+      tutorApi.getSuggestions(data.id).then(({ data: s }) => {
+        if (s?.suggestions) setSuggestions(s.suggestions);
+      }).catch(() => {});
       setTimeout(() => inputRef.current?.focus(), 100);
     } finally {
       setCreatingSession(false);
@@ -152,6 +187,9 @@ export default function TutorPage() {
     const text = input.trim();
     if (!text || isStreaming || !activeSession || !currentUser) return;
     setInput('');
+    setSuggestions([]);
+    setNoteOffer(null);
+    setOfferSaved(false);
     const wasReveal = revealAnswer;
     setRevealAnswer(false);
     setIsStreaming(true);
@@ -176,13 +214,20 @@ export default function TutorPage() {
           setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m));
         },
         () => {},
-        token
+        token,
+        offer => setNoteOffer(offer)
       );
     } catch {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
     } finally {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
-      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, lastMessage: text.slice(0, 100), updatedAt: new Date().toISOString() } : s));
+      // Refresh session to pick up auto-generated title after first message
+      const isFirstMessage = messages.filter(m => m.role === 'user').length === 1;
+      if (isFirstMessage) {
+        tutorApi.getSessions().then(({ data }) => { if (data) setSessions(data); }).catch(() => {});
+      } else {
+        setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, lastMessage: text.slice(0, 100), updatedAt: new Date().toISOString() } : s));
+      }
       setIsStreaming(false);
     }
   }
@@ -220,6 +265,20 @@ export default function TutorPage() {
     const newIds = [...activeSession.noteIds, noteId];
     const { data } = await tutorApi.updateNotes(activeSession.id, newIds);
     if (data) setActiveSession(data);
+  }
+
+  async function acceptOffer() {
+    if (!noteOffer || offerSaving) return;
+    setOfferSaving(true);
+    try {
+      await notesApi.append(noteOffer.noteId, noteOffer.heading, noteOffer.content);
+      setOfferSaved(true);
+      setNoteOffer(null);
+    } catch {
+      // silently fail — user can try again
+    } finally {
+      setOfferSaving(false);
+    }
   }
 
   const loadedNoteIds = new Set(activeSession?.noteIds ?? []);
@@ -407,6 +466,56 @@ export default function TutorPage() {
 
             {/* Input area */}
             <div className="px-4 pb-4 shrink-0 relative">
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
+                      className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
+                      style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: '#9747FF' }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {offerSaved && (
+                <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center gap-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  Added to notes successfully.
+                </div>
+              )}
+
+              {noteOffer && (
+                <div className="mb-2 px-3 py-2.5 rounded-xl text-sm flex items-start gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--brand-border)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2" className="shrink-0 mt-0.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-[var(--text-1)] mb-0.5">
+                      Save &ldquo;{noteOffer.heading}&rdquo; to <span style={{ color: '#9747FF' }}>{noteOffer.noteTitle}</span>?
+                    </p>
+                    <p className="text-xs text-[var(--text-3)] truncate">{noteOffer.content.slice(0, 80)}{noteOffer.content.length > 80 ? '…' : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={acceptOffer}
+                      disabled={offerSaving}
+                      className="text-xs px-2.5 py-1 rounded-lg font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: '#9747FF' }}
+                    >
+                      {offerSaving ? 'Saving…' : 'Add to notes'}
+                    </button>
+                    <button
+                      onClick={() => setNoteOffer(null)}
+                      className="text-xs px-2 py-1 rounded-lg transition-colors"
+                      style={{ color: 'var(--text-3)' }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {showContextPanel && (
                 <ContextPicker
                   loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
