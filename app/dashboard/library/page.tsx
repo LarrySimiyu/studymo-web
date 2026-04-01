@@ -5,11 +5,24 @@ import { useSearchParams } from 'next/navigation';
 import { documentsApi, Document, docTagsApi, notesApi } from '@/lib/api/documents';
 import { foldersApi, Folder } from '@/lib/api/organization';
 import UploadModal from '@/components/upload/UploadModal';
-import DocumentDetail from '@/components/library/DocumentDetail';
+import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
+
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 2) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function typeIcon(type: string) {
   if (type === 'pdf') return '📄';
@@ -297,13 +310,9 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
           )}
 
           {/* Dates */}
-          <div className="flex items-center gap-1.5 mt-1.5">
+          <div className="mt-1.5">
             <span className="text-xs" style={{ color: 'var(--text-3)' }}>
-              Created {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </span>
-            <span className="text-xs" style={{ color: 'var(--text-3)' }}>·</span>
-            <span className="text-xs" style={{ color: 'var(--text-3)' }}>
-              Edited {new Date(doc.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              Edited {timeAgo(doc.updatedAt)}
             </span>
           </div>
         </div>
@@ -322,6 +331,7 @@ export default function LibraryPage() {
   const noteParamRef = useRef(searchParams.get('note'));
 
   const selectDoc = (id: string | null) => {
+    flushPendingNoteSave(); // save before switching, fire-and-forget
     setSelectedDocId(id);
     if (debounceDocRef.current) clearTimeout(debounceDocRef.current);
     debounceDocRef.current = setTimeout(() => setDebouncedDocId(id), 300);
@@ -340,6 +350,13 @@ export default function LibraryPage() {
   const [sort, setSort] = useState('newest');
   const [deleteTarget, setDeleteTarget] = useState<Set<string> | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [, setTick] = useState(0);
+
+  // Tick every 30s so relative timestamps stay fresh
+  useEffect(() => {
+    const id = setInterval(() => setTick(n => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   // Clear selection when folder changes so auto-select picks the new first doc
   useEffect(() => { selectDoc(null); }, [selectedFolder, search, tagFilter, typeFilter]);
@@ -349,13 +366,6 @@ export default function LibraryPage() {
     window.addEventListener('library:new-folder', handler);
     return () => window.removeEventListener('library:new-folder', handler);
   }, []);
-
-  // Listen for global upload success → refetch
-  useEffect(() => {
-    const handler = () => fetchAll();
-    window.addEventListener('library:refetch', handler);
-    return () => window.removeEventListener('library:refetch', handler);
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = useCallback(async () => {
     const params: Record<string, string> = {};
@@ -384,6 +394,15 @@ export default function LibraryPage() {
   }, [selectedFolder, tagFilter, search, typeFilter, sort]);
 
   useEffect(() => { fetchAll().finally(() => setLoading(false)); }, [fetchAll]);
+
+  // Listen for global upload/save success → refetch (using ref so listener always calls latest fetchAll)
+  const fetchAllRef = useRef(fetchAll);
+  useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
+  useEffect(() => {
+    const handler = () => fetchAllRef.current();
+    window.addEventListener('library:refetch', handler);
+    return () => window.removeEventListener('library:refetch', handler);
+  }, []);
 
   // Auto-select: prefer ?note= param on first load, otherwise keep current or pick first
   useEffect(() => {

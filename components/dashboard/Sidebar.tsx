@@ -281,7 +281,6 @@ export default function Sidebar() {
             <NavLink href="/dashboard/weak-topics" icon="⚠" label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} />
             <NavLink href="/dashboard/tasks" icon="✓" label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} />
             <NavLink href="/dashboard/study-plan" icon="📅" label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} />
-            <NavLink href="/dashboard/analytics" icon="📊" label="Analytics" isActive={isActive('/dashboard/analytics')} collapsed={collapsed} />
           </>
         )}
       </nav>
