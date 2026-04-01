@@ -95,7 +95,7 @@ export default function PracticeExamsPage() {
         <div className="text-center py-20">
           <div className="text-5xl mb-4">📝</div>
           <p className="text-[var(--text-2)] mb-2">No practice exams yet</p>
-          <p className="text-[var(--text-3)] text-sm mb-6">Generate an exam from your study documents</p>
+          <p className="text-[var(--text-3)] text-sm mb-6">Generate an exam from your notes</p>
           <button onClick={openModal}
             className="px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-[#9747FF] hover:bg-[#8535ee]">
             Generate Your First Exam
@@ -194,7 +194,7 @@ export default function PracticeExamsPage() {
               </div>
 
               <div>
-                <label className="text-xs text-[var(--text-2)] mb-1 block">Select Documents *</label>
+                <label className="text-xs text-[var(--text-2)] mb-1 block">Select Notes *</label>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {allDocs.filter(d => d.status === 'complete').map(d => (
                     <label key={d.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-black/5 cursor-pointer">
@@ -205,7 +205,7 @@ export default function PracticeExamsPage() {
                     </label>
                   ))}
                   {allDocs.filter(d => d.status === 'complete').length === 0 && (
-                    <p className="text-[var(--text-3)] text-sm px-3">No completed documents found.</p>
+                    <p className="text-[var(--text-3)] text-sm px-3">No completed notes found.</p>
                   )}
                 </div>
               </div>

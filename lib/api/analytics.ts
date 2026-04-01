@@ -92,6 +92,10 @@ export interface WeakTopicsSummaryData {
       missedCount: number;
       resolved: boolean;
       lastMissedAt: string;
+      correctAnswer: string | null;
+      resolvedAt: string | null;
+      documentId: string;
+      document: { id: string; title: string };
     }[];
   }[];
   mostMissed: { topic: string; documentTitle: string; missedCount: number }[];
@@ -103,4 +107,30 @@ export const analyticsApi = {
   getQuizHistory: () => api.get<QuizHistoryData>('/analytics/quiz-history'),
   getStudySessions: () => api.get<StudySessionsData>('/analytics/study-sessions'),
   getWeakTopicsSummary: () => api.get<WeakTopicsSummaryData>('/analytics/weak-topics-summary'),
+  getActivityHeatmap: (year: number, month?: number) =>
+    api.get<ActivityDay[]>(month
+      ? `/analytics/activity?year=${year}&month=${month}`
+      : `/analytics/activity?year=${year}`
+    ),
+};
+
+/**
+ * Activity levels per day:
+ *   0 — no activity
+ *   1 — signed in / visited (any API call triggers a server-side ping)
+ *   2 — uploaded a document
+ *   3 — took a quiz, studied flashcards, or chatted with the tutor
+ *
+ * Streak is now calculated server-side based on consecutive visit days,
+ * not quiz attempts. Call activityApi.ping() on dashboard mount to record
+ * the visit and keep the streak alive.
+ */
+export interface ActivityDay {
+  date: string; // YYYY-MM-DD
+  level: 0 | 1 | 2 | 3;
+}
+
+export const activityApi = {
+  /** Call once on dashboard mount to record a site visit for streak tracking. */
+  ping: () => api.post<{ currentStreak: number; longestStreak: number }>('/activity/ping', {}),
 };

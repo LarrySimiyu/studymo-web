@@ -7,6 +7,7 @@ import { foldersApi, Folder } from '@/lib/api/organization';
 import UploadModal from '@/components/upload/UploadModal';
 import DocumentDetail from '@/components/library/DocumentDetail';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
+import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
 
@@ -40,8 +41,8 @@ function DeleteConfirmModal({ count, onConfirm, onCancel, deleting }: {
         <div className="flex flex-col items-center text-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--danger-subtle)' }}>🗑</div>
           <div>
-            <p className="text-[var(--text-1)] font-semibold">Delete {count} document{count !== 1 ? 's' : ''}?</p>
-            <p className="text-[var(--text-2)] opacity-60 text-sm mt-1">This action cannot be undone. All notes, flashcards, and quizzes for {count !== 1 ? 'these documents' : 'this document'} will be permanently deleted.</p>
+            <p className="text-[var(--text-1)] font-semibold">Delete {count} note{count !== 1 ? 's' : ''}?</p>
+            <p className="text-[var(--text-2)] opacity-60 text-sm mt-1">This action cannot be undone. All notes, flashcards, and quizzes for {count !== 1 ? 'these notes' : 'this note'} will be permanently deleted.</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -87,7 +88,7 @@ function ManageTagsModal({ onClose, onChange }: { onClose: () => void; onChange:
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="border border-black/10 rounded-2xl w-full max-w-sm p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
         <div className="flex justify-between mb-4">
-          <h3 className="font-semibold text-[var(--text-1)]">Document Tags</h3>
+          <h3 className="font-semibold text-[var(--text-1)]">Note Tags</h3>
           <button onClick={onClose} className="text-[var(--text-1)] opacity-40 hover:opacity-100 text-xl leading-none">×</button>
         </div>
         <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-input)' }}>
@@ -130,12 +131,12 @@ function FolderModal({ folder, onClose, onSave }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="border border-black/10 rounded-2xl w-full max-w-sm p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
         <div className="flex justify-between mb-4">
-          <h3 className="font-semibold text-[var(--text-1)]">{folder ? 'Rename Folder' : 'New Folder'}</h3>
+          <h3 className="font-semibold text-[var(--text-1)]">{folder ? 'Rename Collection' : 'New Collection'}</h3>
           <button onClick={onClose} className="text-[var(--text-1)] opacity-40 hover:opacity-100 text-xl leading-none">×</button>
         </div>
         <input autoFocus value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && name.trim() && onSave(name.trim(), color)}
-          placeholder="Folder name"
+          placeholder="Collection name"
           className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 mb-3" style={{ backgroundColor: 'var(--bg-input)' }} />
         <div className="flex gap-2 mb-4">
           {TAG_COLORS.map(c => (
@@ -164,7 +165,7 @@ function twoSentences(text: string | null | undefined): string {
   return matches.slice(0, 2).join(' ').trim();
 }
 
-function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders, availableTags, onAddTag }: {
+function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders, availableTags, onAddTag, onManageTags }: {
   doc: Document;
   preview?: string;
   isSelected: boolean;
@@ -172,11 +173,12 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
   onDelete: (id: string) => void;
   onMoveToFolder: (docId: string, folderId: string | null) => void;
   onAddTag: (docId: string, tagId: string) => void;
+  onManageTags: () => void;
   folders: Folder[];
-  availableTags: { id: string; name: string; color: string | null }[];
+  availableTags: Tag[];
 }) {
   const [showMenu, setShowMenu] = useState(false);
-  const [openSub, setOpenSub] = useState<'folder' | 'tag' | null>(null);
+  const [openSub, setOpenSub] = useState<'folder' | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const flat = flattenFolders(folders);
   const docTags = doc.tags ?? [];
@@ -196,17 +198,15 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
   return (
     <div
       onClick={onClick}
-      className="group relative px-3 py-2.5 cursor-pointer transition-colors border-b"
+      className="group relative mx-2 my-1 px-3 py-2.5 cursor-pointer transition-colors rounded-xl"
       style={{
-        backgroundColor: isSelected ? 'var(--brand-subtle)' : 'transparent',
-        borderColor: 'var(--border)',
-        borderLeft: isSelected ? '2px solid #9747FF' : '2px solid transparent',
+        backgroundColor: isSelected ? 'var(--bg-hover)' : 'transparent',
       }}
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
-            <p className="text-body font-medium leading-snug" style={{ color: isSelected ? '#9747FF' : 'var(--text-1)' }}>
+            <p className="text-xs font-medium leading-snug text-[var(--text-1)]">
               {doc.title}
             </p>
             {/* ⋯ menu */}
@@ -226,7 +226,7 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
                     className="w-full text-left px-3 py-2 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex justify-between items-center"
                     onClick={e => { e.stopPropagation(); setOpenSub(s => s === 'folder' ? null : 'folder'); }}
                   >
-                    Move to folder
+                    Move to collection
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--text-3)', transform: openSub === 'folder' ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
                       <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -250,26 +250,15 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
                   )}
 
                   {/* Add tag */}
-                  <button
-                    className="w-full text-left px-3 py-2 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex justify-between items-center"
-                    onClick={e => { e.stopPropagation(); setOpenSub(s => s === 'tag' ? null : 'tag'); }}
-                  >
-                    Add tag
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--text-3)', transform: openSub === 'tag' ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
-                      <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {openSub === 'tag' && availableTags.length > 0 && (
-                    <div className="border-t mx-2" style={{ borderColor: 'var(--border)' }}>
-                      {availableTags.map(t => (
-                        <button key={t.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                          onClick={e => { e.stopPropagation(); onAddTag(doc.id, t.id); setShowMenu(false); }}>
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color ?? '#9747FF' }} />
-                          {t.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                    <TagDropdown
+                      tags={availableTags}
+                      placeholder="Add tag"
+                      align="right"
+                      onChange={id => { onAddTag(doc.id, id); setShowMenu(false); }}
+                      onManageTags={() => { setShowMenu(false); onManageTags(); }}
+                    />
+                  </div>
 
                   <div className="border-t mx-2 my-1" style={{ borderColor: 'var(--border)' }} />
                   <button className="w-full text-left px-3 py-2 text-body-sm text-red-400 hover:bg-black/5"
@@ -281,9 +270,9 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
             </div>
           </div>
 
-          {/* Preview text */}
+          {/* Preview text — 1 line */}
           {preview && (
-            <p className="text-body-sm mt-0.5 line-clamp-2 leading-relaxed" style={{ color: 'var(--text-3)' }}>
+            <p className="text-xs mt-0 line-clamp-1 leading-snug" style={{ color: 'var(--text-2)' }}>
               {preview}
             </p>
           )}
@@ -291,21 +280,31 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
           {doc.status === 'processing' && (
             <div className="flex items-center gap-1 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-              <span className="text-[10px] text-yellow-500">Processing…</span>
+              <span className="text-xs text-yellow-500">Processing…</span>
             </div>
           )}
 
-          {/* Bottom row: date + tags */}
-          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-            <span className="text-[10px] shrink-0" style={{ color: 'var(--text-3)' }}>
-              {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          {/* Tags */}
+          {docTags.length > 0 && (
+            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+              {docTags.slice(0, 3).map(dt => (
+                <span key={dt.tagId} className="text-xs px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '25', color: dt.tag.color ?? '#9747FF' }}>
+                  {dt.tag.name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Dates */}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+              Created {new Date(doc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
-            {docTags.slice(0, 2).map(dt => (
-              <span key={dt.tagId} className="text-[10px] px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '25', color: dt.tag.color ?? '#9747FF' }}>
-                {dt.tag.name}
-              </span>
-            ))}
+            <span className="text-xs" style={{ color: 'var(--text-3)' }}>·</span>
+            <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+              Edited {new Date(doc.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
           </div>
         </div>
       </div>
@@ -317,6 +316,14 @@ export default function LibraryPage() {
   const searchParams = useSearchParams();
   const selectedFolder = searchParams.get('folder') ?? 'all';
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [debouncedDocId, setDebouncedDocId] = useState<string | null>(null);
+  const debounceDocRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const selectDoc = (id: string | null) => {
+    setSelectedDocId(id);
+    if (debounceDocRef.current) clearTimeout(debounceDocRef.current);
+    debounceDocRef.current = setTimeout(() => setDebouncedDocId(id), 300);
+  };
   const [documents, setDocuments] = useState<Document[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [availableTags, setAvailableTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
@@ -333,7 +340,7 @@ export default function LibraryPage() {
   const [deleting, setDeleting] = useState(false);
 
   // Clear selection when folder changes so auto-select picks the new first doc
-  useEffect(() => { setSelectedDocId(null); }, [selectedFolder, search, tagFilter, typeFilter]);
+  useEffect(() => { selectDoc(null); }, [selectedFolder, search, tagFilter, typeFilter]);
 
   useEffect(() => {
     const handler = () => setShowFolderModal(true);
@@ -378,12 +385,11 @@ export default function LibraryPage() {
 
   // Auto-select the first (most recent) doc whenever the list changes
   useEffect(() => {
-    if (documents.length === 0) { setSelectedDocId(null); return; }
+    if (documents.length === 0) { selectDoc(null); return; }
     setSelectedDocId(prev => {
-      // Keep current selection if it's still in the list
-      if (prev && documents.some(d => d.id === prev)) return prev;
-      // Otherwise default to first
-      return documents[0].id;
+      const next = prev && documents.some(d => d.id === prev) ? prev : documents[0].id;
+      if (next !== prev) selectDoc(next);
+      return next;
     });
   }, [documents]);
 
@@ -398,13 +404,13 @@ export default function LibraryPage() {
     await Promise.all([...ids].map(id => documentsApi.delete(id)));
     setDeleting(false);
     setDeleteTarget(null);
-    if (selectedDocId && ids.has(selectedDocId)) setSelectedDocId(null);
+    if (selectedDocId && ids.has(selectedDocId)) selectDoc(null);
     fetchAll();
   }
 
   const folderName = selectedFolder === 'all' ? 'Notes'
     : selectedFolder === 'none' ? 'Unfiled'
-    : flattenFolders(folders).find(f => f.id === selectedFolder)?.name ?? 'Notes';
+      : flattenFolders(folders).find(f => f.id === selectedFolder)?.name ?? 'Notes';
 
   return (
     <DndContext onDragEnd={async (e: DragEndEvent) => {
@@ -419,19 +425,18 @@ export default function LibraryPage() {
         {/* LEFT: Note list */}
         <div
           className="flex flex-col shrink-0 overflow-hidden"
-          style={{ width: 280, borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-card)' }}
+          style={{ width: 280, borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
         >
           {/* Left header: title + upload */}
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-3">
-              <h1 className="text-heading-sm font-bold text-[var(--text-1)]">{folderName}</h1>
+              <h1 className="text-body-sm font-semibold text-[var(--text-1)]">{folderName}</h1>
               <button
                 onClick={() => setShowUpload(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-white hover:opacity-90 transition-opacity text-xl leading-none"
                 style={{ backgroundColor: '#9747FF' }}
               >
-                <span className="text-xs">+</span>
-                New
+                +
               </button>
             </div>
             {/* Search */}
@@ -442,52 +447,18 @@ export default function LibraryPage() {
               className="w-full px-3 py-1.5 rounded-lg text-body-sm outline-none text-[var(--text-1)] placeholder-[var(--text-3)] mb-2"
               style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
             />
-            {/* Filter row */}
-            <div className="flex gap-1.5 flex-wrap">
-              <select
-                value={tagFilter}
-                onChange={e => setTagFilter(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-1 rounded-lg text-[10px] text-[var(--text-2)] outline-none"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
-              >
-                <option value="">All Tags</option>
-                {availableTags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-              <select
-                value={typeFilter}
-                onChange={e => setTypeFilter(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-1 rounded-lg text-[10px] text-[var(--text-2)] outline-none"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
-              >
-                <option value="">All Types</option>
-                <option value="pdf">PDF</option>
-                <option value="audio">Audio</option>
-                <option value="video_url">Video</option>
-                <option value="recording">Recording</option>
-              </select>
-              <select
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-                className="flex-1 min-w-0 px-2 py-1 rounded-lg text-[10px] text-[var(--text-2)] outline-none"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="title_asc">A→Z</option>
-                <option value="title_desc">Z→A</option>
-              </select>
-            </div>
+            {/* Tag filter pill */}
+            <TagDropdown
+              tags={availableTags}
+              value={tagFilter}
+              onChange={setTagFilter}
+              onManageTags={() => setShowManageTags(true)}
+            />
             {/* Manage Tags link */}
-            <button
-              onClick={() => setShowManageTags(true)}
-              className="mt-2 text-[10px] text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors"
-            >
-              Manage Tags
-            </button>
           </div>
 
           {/* Note list */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto py-1">
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="w-5 h-5 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
@@ -504,10 +475,11 @@ export default function LibraryPage() {
                   doc={doc}
                   preview={notePreviews[doc.id]}
                   isSelected={selectedDocId === doc.id}
-                  onClick={() => setSelectedDocId(doc.id)}
+                  onClick={() => selectDoc(doc.id)}
                   onDelete={(id) => setDeleteTarget(new Set([id]))}
                   onMoveToFolder={async (docId, folderId) => { await documentsApi.setFolder(docId, folderId); fetchAll(); }}
                   onAddTag={async (docId, tagId) => { await documentsApi.addTag(docId, tagId); fetchAll(); }}
+                  onManageTags={() => setShowManageTags(true)}
                   folders={folders}
                   availableTags={availableTags}
                 />
@@ -517,19 +489,19 @@ export default function LibraryPage() {
         </div>
 
         {/* RIGHT: Document detail */}
-        <div className="flex-1 overflow-y-auto" style={{ backgroundColor: 'var(--bg-page)' }}>
-          {selectedDocId ? (
+        <div className="flex-1 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+          {debouncedDocId ? (
             <DocumentDetail
-              key={selectedDocId}
-              id={selectedDocId}
+              key={debouncedDocId}
+              id={debouncedDocId}
               embedded
-              onBack={() => setSelectedDocId(null)}
+              onBack={() => selectDoc(null)}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3">
               <div className="text-5xl">📝</div>
               <p className="text-body text-[var(--text-2)]">Select a note to view it</p>
-              <p className="text-body-sm text-[var(--text-3)]">Or upload a new document to get started</p>
+              <p className="text-body-sm text-[var(--text-3)]">Or upload a new note to get started</p>
               <button
                 onClick={() => setShowUpload(true)}
                 className="mt-2 px-4 py-2 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"

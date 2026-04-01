@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useAuth } from '@/hooks/useAuth';
 import {
   analyticsApi,
   OverviewStats,
@@ -10,7 +10,10 @@ import {
   StudySessionsData,
   WeakTopicsSummaryData,
 } from '@/lib/api/analytics';
-import { weakTopicsApi } from '@/lib/api/studyPlan';
+import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap';
+import QuizScoreCard from '@/components/dashboard/QuizScoreCard';
+import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
+import { WeakTopic } from '@/lib/api/studyPlan';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -27,21 +30,6 @@ function scoreColor(score: number): string {
   return '#EF4444';
 }
 
-function daysAgo(dateStr: string | null): string {
-  if (!dateStr) return 'Never';
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return `${diff} days ago`;
-}
-
-function streakMessage(days: number): string {
-  if (days === 0) return 'Start studying today to begin your streak';
-  if (days < 7) return 'Great start! Keep going';
-  if (days < 14) return 'One week strong!';
-  if (days < 30) return "You're on fire!";
-  return 'Incredible dedication!';
-}
 
 // ─── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -79,6 +67,7 @@ function ProgressBar({ pct, color = '#9747FF', height = 6 }: { pct: number; colo
 // ─── Main page ──────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
+  const { dbUser } = useAuth();
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [timeBySubject, setTimeBySubject] = useState<TimeBySubjectData | null>(null);
   const [quizHistory, setQuizHistory] = useState<QuizHistoryData | null>(null);
@@ -86,7 +75,6 @@ export default function AnalyticsPage() {
   const [weakSummary, setWeakSummary] = useState<WeakTopicsSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [weakTab, setWeakTab] = useState<'needs' | 'resolved'>('needs');
-  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -104,15 +92,18 @@ export default function AnalyticsPage() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  async function handleResolve(topicId: string) {
-    setResolvingId(topicId);
-    try {
-      await weakTopicsApi.resolve(topicId);
-      const { data } = await analyticsApi.getWeakTopicsSummary();
-      if (data) setWeakSummary(data);
-    } catch { /* ignore */ } finally {
-      setResolvingId(null);
-    }
+  function handleTopicResolved(updated: WeakTopic) {
+    setWeakSummary(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        resolved: prev.resolved + (updated.resolved ? 1 : -1),
+        byDocument: prev.byDocument.map(doc => ({
+          ...doc,
+          topics: doc.topics.map(t => t.id === updated.id ? { ...t, resolved: updated.resolved, resolvedAt: updated.resolvedAt } : t),
+        })),
+      };
+    });
   }
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
@@ -153,7 +144,7 @@ export default function AnalyticsPage() {
       {/* ── Section 1: Overview stats ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { icon: '📄', label: 'Documents Uploaded', value: String(overview?.totalDocuments ?? 0) },
+          { icon: '📄', label: 'Notes Uploaded', value: String(overview?.totalDocuments ?? 0) },
           {
             icon: '⏱', label: 'Time Studied',
             value: fmtMins(overview?.totalMinsStudied ?? 0),
@@ -197,113 +188,22 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* ── Section 2: Streak ──────────────────────────────────────────────── */}
-      <Card>
-        <div className="flex items-start justify-between gap-6 mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-4xl">🔥</span>
-            <div>
-              <p className="text-3xl font-bold text-[var(--text-1)] leading-none">
-                {overview?.currentStreak ?? 0}
-                <span className="text-sm font-normal text-[var(--text-2)] ml-1">day streak</span>
-              </p>
-              <p className="text-xs text-[var(--text-2)] mt-1">
-                {streakMessage(overview?.currentStreak ?? 0)}
-              </p>
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-xs text-[var(--text-2)] mb-0.5">Personal best</p>
-            <p className="text-2xl font-bold text-[var(--text-1)]">
-              {overview?.longestStreak ?? 0}
-              <span className="text-xs font-normal text-[var(--text-2)] ml-1">days</span>
-            </p>
-          </div>
-        </div>
-        <ProgressBar
-          pct={overview?.longestStreak ? ((overview.currentStreak / overview.longestStreak) * 100) : 0}
-        />
-        <p className="text-xs text-[var(--text-3)] mt-2">
-          Last studied: {daysAgo(overview?.lastStudyDate ?? null)}
-        </p>
-      </Card>
+      {/* ── Section 2: Activity Heatmap ────────────────────────────────────── */}
+      <ActivityHeatmap
+        streak={{
+          currentStreak: overview?.currentStreak ?? 0,
+          longestStreak: overview?.longestStreak ?? 0,
+        }}
+        joinYear={dbUser?.createdAt ? new Date(dbUser.createdAt).getFullYear() : undefined}
+      />
 
       {/* ── Section 3: Quiz performance ────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Overall quiz stats */}
-        <Card>
-          <SectionTitle>Quiz Performance</SectionTitle>
-          <div className="flex items-end gap-2 mb-4">
-            <span
-              className="text-4xl font-bold"
-              style={{ color: scoreColor(overview?.avgQuizScore ?? 0) }}
-            >
-              {overview?.avgQuizScore ?? 0}%
-            </span>
-            <span className="text-[var(--text-2)] text-sm mb-1">average score</span>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs text-[var(--text-2)] mb-1">
-                <span>Accuracy</span>
-                <span>{overview?.avgQuizScore ?? 0}%</span>
-              </div>
-              <ProgressBar
-                pct={overview?.avgQuizScore ?? 0}
-                color={scoreColor(overview?.avgQuizScore ?? 0)}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
-                <p className="text-lg font-bold text-[var(--text-1)]">{overview?.totalQuizzesTaken ?? 0}</p>
-                <p className="text-xs text-[var(--text-2)]">Quizzes taken</p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
-                <p className="text-lg font-bold text-[var(--text-1)]">{overview?.bestQuizScore ?? 0}%</p>
-                <p className="text-xs text-[var(--text-2)]">Best score</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Score improvement */}
-        <Card>
-          <SectionTitle>Score Improvement</SectionTitle>
-          {!quizHistory?.byQuiz.length ? (
-            <p className="text-sm text-[var(--text-2)] py-6 text-center">
-              Take quizzes multiple times to track your improvement
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {quizHistory.byQuiz.slice(0, 5).map(q => (
-                <div key={q.quizId} className="flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-[var(--text-1)] truncate">{q.documentTitle}</p>
-                    <p className="text-xs text-[var(--text-3)]">{q.attempts} attempt{q.attempts !== 1 ? 's' : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs shrink-0">
-                    <span className="text-[var(--text-2)]">{q.firstScore}%</span>
-                    <span className="text-[var(--text-3)]">→</span>
-                    <span style={{ color: scoreColor(q.latestScore) }}>{q.latestScore}%</span>
-                  </div>
-                  <span
-                    className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0"
-                    style={
-                      q.improvement > 0
-                        ? { backgroundColor: 'var(--success-subtle)', color: '#22C55E' }
-                        : q.improvement < 0
-                        ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
-                        : { backgroundColor: 'var(--bg-input)', color: '#6B7280' }
-                    }
-                  >
-                    {q.improvement > 0 ? `+${q.improvement}%` : q.improvement < 0 ? `${q.improvement}%` : 'No change'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
+      <QuizScoreCard
+        avgScore={overview?.avgQuizScore ?? 0}
+        totalQuizzesTaken={overview?.totalQuizzesTaken ?? 0}
+        bestScore={overview?.bestQuizScore ?? 0}
+        quizHistory={quizHistory?.byQuiz ?? []}
+      />
 
       {/* ── Section 4: Time by subject ─────────────────────────────────────── */}
       <Card>
@@ -438,40 +338,12 @@ export default function AnalyticsPage() {
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => !t.resolved).map(topic => (
-                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[var(--text-1)] truncate">{topic.topic}</p>
-                          <p className="text-xs text-[var(--text-3)] mt-0.5">
-                            Last missed: {new Date(topic.lastMissedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span
-                          className="text-xs font-medium px-1.5 py-0.5 rounded shrink-0"
-                          style={
-                            topic.missedCount >= 3
-                              ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
-                              : topic.missedCount === 2
-                              ? { backgroundColor: 'var(--warning-subtle)', color: '#F59E0B' }
-                              : { backgroundColor: 'var(--bg-input)', color: '#9CA3AF' }
-                          }
-                        >
-                          missed {topic.missedCount}×
-                        </span>
-                        <Link
-                          href={`/dashboard/library/${doc.documentId}`}
-                          className="text-xs text-purple-400 shrink-0 hover:text-purple-300"
-                        >
-                          Review
-                        </Link>
-                        <button
-                          onClick={() => handleResolve(topic.id)}
-                          disabled={resolvingId === topic.id}
-                          className="text-xs shrink-0 px-2 py-1 rounded-lg disabled:opacity-50 hover:opacity-90"
-                          style={{ backgroundColor: 'var(--success-subtle)', color: '#22C55E' }}
-                        >
-                          {resolvingId === topic.id ? '…' : 'Resolve'}
-                        </button>
-                      </div>
+                      <WeakTopicItem
+                        key={topic.id}
+                        topic={topic as WeakTopic}
+                        linkToDocument
+                        onResolved={handleTopicResolved}
+                      />
                     ))}
                   </div>
                 </div>
@@ -494,16 +366,11 @@ export default function AnalyticsPage() {
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => t.resolved).map(topic => (
-                      <div key={topic.id} className="flex items-center gap-3 p-3 rounded-lg opacity-70" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--success-border)' }}>
-                        <span className="text-green-400 shrink-0">✓</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[var(--text-1)] truncate">{topic.topic}</p>
-                          <p className="text-xs text-[var(--text-3)] mt-0.5">Resolved</p>
-                        </div>
-                        <span className="text-xs text-[var(--text-3)] shrink-0">
-                          missed {topic.missedCount}×
-                        </span>
-                      </div>
+                      <WeakTopicItem
+                        key={topic.id}
+                        topic={topic as WeakTopic}
+                        onResolved={handleTopicResolved}
+                      />
                     ))}
                   </div>
                 </div>

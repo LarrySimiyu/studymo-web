@@ -4,41 +4,41 @@
 
 /* ─── Design tokens ──────────────────────────────────────────────────────── */
 :root {
-  --bg-page:      #F5F4F0;
-  --bg-card:      #FFFFFF;
-  --bg-input:     #F0EFEB;
-  --bg-hover:     #ECEAE4;
-  --border:       #E5E3DD;
-  --border-md:    #D6D4CE;
-  --text-1:       #1A1A1A;
-  --text-2:       #6B7280;
-  --text-3:       #9CA3AF;
+  --bg-page:      #111111;
+  --bg-card:      #1a1a1a;
+  --bg-input:     #242424;
+  --bg-hover:     #2a2a2a;
+  --border:       #2d2d2d;
+  --border-md:    #3a3a3a;
+  --text-1:       #f0f0f0;
+  --text-2:       #8b8b8b;
+  --text-3:       #555555;
   --brand:        #9747FF;
-  --brand-subtle: #F3EEFF;
-  --brand-border: #D4B3FF;
+  --brand-subtle: rgba(151, 71, 255, 0.12);
+  --brand-border: rgba(151, 71, 255, 0.35);
   --danger:         #EF4444;
-  --danger-subtle:  #FEF2F2;
-  --danger-border:  #FECACA;
+  --danger-subtle:  rgba(239, 68, 68, 0.12);
+  --danger-border:  rgba(239, 68, 68, 0.35);
   --success:        #22C55E;
-  --success-subtle: #F0FDF4;
-  --success-border: #BBF7D0;
+  --success-subtle: rgba(34, 197, 94, 0.12);
+  --success-border: rgba(34, 197, 94, 0.35);
   --warning:        #F59E0B;
-  --warning-subtle: #FFFBEB;
+  --warning-subtle: rgba(245, 158, 11, 0.12);
 
   /* Tailwind HSL compat */
-  --background: 40 14% 95%;
-  --foreground: 0 0% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
+  --background: 0 0% 7%;
+  --foreground: 0 0% 94%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 94%;
   --primary: 270 100% 64%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 40 10% 93%;
-  --secondary-foreground: 0 0% 10%;
-  --muted: 40 10% 93%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 40 10% 93%;
-  --accent-foreground: 0 0% 10%;
-  --input: 40 10% 91%;
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 94%;
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 0 0% 16%;
+  --accent-foreground: 0 0% 94%;
+  --input: 0 0% 14%;
   --ring: 270 100% 64%;
   --radius: 0.625rem;
 }
@@ -111,4 +111,16 @@
 ::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
-input[type="date"] { color-scheme: light; }
+input[type="date"] { color-scheme: dark; }
+
+/* ── Tutor markdown message styles ─────────────────────────────────────── */
+.tutor-message p { margin: 0 0 0.35em 0; }
+.tutor-message p:last-child { margin-bottom: 0; }
+.tutor-message strong { font-weight: 600; }
+.tutor-message em { font-style: italic; }
+.tutor-message ul { list-style: disc; padding-left: 1.25em; margin: 0.25em 0; }
+.tutor-message ol { list-style: decimal; padding-left: 1.25em; margin: 0.25em 0; }
+.tutor-message li { margin: 0.1em 0; }
+.tutor-message code { font-family: monospace; font-size: 0.85em; background: var(--bg-input); padding: 0.1em 0.3em; border-radius: 3px; }
+.tutor-cursor { display: inline-block; width: 4px; height: 14px; margin-left: 2px; border-radius: 2px; background: #9747FF; animation: tutor-blink 1s step-end infinite; vertical-align: text-bottom; }
+@keyframes tutor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }

@@ -72,10 +72,10 @@ export default function StudyPlanPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
+          className="px-4 py-2 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
         >
-          + New Plan
+          New Plan
         </button>
       </div>
 
@@ -92,8 +92,8 @@ export default function StudyPlanPage() {
           <p className="text-[var(--text-2)] text-sm mb-6 max-w-xs">Create a plan by selecting your study materials and test date. AI will generate a day-by-day schedule.</p>
           <button
             onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
+            className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
           >
             Create Study Plan
           </button>
@@ -162,67 +162,92 @@ export default function StudyPlanPage() {
                 <p className="text-[var(--text-2)] text-sm mt-1">AI is creating a day-by-day schedule</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Title */}
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Plan Title</label>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-2)' }}>Plan title</label>
                   <input
                     value={form.title}
                     onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g., Biology Midterm Prep"
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] placeholder-[var(--text-3)] outline-none focus:ring-1"
-                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', '--tw-ring-color': '#9747FF' } as any}
+                    className="w-full px-3 py-2.5 rounded-lg text-xs text-[var(--text-1)] placeholder-[var(--text-3)] outline-none focus-within:ring-1 focus-within:ring-[#9747FF]/50"
+                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
                   />
                 </div>
 
+                {/* Test date */}
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Test Date</label>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-2)' }}>Test date</label>
                   <input
                     type="date"
                     value={form.testDate}
                     min={minDateStr}
                     onChange={e => setForm(f => ({ ...f, testDate: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] outline-none focus:ring-1"
-                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', colorScheme: 'light' } as any}
+                    className="w-full px-3 py-2.5 rounded-lg text-xs text-[var(--text-1)] outline-none"
+                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', colorScheme: 'dark' } as React.CSSProperties}
                   />
                 </div>
 
+                {/* Study materials */}
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-2)] mb-1.5">Study Materials ({form.documentIds.length} selected)</label>
+                  <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-2)' }}>
+                    Study materials
+                    {form.documentIds.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: 'var(--brand-subtle)', color: '#9747FF' }}>
+                        {form.documentIds.length} selected
+                      </span>
+                    )}
+                  </label>
                   {documents.length === 0 ? (
-                    <p className="text-xs text-[var(--text-2)] py-2">No documents available. Upload documents in your Library first.</p>
+                    <p className="text-xs py-2" style={{ color: 'var(--text-2)' }}>No notes available. Upload notes in your Library first.</p>
                   ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg p-2" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
-                      {documents.map(doc => (
-                        <button
-                          key={doc.id}
-                          onClick={() => toggleDoc(doc.id)}
-                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-black/5 transition-colors"
-                        >
-                          <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: form.documentIds.includes(doc.id) ? '#9747FF' : 'var(--bg-card)', border: form.documentIds.includes(doc.id) ? 'none' : '1px solid var(--border-md)' }}>
-                            {form.documentIds.includes(doc.id) && <span className="text-white text-xs leading-none">✓</span>}
-                          </div>
-                          <span className="text-sm text-[var(--text-1)] truncate">{doc.title}</span>
-                        </button>
-                      ))}
+                    <div className="flex flex-wrap gap-2">
+                      {documents.map(doc => {
+                        const selected = form.documentIds.includes(doc.id);
+                        return (
+                          <button
+                            key={doc.id}
+                            onClick={() => toggleDoc(doc.id)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all hover:opacity-90"
+                            style={selected ? {
+                              backgroundColor: 'var(--brand-subtle)',
+                              border: '1px solid var(--brand-border)',
+                              color: '#9747FF',
+                            } : {
+                              backgroundColor: 'var(--bg-input)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-2)',
+                            }}
+                          >
+                            {selected && (
+                              <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 6l3 3 5-5" />
+                              </svg>
+                            )}
+                            <span className="max-w-[160px] truncate">{doc.title}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => { setShowCreate(false); setForm({ title: '', testDate: '', documentIds: [] }); }}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-black/5"
-                    style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
-                  >
-                    Cancel
-                  </button>
+                {/* Actions */}
+                <div className="flex flex-col items-center gap-3 pt-1">
                   <button
                     onClick={handleCreate}
                     disabled={!form.title.trim() || !form.testDate || form.documentIds.length === 0}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: '#9747FF' }}
+                    className="w-full py-2.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
                   >
                     Generate Plan
+                  </button>
+                  <button
+                    onClick={() => { setShowCreate(false); setForm({ title: '', testDate: '', documentIds: [] }); }}
+                    className="text-xs transition-colors hover:opacity-70"
+                    style={{ color: 'var(--text-3)' }}
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>

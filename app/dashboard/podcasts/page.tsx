@@ -1,28 +1,99 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import Link from 'next/link';
 
 type StatusFilter = 'all' | 'complete' | 'generating' | 'failed';
+type LengthFilter = 'all' | 5 | 10 | 15;
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'complete', label: 'Ready' },
+  { value: 'generating', label: 'Generating' },
+  { value: 'failed', label: 'Failed' },
+];
+
+const LENGTH_OPTIONS: { value: LengthFilter; label: string }[] = [
+  { value: 'all', label: 'All lengths' },
+  { value: 5, label: '5 min' },
+  { value: 10, label: '10 min' },
+  { value: 15, label: '15 min' },
+];
+
+function AnimatedTabs<T extends string | number>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [, forceUpdate] = useState(0);
+  const activeIndex = options.findIndex(o => o.value === value);
+
+  useEffect(() => { forceUpdate(n => n + 1); }, []);
+
+  return (
+    <div className="relative flex">
+      {options.map((opt, i) => (
+        <button
+          key={String(opt.value)}
+          ref={el => { tabRefs.current[i] = el; }}
+          onClick={() => onChange(opt.value)}
+          className="px-3 py-2 text-xs transition-colors"
+          style={{
+            color: value === opt.value ? 'var(--text-1)' : 'var(--text-3)',
+            fontWeight: value === opt.value ? 600 : 400,
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
+      <span
+        className="absolute bottom-0 h-0.5 rounded-full"
+        style={{
+          backgroundColor: 'var(--text-1)',
+          left: tabRefs.current[activeIndex]?.offsetLeft ?? 0,
+          width: tabRefs.current[activeIndex]?.offsetWidth ?? 0,
+          transition: 'left 0.2s ease, width 0.2s ease',
+        }}
+      />
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'generating') return (
+    <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.35)' }}>
+      <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse" />
+      Generating
+    </span>
+  );
+  if (status === 'failed') return (
+    <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444', border: '1px solid var(--danger-border)' }}>
+      Failed
+    </span>
+  );
+  return null;
+}
 
 export default function PodcastsPage() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [lengthFilter, setLengthFilter] = useState<number | 'all'>('all');
+  const [lengthFilter, setLengthFilter] = useState<LengthFilter>('all');
 
   async function load() {
     const { data } = await podcastsApi.getAll();
     if (data) setPodcasts(data);
   }
 
-  useEffect(() => {
-    load().finally(() => setLoading(false));
-  }, []);
+  useEffect(() => { load().finally(() => setLoading(false)); }, []);
 
-  // Poll while any are generating
   useEffect(() => {
     const hasGenerating = podcasts.some(p => p.status === 'generating');
     if (!hasGenerating) return;
@@ -44,13 +115,6 @@ export default function PodcastsPage() {
     return true;
   });
 
-  const STATUS_LABELS: Record<StatusFilter, string> = {
-    all: 'All',
-    complete: 'Ready',
-    generating: 'Generating',
-    failed: 'Failed',
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -64,125 +128,99 @@ export default function PodcastsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-1)]">Podcasts</h1>
-          <p className="text-[var(--text-2)] text-sm mt-0.5">{podcasts.length} podcast{podcasts.length !== 1 ? 's' : ''} generated</p>
+          <h1 className="text-heading-sm text-[var(--text-1)]">Podcasts</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>
+            {podcasts.length} podcast{podcasts.length !== 1 ? 's' : ''} generated
+          </p>
         </div>
         <Link
           href="/dashboard/library"
-          className="px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
+          className="px-4 py-2 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+          style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
         >
-          + Generate New
+          Generate Podcast
         </Link>
       </div>
 
       {/* Filters */}
       {podcasts.length > 0 && (
-        <div className="flex flex-wrap gap-3 mb-6">
-          {/* Status filter */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            {(['all', 'complete', 'generating', 'failed'] as StatusFilter[]).map(s => (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                style={statusFilter === s ? { backgroundColor: '#9747FF', color: 'white' } : { color: 'var(--text-2)' }}
-              >
-                {STATUS_LABELS[s]}
-              </button>
-            ))}
-          </div>
-
-          {/* Length filter */}
-          <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            {(['all', 5, 10, 15] as (number | 'all')[]).map(l => (
-              <button
-                key={l}
-                onClick={() => setLengthFilter(l)}
-                className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                style={lengthFilter === l ? { backgroundColor: '#9747FF', color: 'white' } : { color: 'var(--text-2)' }}
-              >
-                {l === 'all' ? 'All lengths' : `${l} min`}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-start gap-6 mb-6">
+          <AnimatedTabs options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter} />
+          <AnimatedTabs options={LENGTH_OPTIONS} value={lengthFilter} onChange={v => setLengthFilter(v as LengthFilter)} />
         </div>
       )}
 
       {/* Empty state */}
       {podcasts.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-6xl mb-4">🎙️</div>
-          <h2 className="text-[var(--text-1)] font-semibold text-lg mb-2">No podcasts yet</h2>
-          <p className="text-[var(--text-2)] text-sm mb-6">
-            Open any document in your library and click the Podcast tab to generate an audio lecture.
+          <div className="text-5xl mb-4">🎙️</div>
+          <h2 className="text-body-lg font-semibold text-[var(--text-1)] mb-2">No podcasts yet</h2>
+          <p className="text-body-sm mb-6" style={{ color: 'var(--text-2)' }}>
+            Open any note in your library and click the Podcast tab to generate an audio lecture.
           </p>
           <Link
             href="/dashboard/library"
-            className="inline-block px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
+            className="inline-block px-5 py-2.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
           >
             Go to Library
           </Link>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-[var(--text-2)] text-center py-10">No podcasts match your filters.</p>
+        <p className="text-xs text-center py-10" style={{ color: 'var(--text-2)' }}>No podcasts match your filters.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filtered.map(podcast => (
-            <div key={podcast.id} className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-              <div className="flex items-start justify-between mb-3">
+            <div
+              key={podcast.id}
+              className="rounded-xl p-4"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              {/* Top row */}
+              <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[var(--text-1)] font-medium text-sm truncate">{podcast.title}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <p className="text-body-sm font-semibold text-[var(--text-1)] truncate">{podcast.title}</p>
+                    <StatusBadge status={podcast.status} />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
                     {podcast.document && (
                       <Link
                         href={`/dashboard/library/${podcast.documentId}`}
-                        className="text-xs text-purple-400 hover:text-purple-300 transition-colors truncate max-w-[200px]"
+                        className="text-xs transition-colors hover:opacity-80 truncate max-w-[180px]"
+                        style={{ color: '#9747FF' }}
                       >
                         {podcast.document.title}
                       </Link>
                     )}
-                    <span className="text-xs text-[var(--text-3)]">·</span>
-                    <span className="text-xs text-[var(--text-2)]">{podcast.lengthMins} min · {podcast.voice}</span>
-                    <span className="text-xs text-[var(--text-3)]">·</span>
-                    <span className="text-xs text-[var(--text-2)]">{new Date(podcast.createdAt).toLocaleDateString()}</span>
-                    {podcast.status === 'generating' && (
-                      <>
-                        <span className="text-xs text-[var(--text-3)]">·</span>
-                        <span className="text-xs text-yellow-400 flex items-center gap-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-                          Generating
-                        </span>
-                      </>
-                    )}
-                    {podcast.status === 'failed' && (
-                      <>
-                        <span className="text-xs text-[var(--text-3)]">·</span>
-                        <span className="text-xs text-red-400">Failed</span>
-                      </>
-                    )}
+                    {podcast.document && <span className="text-xs" style={{ color: 'var(--text-3)' }}>·</span>}
+                    <span className="text-xs" style={{ color: 'var(--text-3)' }}>
+                      {podcast.lengthMins} min · {podcast.voice} · {new Date(podcast.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleDelete(podcast.id)}
-                  className="ml-3 text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0"
+                  className="text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0 mt-0.5"
                   title="Delete podcast"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                   </svg>
                 </button>
               </div>
 
+              {/* Status body */}
               {podcast.status === 'generating' && (
-                <div className="flex items-center gap-2 text-sm text-yellow-400 py-2">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400" />
+                <div className="flex items-center gap-2 text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#F59E0B] shrink-0" />
                   Generating audio… this takes a minute
                 </div>
               )}
               {podcast.status === 'failed' && (
-                <p className="text-sm text-red-400 py-1">Generation failed. Please generate a new podcast from the library.</p>
+                <p className="text-xs py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>
+                  Generation failed. Open the note in your library to try again.
+                </p>
               )}
               {podcast.status === 'complete' && podcast.audioUrl && (
                 <PodcastPlayer audioUrl={podcast.audioUrl} title={podcast.title} />

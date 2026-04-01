@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { marked } from 'marked';
 import { useAuth } from '@/hooks/useAuth';
 import {
   tutorApi,
@@ -12,6 +13,9 @@ import {
   TutorNoteMeta,
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
+import TutorInput from '@/components/tutor/TutorInput';
+import UserBubble from '@/components/tutor/UserBubble';
+import ContextPicker from '@/components/tutor/ContextPicker';
 
 // ─── types ──────────────────────────────────────────────────────────────────
 
@@ -25,6 +29,18 @@ function timeAgo(date: string): string {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function renderMarkdown(text: string): string {
+  // Collapse 3+ consecutive newlines to 2, and 2 newlines between short lines to 1
+  const collapsed = text
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n\n(?=[^\n])/g, (_, offset, str) => {
+      // If previous paragraph is short (< 120 chars) treat as single newline
+      const prev = str.slice(0, offset).split('\n').pop() ?? '';
+      return prev.length < 120 ? '\n' : '\n\n';
+    });
+  return marked.parse(collapsed, { breaks: true }) as string;
 }
 
 function buildWelcome(name: string, noteCount: number): string {
@@ -58,6 +74,7 @@ export default function TutorPage() {
   const [creatingSession, setCreatingSession] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  const [revealAnswer, setRevealAnswer] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -69,9 +86,16 @@ export default function TutorPage() {
 
   useEffect(() => {
     tutorApi.getSessions().then(({ data }) => {
-      if (data) setSessions(data);
+      if (data) {
+        setSessions(data);
+        // Auto-select most recent session unless URL specifies one
+        if (!initialSession && data.length > 0) {
+          loadSession(data[0].id);
+        }
+      }
       setSessionsLoading(false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── load all notes for context panel ──────────────────────────────────────
@@ -128,18 +152,26 @@ export default function TutorPage() {
     const text = input.trim();
     if (!text || isStreaming || !activeSession || !currentUser) return;
     setInput('');
+    const wasReveal = revealAnswer;
+    setRevealAnswer(false);
     setIsStreaming(true);
 
+    // What the student sees — no tag
     const userMsg: UIMessage = { id: nextId(), role: 'user', content: text };
     const assistantId = nextId();
     const assistantMsg: UIMessage = { id: assistantId, role: 'assistant', content: '', isStreaming: true };
     setMessages(prev => [...prev, userMsg, assistantMsg]);
 
+    // What gets sent to the API — append reveal tag if toggled
+    const apiMessage = wasReveal
+      ? `${text}\n\n[STUDENT_REQUESTING_DIRECT_ANSWER]`
+      : text;
+
     try {
       const token = await currentUser.getIdToken();
       await streamTutorChat(
         activeSession.id,
-        text,
+        apiMessage,
         chunk => {
           setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m));
         },
@@ -190,13 +222,6 @@ export default function TutorPage() {
     if (data) setActiveSession(data);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-
   const loadedNoteIds = new Set(activeSession?.noteIds ?? []);
   const availableNotes = allNotes.filter(n => {
     if (loadedNoteIds.has(n.id)) return false;
@@ -216,17 +241,13 @@ export default function TutorPage() {
           <button
             onClick={createSession}
             disabled={creatingSession}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#9747FF', color: 'white' }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-base font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: '#9747FF' }}
+            title="New session"
           >
             {creatingSession ? (
               <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2">
-                <path d="M6 1v10M1 6h10" strokeLinecap="round" />
-              </svg>
-            )}
-            New
+            ) : '+'}
           </button>
         </div>
 
@@ -238,37 +259,38 @@ export default function TutorPage() {
           ) : sessions.length === 0 ? (
             <p className="text-xs text-[var(--text-3)] text-center py-8 px-4">No sessions yet — start one to begin</p>
           ) : (
-            sessions.map(s => (
-              <div
-                key={s.id}
-                onClick={() => loadSession(s.id)}
-                className="w-full text-left px-4 py-3 group relative transition-colors hover:bg-black/5 cursor-pointer"
-                style={activeSession?.id === s.id ? { borderLeft: '2px solid #9747FF', backgroundColor: 'var(--brand-subtle)' } : { borderLeft: '2px solid transparent' }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <p className="text-xs font-medium text-[var(--text-1)] truncate">{s.title}</p>
+            <div className="p-3 space-y-2">
+              {sessions.map(s => (
+                <div
+                  key={s.id}
+                  onClick={() => loadSession(s.id)}
+                  className="block p-3 rounded-xl transition-colors hover:border-purple-500/50 cursor-pointer group"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: activeSession?.id === s.id ? '1px solid #9747FF' : '1px solid var(--border)',
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[var(--text-1)] truncate">{s.title}</p>
+                      <p className="text-xs text-[var(--text-3)] mt-0.5">{timeAgo(s.updatedAt)}</p>
+                      {s.lastMessage && (
+                        <p className="text-xs text-[var(--text-2)] mt-1 truncate">{s.lastMessage}</p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs text-[var(--text-3)]">{timeAgo(s.updatedAt)}</span>
-                    </div>
-                    {s.lastMessage && (
-                      <p className="text-xs text-[var(--text-3)] truncate">{s.lastMessage}</p>
-                    )}
+                    <button
+                      onClick={e => deleteSession(s.id, e)}
+                      className="opacity-0 group-hover:opacity-100 text-[var(--text-3)] hover:text-red-400 transition-all shrink-0 mt-0.5"
+                      title="Delete session"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    onClick={e => deleteSession(s.id, e)}
-                    className="opacity-0 group-hover:opacity-100 text-[var(--text-3)] hover:text-red-400 transition-all shrink-0 mt-0.5"
-                    title="Delete session"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                    </svg>
-                  </button>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -350,7 +372,7 @@ export default function TutorPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               {messages.map(msg => {
                 if (msg.role === 'system') {
                   return (
@@ -361,32 +383,20 @@ export default function TutorPage() {
                     </div>
                   );
                 }
-                if (msg.role === 'assistant') {
-                  return (
-                    <div key={msg.id} className="flex items-start gap-2 max-w-[80%]">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'var(--bg-input)' }}>
-                        <span className="text-sm">🎓</span>
-                      </div>
-                      <div className="px-4 py-3 rounded-2xl rounded-tl-sm text-sm text-[var(--text-1)] whitespace-pre-wrap leading-relaxed" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                        {msg.content}
-                        {'isStreaming' in msg && msg.isStreaming && (
-                          <span className="inline-block w-1 h-3 ml-0.5 rounded-sm animate-pulse" style={{ backgroundColor: '#9747FF' }} />
-                        )}
-                      </div>
-                    </div>
-                  );
+                if (msg.role === 'user') {
+                  return <UserBubble key={msg.id} content={msg.content} />;
                 }
                 return (
-                  <div key={msg.id} className="flex justify-end">
-                    <div className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm text-white max-w-[80%] whitespace-pre-wrap leading-relaxed" style={{ backgroundColor: '#9747FF' }}>
-                      {msg.content}
-                    </div>
-                  </div>
+                  <div
+                    key={msg.id}
+                    className="tutor-message text-sm text-[var(--text-1)] leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) + ('isStreaming' in msg && msg.isStreaming ? '<span class="tutor-cursor"></span>' : '') }}
+                  />
                 );
               })}
 
               {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
-                <div className="flex items-center gap-1.5 pl-9">
+                <div className="flex items-center gap-1.5">
                   {[0, 150, 300].map(delay => (
                     <div key={delay} className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#9747FF', animationDelay: `${delay}ms` }} />
                   ))}
@@ -395,122 +405,32 @@ export default function TutorPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Context panel (slides up) */}
-            {showContextPanel && (
-              <div className="shrink-0 mx-4 mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: 280 }}>
-                <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[var(--text-1)]">Loaded Notes</span>
-                    <span className="text-xs text-[var(--text-2)]">{activeSession.noteIds.length} / 15</span>
-                  </div>
-                  <button onClick={() => setShowContextPanel(false)} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
-                  {/* Loaded notes */}
-                  {activeSession.notes.length === 0 ? (
-                    <p className="text-xs text-[var(--text-3)] px-4 py-3">No notes loaded. Add notes below.</p>
-                  ) : (
-                    activeSession.notes.map((n: TutorNoteMeta) => (
-                      <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-black/5">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[var(--text-1)] truncate">{n.document.title}</p>
-                          {n.summary && <p className="text-xs text-[var(--text-2)] truncate">{n.summary}</p>}
-                        </div>
-                        <button onClick={() => removeNote(n.id)} className="ml-3 text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0" title="Remove">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 6 6 18M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))
-                  )}
-                  {/* Divider */}
-                  <div className="px-4 py-2" style={{ borderTop: '1px solid var(--border)' }}>
-                    <input
-                      type="text"
-                      value={noteSearch}
-                      onChange={e => setNoteSearch(e.target.value)}
-                      placeholder="Search your notes…"
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none"
-                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
-                    />
-                  </div>
-                  {availableNotes.map(n => (
-                    <div key={n.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-black/5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-[var(--text-1)] truncate">{n.document.title}</p>
-                        {n.summary && <p className="text-xs text-[var(--text-2)] truncate">{n.summary}</p>}
-                      </div>
-                      <button
-                        onClick={() => addNote(n.id)}
-                        disabled={activeSession.noteIds.length >= 15}
-                        className="ml-3 text-xs px-2 py-1 rounded-lg transition-colors disabled:opacity-40"
-                        style={{ backgroundColor: 'var(--bg-input)', color: '#9747FF' }}
-                        title={activeSession.noteIds.length >= 15 ? 'Max reached' : 'Add note'}
-                      >
-                        {activeSession.noteIds.length >= 15 ? 'Max' : 'Add'}
-                      </button>
-                    </div>
-                  ))}
-                  {availableNotes.length === 0 && noteSearch && (
-                    <p className="text-xs text-[var(--text-3)] px-4 py-2">No notes match your search.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Input area */}
-            <div className="px-4 pb-4 shrink-0">
-              {/* Context button */}
-              <button
-                onClick={() => setShowContextPanel(v => !v)}
-                className="mb-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-colors hover:opacity-80"
-                style={{
-                  backgroundColor: activeSession.noteIds.length > 0 ? 'var(--brand-subtle)' : 'var(--bg-card)',
-                  border: `1px solid ${activeSession.noteIds.length > 0 ? 'var(--brand-border)' : 'var(--border)'}`,
-                  color: activeSession.noteIds.length > 0 ? '#9747FF' : 'var(--text-2)',
-                }}
-              >
-                📚 {activeSession.noteIds.length > 0 ? `${activeSession.noteIds.length} note${activeSession.noteIds.length !== 1 ? 's' : ''} loaded` : 'No notes loaded — add notes for better answers'}
-              </button>
-
-              <div className="flex items-end gap-2">
-                <textarea
-                  ref={inputRef}
-                  rows={1}
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={isStreaming}
-                  placeholder={isStreaming ? 'Thinking…' : 'Message your tutor…'}
-                  className="flex-1 px-4 py-3 rounded-xl text-sm text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none resize-none disabled:opacity-50"
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    minHeight: 48,
-                    maxHeight: 120,
-                  }}
-                  onInput={e => {
-                    const el = e.target as HTMLTextAreaElement;
-                    el.style.height = 'auto';
-                    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-                  }}
+            <div className="px-4 pb-4 shrink-0 relative">
+              {showContextPanel && (
+                <ContextPicker
+                  loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
+                  availableNotes={availableNotes}
+                  noteSearch={noteSearch}
+                  onNoteSearchChange={setNoteSearch}
+                  onRemove={removeNote}
+                  onAdd={addNote}
+                  onClose={() => setShowContextPanel(false)}
                 />
-                <button
-                  onClick={sendMessage}
-                  disabled={!input.trim() || isStreaming}
-                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-40 shrink-0"
-                  style={{ backgroundColor: '#9747FF' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
+              )}
+              <TutorInput
+                value={input}
+                onChange={setInput}
+                onSend={sendMessage}
+                disabled={isStreaming}
+                placeholder={isStreaming ? 'Thinking…' : 'Message your tutor…'}
+                contextNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
+                onAddContext={() => setShowContextPanel(v => !v)}
+                onRemoveContext={removeNote}
+                revealAnswer={revealAnswer}
+                onToggleReveal={() => setRevealAnswer(v => !v)}
+                inputRef={inputRef}
+              />
             </div>
           </>
         )}

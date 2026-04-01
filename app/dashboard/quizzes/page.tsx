@@ -294,7 +294,7 @@ export default function QuizzesPage() {
           className="text-xs px-3 py-1.5 rounded-lg font-medium text-white hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#9747FF' }}
         >
-          + Upload Document
+          + Upload Note
         </Link>
       </div>
 
