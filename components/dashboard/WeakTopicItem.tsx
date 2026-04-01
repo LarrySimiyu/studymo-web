@@ -75,16 +75,14 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
       {/* Topic name */}
       <p className="text-body-sm font-semibold text-[var(--text-1)] leading-snug">{current.topic}</p>
 
-      {/* Date row */}
-      <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-3)' }}>
-        {current.resolved && current.resolvedAt ? (
+      {/* Date row — only show when resolved */}
+      {current.resolved && current.resolvedAt && (
+        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-3)' }}>
           <span style={{ color: 'var(--success)' }}>
             Resolved {new Date(current.resolvedAt).toLocaleDateString()}
           </span>
-        ) : (
-          <span>Last missed {new Date(current.lastMissedAt).toLocaleDateString()}</span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Revealed answer */}
       {answerVisible && current.correctAnswer && (
@@ -102,7 +100,7 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
         {linkToDocument && current.document?.id && (
           <button
             onClick={() => router.push(`/dashboard/library?note=${current.document!.id}`)}
-            className="text-xs px-2.5 py-1.5 rounded-lg transition-colors hover:opacity-80"
+            className="text-xs px-2.5 py-1.5 rounded-xl transition-colors hover:opacity-80"
             style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
           >
             View note
@@ -114,7 +112,7 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
           {!current.resolved && !answerVisible && current.correctAnswer && (
             <button
               onClick={e => { e.stopPropagation(); setAnswerVisible(true); }}
-              className="text-xs px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+              className="text-xs px-2.5 py-1.5 rounded-xl transition-opacity hover:opacity-80"
               style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.35)' }}
             >
               Show answer
@@ -126,7 +124,7 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
             <button
               onClick={handleResolve}
               disabled={resolving}
-              className="text-xs px-2.5 py-1.5 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="text-xs px-2.5 py-1.5 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-50"
               style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success-border)' }}
             >
               {resolving ? '…' : 'Resolve ✓'}

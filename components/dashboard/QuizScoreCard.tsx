@@ -128,7 +128,10 @@ function QuizRow({ documentTitle, latestScore, attempts, improvement }: QuizRowP
   const arrow = improvement > 0 ? '↑' : improvement < 0 ? '↓' : '→';
 
   return (
-    <div className="flex items-center gap-3 py-2 px-1">
+    <div
+      className="flex items-center gap-3 p-3 rounded-xl"
+      style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
+    >
       {/* Small ring */}
       <div className="relative shrink-0">
         <SmallRing value={latestScore} size={44} />
@@ -143,14 +146,16 @@ function QuizRow({ documentTitle, latestScore, attempts, improvement }: QuizRowP
         <p className="text-xs text-[var(--text-3)]">{attempts} attempt{attempts !== 1 ? 's' : ''}</p>
       </div>
 
-      {/* Improvement badge */}
-      <span
-        className="text-xs font-semibold px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5"
-        style={{ backgroundColor: impBg, color: impColor }}
-      >
-        <span>{arrow}</span>
-        <span>{Math.abs(improvement)}%</span>
-      </span>
+      {/* Improvement badge — only show if score changed */}
+      {improvement !== 0 && (
+        <span
+          className="text-xs font-semibold px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5"
+          style={{ backgroundColor: impBg, color: impColor }}
+        >
+          <span>{arrow}</span>
+          <span>{Math.abs(improvement)}%</span>
+        </span>
+      )}
     </div>
   );
 }
@@ -176,7 +181,6 @@ export default function QuizScoreCard({
   const [total, setTotal] = useState(totalProp ?? 0);
   const [best, setBest] = useState(bestProp ?? 0);
   const [history, setHistory] = useState<QuizHistoryData['byQuiz']>(historyProp ?? []);
-  const [open, setOpen] = useState(false);
 
   // Self-fetch when not given props (home page usage)
   useEffect(() => {
@@ -190,7 +194,7 @@ export default function QuizScoreCard({
         }
         if (qh.data) setHistory(qh.data.byQuiz);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [avgScoreProp]);
 
   // Sync when props update
@@ -206,81 +210,41 @@ export default function QuizScoreCard({
       className="rounded-xl p-5"
       style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
     >
-      <h2 className="text-sm font-semibold text-[var(--text-1)] mb-5">Quiz Performance</h2>
+      <h2 className="text-sm font-semibold text-[var(--text-1)] mb-5">Quiz Stats</h2>
 
-      {/* Top section: ring + stats */}
-      <div className="flex items-center gap-6">
-        <LargeRing value={avgScore} />
-
-        <div className="flex flex-col gap-3">
-          {/* Quizzes taken */}
-          <div
-            className="px-4 py-2.5 rounded-lg"
-            style={{ backgroundColor: 'var(--bg-input)' }}
-          >
-            <p className="text-xl font-bold text-[var(--text-1)]">{total}</p>
-            <p className="text-xs text-[var(--text-2)]">Quizzes taken</p>
+      <div className="grid grid-cols-2 gap-5 items-start">
+        {/* Left: ring + stats */}
+        <div className="flex flex-col gap-3 items-center">
+          <LargeRing value={avgScore} />
+          <div className="flex flex-col gap-2 w-full">
+            <div className="px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
+              <p className="text-sm font-bold text-[var(--text-1)]">{total}</p>
+              <p className="text-[10px] text-[var(--text-2)]">Quizzes taken</p>
+            </div>
+            <div className="px-3 py-2 rounded-lg" style={{ backgroundColor: scoreBg(best) }}>
+              <p className="text-sm font-bold" style={{ color: scoreColor(best) }}>{best}%</p>
+              <p className="text-[10px]" style={{ color: scoreColor(best), opacity: 0.8 }}>Best score</p>
+            </div>
           </div>
+        </div>
 
-          {/* Best score */}
-          <div
-            className="px-4 py-2.5 rounded-lg"
-            style={{ backgroundColor: scoreBg(best) }}
-          >
-            <p className="text-xl font-bold" style={{ color: scoreColor(best) }}>{best}%</p>
-            <p className="text-xs" style={{ color: scoreColor(best), opacity: 0.8 }}>Best score</p>
-          </div>
+        {/* Right: history */}
+        <div className="flex flex-col gap-2">
+          {hasHistory ? (
+            history.map(q => (
+              <QuizRow
+                key={q.quizId}
+                documentTitle={q.documentTitle}
+                latestScore={q.latestScore}
+                attempts={q.attempts}
+                improvement={q.improvement}
+              />
+            ))
+          ) : total === 0 ? (
+            <p className="text-sm text-[var(--text-2)] py-1">Take a quiz to see your score here</p>
+          ) : null}
         </div>
       </div>
-
-      {/* Collapsible improvement list */}
-      {hasHistory && (
-        <div className="mt-5">
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="flex items-center justify-between w-full text-left group"
-          >
-            <span className="text-xs font-semibold text-[var(--text-2)] group-hover:text-[var(--text-1)] transition-colors">
-              Score Improvement
-            </span>
-            <motion.span
-              animate={{ rotate: open ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="text-[var(--text-3)] text-xs"
-            >
-              ▼
-            </motion.span>
-          </button>
-
-          <motion.div
-            initial={false}
-            animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div
-              className="mt-3 divide-y"
-              style={{ borderTop: '1px solid var(--border)', divideColor: 'var(--border)' }}
-            >
-              {history.map(q => (
-                <QuizRow
-                  key={q.quizId}
-                  documentTitle={q.documentTitle}
-                  latestScore={q.latestScore}
-                  attempts={q.attempts}
-                  improvement={q.improvement}
-                />
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {!hasHistory && total === 0 && (
-        <p className="text-sm text-[var(--text-2)] text-center mt-5 py-2">
-          Take a quiz to see your score here
-        </p>
-      )}
     </div>
   );
 }
