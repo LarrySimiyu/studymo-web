@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { House, Star, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
@@ -29,10 +31,7 @@ function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number
 function CountBadge({ n }: { n: number | undefined }) {
   if (!n) return null;
   return (
-    <span
-      className="ml-auto shrink-0 text-[10px] font-medium leading-5 min-w-[18px] text-center"
-      style={{ color: 'var(--text-3)' }}
-    >
+    <span className="ml-auto shrink-0 text-[10px] font-medium leading-5 min-w-[18px] text-center text-[var(--text-3)] group-hover:text-white group-[.active]:text-white">
       {n}
     </span>
   );
@@ -43,38 +42,47 @@ function Divider() {
 }
 
 function SectionHeader({
-  label, collapsed, open, onToggle,
-}: { label: string; collapsed: boolean; open: boolean; onToggle: () => void }) {
-  if (collapsed) return <Divider />;
+  label, icon: Icon, collapsed, open, onToggle,
+}: { label: string; icon?: LucideIcon; collapsed: boolean; open: boolean; onToggle: () => void }) {
+  if (collapsed) {
+    return Icon ? (
+      <button onClick={onToggle} className="group w-full flex justify-center py-1.5">
+        <Icon size={16} className="text-[var(--text-2)] group-hover:text-white transition-colors" />
+      </button>
+    ) : null;
+  }
   return (
-    <button onClick={onToggle} className="w-full flex items-center gap-1 px-2.5 pt-3 pb-1">
-      <span className="flex-1 text-left text-xs font-semibold" style={{ color: 'var(--text-1)' }}>
+    <button onClick={onToggle} className="group w-full flex items-center gap-1.5 px-2.5 pt-2 pb-1">
+      {Icon && <Icon size={14} className="text-[var(--text-2)] group-hover:text-white transition-colors" />}
+      <span className="flex-1 text-left text-sm font-semibold text-[var(--text-2)] group-hover:text-white transition-colors">
         {label}
       </span>
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-        style={{ color: 'var(--text-1)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+        className="text-[var(--text-2)] group-hover:text-white transition-colors"
+        style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
         <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
   );
 }
 
-function NavLink({ href, icon, label, count, isActive, collapsed }: {
-  href: string; icon: string; label: string; count?: number; isActive: boolean; collapsed: boolean;
+function NavLink({ href, icon, label, count, isActive, collapsed, small }: {
+  href: string; icon: React.ReactNode; label: string; count?: number; isActive: boolean; collapsed: boolean; small?: boolean;
 }) {
   return (
     <Link
       href={href}
       title={collapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
+        'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-colors',
+        small ? 'text-xs' : 'text-sm',
         collapsed ? 'justify-center' : '',
         isActive
-          ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
-          : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
+          ? 'active text-[var(--text-1)] bg-[var(--brand-subtle)]'
+          : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
       )}
     >
-      <span className="text-sm leading-none shrink-0">{icon}</span>
+      <span className="leading-none shrink-0 flex items-center">{icon}</span>
       {!collapsed && (
         <>
           <span className="truncate flex-1">{label}</span>
@@ -166,19 +174,17 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="shrink-0 flex flex-col transition-all duration-200"
-      style={{ width: collapsed ? 52 : 220, backgroundColor: 'var(--bg-card)' }}
+      className="shrink-0 flex flex-col transition-all duration-200 my-3 ml-3 rounded-2xl overflow-hidden"
+      style={{ width: collapsed ? 60 : 330, backgroundColor: 'var(--bg-card)' }}
     >
-      {/* Logo + collapse + global upload */}
-      <div
-        className="flex items-center justify-between px-3 py-3.5 shrink-0"
-      >
+      {/* Logo + collapse */}
+      <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
         {!collapsed && (
           <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
         )}
         <button
           onClick={toggleCollapsed}
-          className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--bg-hover)]', collapsed && 'mx-auto')}
+          className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--brand-subtle)]', collapsed && 'mx-auto')}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
@@ -186,111 +192,132 @@ export default function Sidebar() {
             <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        {/* Collapsed: show + button centered */}
-        {collapsed && (
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('app:open-upload'))}
-            title="New note"
-            className="absolute left-0 right-0 mx-auto mt-10 hidden"
-          />
-        )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-0.5">
-        <NavLink href="/dashboard" icon="⌂" label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
-        <NavLink href="/dashboard/tutor" icon="🎓" label="AI Tutor" isActive={isActive('/dashboard/tutor')} collapsed={collapsed} />
+      <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
+        <NavLink href="/dashboard" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
+        <NavLink href="/dashboard/tutor" icon={<Star size={16} />} label="AI Tutor" isActive={isActive('/dashboard/tutor')} collapsed={collapsed} />
 
         {/* ── NOTES ── */}
-        <SectionHeader label="Notes" collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
+        <SectionHeader label="Notes" icon={FolderIcon} collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
 
-        {sectionOpen.notes && (
-          <>
-            <NavLink
-              href="/dashboard/library"
-              icon="📝"
-              label="Notes"
-              count={counts.notes}
-              isActive={isLibraryActive && selectedFolder === 'all'}
-              collapsed={collapsed}
-            />
-
-            {!collapsed && isLibraryActive && (
-              <div className="ml-3 mt-0.5 mb-1 space-y-0.5 border-l pl-2" style={{ borderColor: 'var(--border)' }}>
-                <Link
-                  href={folderHref('none')}
-                  className={cn(
-                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
-                    isFolderActive('none')
-                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
-                      : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
-                  )}
-                >
-                  <span className="shrink-0 text-xs">📭</span>
-                  <span className="truncate flex-1">Unfiled</span>
-                  <CountBadge n={unfiledCount} />
-                </Link>
-
-                {flat.map((f) => (
+        <AnimatePresence initial={false}>
+          {sectionOpen.notes && (
+            <motion.div
+              key="notes-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="overflow-hidden space-y-1"
+            >
+              {!collapsed && (
+                <div className="ml-4 space-y-0.5 overflow-hidden">
                   <Link
-                    key={f.id}
-                    href={folderHref(f.id)}
+                    href="/dashboard/library"
                     className={cn(
-                      'flex items-center gap-2 py-1 rounded-md text-body-sm transition-colors',
-                      isFolderActive(f.id)
-                        ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
-                        : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
+                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                      isLibraryActive && selectedFolder === 'all'
+                        ? 'text-[var(--text-1)] bg-[var(--brand-subtle)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
                     )}
-                    style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                   >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
-                    <span className="truncate flex-1">{f.name}</span>
-                    <CountBadge n={f._count?.documents} />
+                    <span className="truncate flex-1">All Notes</span>
+                    <CountBadge n={counts.notes} />
                   </Link>
-                ))}
+                  <Link
+                    href={folderHref('none')}
+                    className={cn(
+                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                      isFolderActive('none')
+                        ? 'text-[var(--text-1)] bg-[var(--brand-subtle)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+                    )}
+                  >
+                    <span className="truncate flex-1">No Collection</span>
+                    <CountBadge n={unfiledCount} />
+                  </Link>
 
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-1)] hover:bg-[var(--bg-hover)]"
-                >
-                  <span className="text-xs opacity-60">+</span>
-                  <span>New Collection</span>
-                </button>
-              </div>
-            )}
-          </>
-        )}
+                  {flat.map((f) => (
+                    <Link
+                      key={f.id}
+                      href={folderHref(f.id)}
+                      className={cn(
+                        'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
+                        isFolderActive(f.id)
+                          ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
+                          : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+                      )}
+                      style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <CountBadge n={f._count?.documents} />
+                    </Link>
+                  ))}
+
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
+                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]"
+                  >
+                    <span className="text-xs opacity-60">+</span>
+                    <span>New Collection</span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── STUDY MATERIALS ── */}
-        <SectionHeader label="Study Materials" collapsed={collapsed} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
+        <SectionHeader label="Study Materials" icon={Library} collapsed={collapsed} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
 
-        {sectionOpen.study && (
-          <>
-            <NavLink href="/dashboard/flashcards" icon="🗂" label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} collapsed={collapsed} />
-            <NavLink href="/dashboard/quizzes" icon="❓" label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} collapsed={collapsed} />
-            <NavLink href="/dashboard/practice-exams" icon="📋" label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} collapsed={collapsed} />
-            <NavLink href="/dashboard/podcasts" icon="🎙️" label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} collapsed={collapsed} />
-          </>
-        )}
+        <AnimatePresence initial={false}>
+          {sectionOpen.study && (
+            <motion.div
+              key="study-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
+            >
+              <NavLink href="/dashboard/flashcards" icon={<Layers size={14} />} label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/quizzes" icon={<Heart size={14} />} label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/practice-exams" icon={<ClipboardList size={14} />} label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/podcasts" icon={<Mic size={14} />} label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} collapsed={collapsed} small />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── TOOLS ── */}
-        <SectionHeader label="Tools" collapsed={collapsed} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
+        <SectionHeader label="Tools" icon={Wrench} collapsed={collapsed} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
 
-        {sectionOpen.tools && (
-          <>
-            <NavLink href="/dashboard/weak-topics" icon="⚠" label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} />
-            <NavLink href="/dashboard/tasks" icon="✓" label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} />
-            <NavLink href="/dashboard/study-plan" icon="📅" label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} />
-          </>
-        )}
+        <AnimatePresence initial={false}>
+          {sectionOpen.tools && (
+            <motion.div
+              key="tools-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
+            >
+              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/study-plan" icon={<CalendarDays size={14} />} label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} small />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
-      {/* User footer — click name to go to settings */}
+      {/* User footer */}
       <div className="px-1.5 pb-2 pt-1">
         {!collapsed ? (
           <Link
             href="/dashboard/settings"
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--brand-subtle)]"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
@@ -306,7 +333,7 @@ export default function Sidebar() {
           <Link
             href="/dashboard/settings"
             title="Settings"
-            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--brand-subtle)]"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"

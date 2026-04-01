@@ -122,7 +122,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const isPastDue = subscriptionStatus?.status === 'past_due';
 
   return (
-    <div className="flex h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
+    <div className="flex h-screen justify-center" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <div className="flex w-full max-w-[1600px]">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {isPastDue && (
@@ -140,7 +141,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-6 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>{children}</main>
+      </div>
       </div>
 
       {showGlobalUpload && (

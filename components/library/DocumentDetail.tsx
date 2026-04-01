@@ -10,6 +10,9 @@ export function flushPendingNoteSave(): Promise<void> {
   _pendingNoteSave = null;
   return fn ? fn() : Promise.resolve();
 }
+// Tracks edited-but-not-yet-saved content keyed by documentId, so remounting
+// DocumentDetail can show local content instead of racing against an in-flight save.
+const _unsavedContent: Record<string, string> = {};
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -185,6 +188,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [, forceTabUpdate] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasTouchedRef = useRef(false);
   const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSettingContent = useRef(false);
   const pendingContent = useRef<{ noteId: string; html: string } | null>(null);
@@ -211,7 +215,10 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         notesApi.getByDocument(id),
         flashcardsApi.getByDocument(id),
       ]);
-      if (noteRes.data) setNote(noteRes.data);
+      if (noteRes.data) {
+        const unsaved = _unsavedContent[id];
+        setNote(unsaved ? { ...noteRes.data, content: unsaved } : noteRes.data);
+      }
       if (flashRes.data) setFlashcards(flashRes.data);
     }
   }, [id]);
@@ -362,10 +369,16 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
       if (!currentNote) return;
       if (isSettingContent.current) return;
       const html = editor.getHTML();
+      if (!hasTouchedRef.current) {
+        hasTouchedRef.current = true;
+        window.dispatchEvent(new CustomEvent('library:doc-touched', { detail: { documentId: id } }));
+      }
+      _unsavedContent[id] = html;
       pendingContent.current = { noteId: currentNote.id, html };
       _pendingNoteSave = () => notesApi.update(currentNote.id, html).then(() => {
         pendingContent.current = null;
         _pendingNoteSave = null;
+        delete _unsavedContent[id];
       });
       setSaveStatus('unsaved');
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -373,6 +386,8 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         _pendingNoteSave = null;
         await notesApi.update(currentNote.id, html);
         pendingContent.current = null;
+        delete _unsavedContent[id];
+        hasTouchedRef.current = false;
         setDoc(prev => prev ? { ...prev, updatedAt: new Date().toISOString() } : prev);
         window.dispatchEvent(new CustomEvent('library:refetch'));
         setSaveStatus('saved');
@@ -414,6 +429,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     pendingContent.current = null;
     setSaveStatus('saving');
     await notesApi.update(noteId, html);
+    delete _unsavedContent[id];
     setDoc(prev => prev ? { ...prev, updatedAt: new Date().toISOString() } : prev);
     window.dispatchEvent(new CustomEvent('library:refetch'));
     setSaveStatus('saved');
@@ -432,7 +448,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     return () => {
       if (pendingContent.current) {
         const { noteId, html } = pendingContent.current;
-        notesApi.update(noteId, html);
+        notesApi.update(noteId, html).then(() => { delete _unsavedContent[id]; });
       }
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };

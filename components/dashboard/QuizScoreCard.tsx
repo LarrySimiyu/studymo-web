@@ -212,7 +212,7 @@ export default function QuizScoreCard({
     >
       <h2 className="text-sm font-semibold text-[var(--text-1)] mb-5">Quiz Stats</h2>
 
-      <div className="grid grid-cols-2 gap-5 items-start">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
         {/* Left: ring + stats */}
         <div className="flex flex-col gap-3 items-center">
           <LargeRing value={avgScore} />
