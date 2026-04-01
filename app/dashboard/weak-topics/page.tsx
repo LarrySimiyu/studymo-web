@@ -1,33 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
+import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 
 export default function WeakTopicsPage() {
   const [topics, setTopics] = useState<WeakTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
   const [filterDocId, setFilterDocId] = useState<string>('');
-  const [resolving, setResolving] = useState<string | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    weakTopicsApi.getAll().then(res => { if (res.data) setTopics(res.data); }).catch(() => {}).finally(() => setLoading(false));
+    if (!filterOpen) return;
+    const h = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [filterOpen]);
+
+  useEffect(() => {
+    weakTopicsApi.getAll().then(res => {
+      if (res.data) setTopics(res.data);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  async function handleResolve(id: string) {
-    setResolving(id);
-    try {
-      const { data: updated } = await weakTopicsApi.resolve(id);
-      if (!updated) return;
-      setTopics(prev => prev.map(t => t.id === id ? updated : t));
-    } catch {
-      // ignore
-    } finally {
-      setResolving(null);
-    }
+  function handleResolved(updated: WeakTopic) {
+    setTopics(prev => prev.map(t => t.id === updated.id ? updated : t));
   }
 
-  // Unique documents from topics
   const documents = Array.from(new Map(
     topics.filter(t => t.document).map(t => [t.documentId, t.document!])
   ).entries()).map(([id, doc]) => ({ id, title: doc.title }));
@@ -38,10 +41,9 @@ export default function WeakTopicsPage() {
     return true;
   });
 
-  // Group by document
   const grouped = filtered.reduce<Record<string, { title: string; topics: WeakTopic[] }>>((acc, t) => {
     const docId = t.documentId;
-    const title = t.document?.title ?? 'Unknown Document';
+    const title = t.document?.title ?? 'Unknown Note';
     if (!acc[docId]) acc[docId] = { title, topics: [] };
     acc[docId].topics.push(t);
     return acc;
@@ -50,14 +52,15 @@ export default function WeakTopicsPage() {
   const unresolvedCount = topics.filter(t => !t.resolved).length;
 
   return (
-    <div className="max-w-4xl mx-auto py-2">
+    <div className="max-w-5xl mx-auto py-2">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-1)]">Weak Topics</h1>
-          <p className="text-[var(--text-2)] text-sm mt-0.5">
+          <h1 className="text-heading-sm text-[var(--text-1)]">Weak Topics</h1>
+          <p className="text-body-sm mt-0.5 flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
             Topics you&apos;ve consistently missed on quizzes
             {unresolvedCount > 0 && (
-              <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444', border: '1px solid var(--danger-border)' }}>
                 {unresolvedCount} to review
               </span>
             )}
@@ -66,23 +69,48 @@ export default function WeakTopicsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <select
-          value={filterDocId}
-          onChange={e => setFilterDocId(e.target.value)}
-          className="px-3 py-2 rounded-lg text-sm text-[var(--text-1)] outline-none"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-        >
-          <option value="">All documents</option>
-          {documents.map(d => (
-            <option key={d.id} value={d.id}>{d.title}</option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="relative" ref={filterRef}>
+          <button
+            onClick={() => setFilterOpen(v => !v)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors"
+            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
+          >
+            {filterDocId ? documents.find(d => d.id === filterDocId)?.title ?? 'All notes' : 'All notes'}
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--text-3)' }}>
+              <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {filterOpen && (
+            <div
+              className="absolute left-0 top-full mt-1 z-50 rounded-xl shadow-xl py-1 min-w-[180px]"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <button
+                onClick={() => { setFilterDocId(''); setFilterOpen(false); }}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
+                style={{ color: filterDocId === '' ? '#9747FF' : 'var(--text-1)' }}
+              >
+                All notes
+              </button>
+              {documents.map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => { setFilterDocId(d.id); setFilterOpen(false); }}
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors truncate"
+                  style={{ color: filterDocId === d.id ? '#9747FF' : 'var(--text-1)' }}
+                >
+                  {d.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <label className="flex items-center gap-2 text-sm text-[var(--text-2)] cursor-pointer">
+        <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-2)' }}>
           <div
             onClick={() => setShowResolved(s => !s)}
-            className="w-8 h-4 rounded-full relative transition-colors cursor-pointer"
+            className="w-8 h-4 rounded-full relative transition-colors cursor-pointer shrink-0"
             style={{ backgroundColor: showResolved ? '#9747FF' : 'var(--border)' }}
           >
             <div
@@ -94,82 +122,47 @@ export default function WeakTopicsPage() {
         </label>
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2].map(i => <div key={i} className="h-32 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-card)' }} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="h-36 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-card)' }} />
+          ))}
         </div>
       ) : Object.keys(grouped).length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: 'var(--success-subtle)' }}>
-            🎉
-          </div>
-          <h2 className="text-lg font-semibold text-[var(--text-1)] mb-1">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: 'var(--success-subtle)' }}>🎉</div>
+          <h2 className="text-body-lg font-semibold text-[var(--text-1)] mb-1">
             {unresolvedCount === 0 && !showResolved ? 'No weak topics!' : 'No topics match'}
           </h2>
-          <p className="text-[var(--text-2)] text-sm max-w-xs">
+          <p className="text-body-sm max-w-xs" style={{ color: 'var(--text-2)' }}>
             {unresolvedCount === 0 && !showResolved
               ? 'Take quizzes to identify areas that need more review'
               : 'Try adjusting your filters'}
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {Object.entries(grouped).map(([docId, group]) => (
             <div key={docId}>
-              <h2 className="text-sm font-semibold text-[var(--text-1)] mb-2 flex items-center gap-2">
-                <span className="text-base">📄</span>
-                {group.title}
-                <span className="text-xs text-[var(--text-2)] font-normal">{group.topics.length} topic{group.topics.length !== 1 ? 's' : ''}</span>
-              </h2>
-              <div className="space-y-2">
+              {/* Group header */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm">📄</span>
+                <h2 className="text-body-sm font-semibold text-[var(--text-1)]">{group.title}</h2>
+                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}>
+                  {group.topics.length} topic{group.topics.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Grid of cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {group.topics.map(topic => (
-                  <div
+                  <WeakTopicItem
                     key={topic.id}
-                    className="flex items-center gap-4 p-4 rounded-xl"
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      border: `1px solid ${topic.resolved ? 'var(--success-border)' : 'var(--border)'}`,
-                      opacity: topic.resolved ? 0.7 : 1,
-                    }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: topic.resolved ? 'var(--success-subtle)' : 'var(--danger-subtle)' }}
-                    >
-                      <span className="text-base">{topic.resolved ? '✅' : '⚠️'}</span>
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--text-1)]">{topic.topic}</p>
-                      {topic.correctAnswer && (
-                        <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={{ backgroundColor: 'var(--success-subtle)', color: '#22C55E' }}>
-                          ✓ {topic.correctAnswer}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-[var(--text-2)]">
-                          Missed <span className="font-medium" style={{ color: topic.missedCount >= 5 ? '#EF4444' : topic.missedCount >= 3 ? '#F59E0B' : '#9CA3AF' }}>{topic.missedCount}×</span>
-                        </span>
-                        <span className="text-xs text-[var(--text-3)]">
-                          Last: {new Date(topic.lastMissedAt).toLocaleDateString()}
-                        </span>
-                        {topic.resolved && topic.resolvedAt && (
-                          <span className="text-xs" style={{ color: '#22C55E' }}>Resolved {new Date(topic.resolvedAt).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {!topic.resolved && (
-                      <button
-                        onClick={() => handleResolve(topic.id)}
-                        disabled={resolving === topic.id}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-                        style={{ backgroundColor: 'var(--success-subtle)', color: '#22C55E', border: '1px solid var(--success-border)' }}
-                      >
-                        {resolving === topic.id ? '...' : 'Resolve'}
-                      </button>
-                    )}
-                  </div>
+                    topic={topic}
+                    linkToDocument
+                    onResolved={handleResolved}
+                  />
                 ))}
               </div>
             </div>

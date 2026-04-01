@@ -201,7 +201,7 @@ export default function FlashcardsPage() {
           className="text-xs px-3 py-1.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
           style={{ backgroundColor: '#9747FF', color: '#fff' }}
         >
-          + Upload Document
+          + Upload Note
         </Link>
       </div>
 
@@ -212,7 +212,7 @@ export default function FlashcardsPage() {
       ) : decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="text-4xl mb-4">🗂</div>
-          <p className="text-[var(--text-2)] text-sm">No flashcard decks yet. Upload a document to generate flashcards.</p>
+          <p className="text-[var(--text-2)] text-sm">No flashcard decks yet. Upload a note to generate flashcards.</p>
           <Link
             href="/dashboard/library"
             className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"

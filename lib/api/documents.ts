@@ -87,6 +87,7 @@ export const documentsApi = {
     return api.get<Document[]>(`/documents${qs ? `?${qs}` : ''}`);
   },
   getById: (id: string) => api.get<Document>(`/documents/${id}`),
+  rename: (id: string, title: string) => api.patch<Document>(`/documents/${id}/title`, { title }),
   delete: (id: string) => api.delete<void>(`/documents/${id}`),
   setFolder: (id: string, folderId: string | null) =>
     api.patch<Document>(`/documents/${id}/folder`, { folderId }),

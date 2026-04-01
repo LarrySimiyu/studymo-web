@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -21,12 +20,14 @@ import { useStudyTimer } from '@/context/StudyTimerContext';
 import { noteTagsApi, NoteTag } from '@/lib/api/organization';
 import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
+import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
-import { tutorApi } from '@/lib/api/tutor';
+import TagDropdown from '@/components/ui/TagDropdown';
+import TutorPanel from '@/components/library/TutorPanel';
 
-type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast';
+type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics';
 
 interface QuizQuestion {
   type: 'multiple_choice' | 'short_answer';
@@ -137,7 +138,6 @@ function QuizGeneratePrompt({ onGenerate }: { onGenerate: (types: string[]) => P
 }
 
 export default function DocumentDetail({ id, onBack, embedded }: Props) {
-  const router = useRouter();
   const [doc, setDoc] = useState<Document | null>(null);
   const [note, setNote] = useState<Note | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -156,16 +156,34 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const [showGeneratePodcast, setShowGeneratePodcast] = useState(false);
   const [showNoteTagDropdown, setShowNoteTagDropdown] = useState(false);
   const [showDocTagDropdown, setShowDocTagDropdown] = useState(false);
+  const [showCreateTagModal, setShowCreateTagModal] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#9747FF');
+  const [showDotsMenu, setShowDotsMenu] = useState(false);
+  const dotsMenuRef = useRef<HTMLDivElement>(null);
+  const [showTutorPanel, setShowTutorPanel] = useState(false);
+  const [tutorPanelWidth, setTutorPanelWidth] = useState(380);
+  const [tutorSessionId, setTutorSessionId] = useState<string | null>(null);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartWidth = useRef(380);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editableTitle, setEditableTitle] = useState('');
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [, forceTabUpdate] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSettingContent = useRef(false);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics'];
   const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
 
   const fetchAll = useCallback(async () => {
     const { data: docData } = await documentsApi.getById(id);
     if (!docData) return;
     setDoc(docData);
+    setEditableTitle(prev => prev || docData.title);
     if (docData.status === 'complete') {
       const [noteRes, flashRes] = await Promise.all([
         notesApi.getByDocument(id),
@@ -188,17 +206,26 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     if (tasksRes.data) setDocTasks(tasksRes.data);
     if (allNoteTagsRes.data) setAllNoteTags(allNoteTagsRes.data);
     if (allDocTagsRes.data) setAllDocTags(allDocTagsRes.data);
-    if (weakRes.data) setDocWeakTopics(weakRes.data.filter((t: WeakTopic) => !t.resolved));
+    if (weakRes.data) setDocWeakTopics(weakRes.data);
     if (podcastsRes.data) setPodcasts(podcastsRes.data);
   }, [id, note]);
 
   useEffect(() => {
-    fetchAll().finally(() => setLoading(false));
+    fetchAll().finally(() => { setLoading(false); forceTabUpdate(n => n + 1); });
   }, [fetchAll]);
 
   useEffect(() => {
     loadSideData();
   }, [loadSideData]);
+
+  useEffect(() => {
+    if (!showDotsMenu) return;
+    const h = (e: MouseEvent) => {
+      if (dotsMenuRef.current && !dotsMenuRef.current.contains(e.target as Node)) setShowDotsMenu(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [showDotsMenu]);
 
   // Poll podcasts while any are still generating
   useEffect(() => {
@@ -305,7 +332,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     content: note ? convertNoteToHTML(note.content) : '',
     editorProps: {
       attributes: {
-        class: 'prose prose-headings:text-[var(--text-1)] prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-[var(--text-1)] prose-p:leading-relaxed prose-strong:text-[var(--text-1)] prose-li:text-[var(--text-1)] prose-ul:my-2 max-w-none focus:outline-none min-h-[400px] bg-white text-gray-900',
+        class: 'prose prose-headings:text-[var(--text-1)] prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-[var(--text-1)] prose-p:leading-relaxed prose-strong:text-[var(--text-1)] prose-li:text-[var(--text-1)] prose-ul:my-2 max-w-none focus:outline-none min-h-[400px]',
       },
     },
     onUpdate: ({ editor }) => {
@@ -350,68 +377,136 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     );
   }
 
-  if (!doc) return <div className="text-[var(--text-2)] py-10 text-center">Document not found.</div>;
+  if (!doc) return <div className="text-[var(--text-2)] py-10 text-center">Note not found.</div>;
+
+  function handleResizeMouseDown(e: React.MouseEvent) {
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartWidth.current = tutorPanelWidth;
+    const onMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = dragStartX.current - ev.clientX;
+      setTutorPanelWidth(Math.max(280, Math.min(700, dragStartWidth.current + delta)));
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
 
   return (
-    <div className={embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2'}>
-      {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
+    <div className="flex h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
+    <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
+      {/* Path label + action buttons */}
+      <div className="flex items-center gap-2 mb-4">
         {!embedded && (
-          <button onClick={() => onBack ? onBack() : undefined} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors mt-0.5">
+          <button onClick={() => onBack?.()} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xs">
             ← Back
           </button>
         )}
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-[var(--text-1)] truncate">{doc.title}</h1>
-          {doc.status === 'processing' && (
-            <div className="flex items-center gap-2 mt-1 text-yellow-400 text-sm">
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400" />
-              Generating your notes…
-            </div>
-          )}
-          {doc.status === 'failed' && (
-            <p className="text-red-400 text-sm mt-1">Processing failed. Please try uploading again.</p>
-          )}
-        </div>
-        {docTasks.filter(t => !t.completed).length > 0 && (
-          <button
-            onClick={async () => {
-              const activeTasks = docTasks.filter(t => !t.completed);
-              if (timerStatus !== 'idle') {
+        <span className="text-xs text-[var(--text-1)] truncate flex-1">{doc.title}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          {docTasks.filter(t => !t.completed).length > 0 && (
+            <button
+              onClick={async () => {
+                const activeTasks = docTasks.filter(t => !t.completed);
+                if (timerStatus !== 'idle') { if (isCollapsed) toggleCollapsed(); return; }
+                await startSession('timeblock', activeTasks.map(t => t.id));
                 if (isCollapsed) toggleCollapsed();
-                return;
-              }
-              await startSession('timeblock', activeTasks.map(t => t.id));
-              if (isCollapsed) toggleCollapsed();
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#9747FF]/30 text-[#9747FF] text-sm hover:bg-[#9747FF]/10 transition-all flex-shrink-0"
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all"
+              style={{ borderColor: 'rgba(151,71,255,0.3)', color: '#9747FF' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {timerStatus === 'idle' ? 'Study Tasks' : 'View Timer'}
+            </button>
+          )}
+          {note && (
+            <button
+              onClick={() => setShowTutorPanel(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
+            >
+              AI Tutor
+            </button>
+          )}
+          {/* Three-dot menu */}
+          <div className="relative" ref={dotsMenuRef}>
+            <button
+              onClick={() => setShowDotsMenu(v => !v)}
+              className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-[var(--bg-hover)] text-[var(--text-2)]"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="8" cy="3" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="8" cy="13" r="1.2"/>
+              </svg>
+            </button>
+            {showDotsMenu && (
+              <div
+                className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl py-1 min-w-[140px]"
+                style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              >
+                <button
+                  onClick={() => { setShowDotsMenu(false); setShowDeleteConfirm(true); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
+                  style={{ color: 'var(--danger)' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Editable title */}
+      <input
+        value={editableTitle}
+        onChange={e => {
+          const val = e.target.value;
+          setEditableTitle(val);
+          setDoc(prev => prev ? { ...prev, title: val } : prev);
+          if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
+          titleDebounceRef.current = setTimeout(async () => {
+            if (val.trim()) {
+              await documentsApi.rename(id, val.trim());
+              window.dispatchEvent(new CustomEvent('library:refetch'));
+            }
+          }, 600);
+        }}
+        placeholder="Untitled"
+        className="w-full bg-transparent border-none outline-none text-2xl font-semibold text-[var(--text-1)] placeholder-[var(--text-3)] mb-3"
+      />
+
+      {/* Tags row */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-6">
+        {(doc.tags ?? []).map(dt => (
+          <span
+            key={dt.tagId}
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full cursor-pointer group"
+            style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '22', color: dt.tag.color ?? '#9747FF' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            {timerStatus === 'idle' ? 'Study Tasks' : 'View Timer'}
-          </button>
-        )}
-        {note && (
-          <button
-            onClick={async () => {
-              const { data } = await tutorApi.createSession({ noteIds: [note.id], mode: 'tutor' });
-              if (data) router.push(`/dashboard/tutor?session=${data.id}`);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#9747FF]/30 text-[#9747FF] text-sm hover:bg-[#9747FF]/10 transition-all flex-shrink-0"
-          >
-            🎓 Study with Tutor
-          </button>
-        )}
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          className="p-2 rounded-xl border border-black/10 text-black/30 hover:text-red-400 hover:border-red-400/30 transition-all flex-shrink-0"
-          title="Delete document"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-          </svg>
-        </button>
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dt.tag.color ?? '#9747FF' }} />
+            {dt.tag.name}
+            <button
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 ml-0.5 leading-none"
+              onClick={async () => { await documentsApi.removeTag(id, dt.tagId); fetchAll(); }}
+            >×</button>
+          </span>
+        ))}
+        <TagDropdown
+          tags={allDocTags.filter(t => !(doc.tags ?? []).some(dt => dt.tagId === t.id))}
+          placeholder="+ Tag"
+          onChange={async tagId => { await documentsApi.addTag(id, tagId); fetchAll(); }}
+          onManageTags={() => setShowCreateTagModal(true)}
+        />
       </div>
 
       {showDeleteConfirm && (
@@ -420,7 +515,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
             <div className="flex flex-col items-center text-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--danger-subtle)' }}>🗑</div>
               <div>
-                <p className="text-[var(--text-1)] font-semibold">Delete this document?</p>
+                <p className="text-[var(--text-1)] font-semibold">Delete this note?</p>
                 <p className="text-[var(--text-2)] text-sm mt-1">All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone.</p>
               </div>
             </div>
@@ -446,60 +541,86 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         </div>
       )}
 
+      {showCreateTagModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="rounded-2xl w-full max-w-xs p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <p className="text-sm font-semibold text-[var(--text-1)]">New tag</p>
+            <input
+              autoFocus
+              value={newTagName}
+              onChange={e => setNewTagName(e.target.value)}
+              placeholder="Tag name"
+              className="w-full px-3 py-2 rounded-lg text-xs outline-none text-[var(--text-1)] placeholder-[var(--text-3)]"
+              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
+              onKeyDown={async e => {
+                if (e.key === 'Escape') { setShowCreateTagModal(false); setNewTagName(''); }
+              }}
+            />
+            <div className="flex items-center gap-2 flex-wrap">
+              {['#9747FF','#FF6B6B','#4ECDC4','#45B7D1','#F59E0B','#22C55E','#EC4899','#64748B'].map(c => (
+                <button key={c} onClick={() => setNewTagColor(c)}
+                  className="w-5 h-5 rounded-full transition-transform hover:scale-110"
+                  style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+                />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowCreateTagModal(false); setNewTagName(''); }}
+                className="flex-1 py-2 rounded-lg text-xs text-[var(--text-2)] hover:bg-[var(--bg-hover)] transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!newTagName.trim()) return;
+                  const { data } = await docTagsApi.create({ name: newTagName.trim(), color: newTagColor });
+                  if (data) { await documentsApi.addTag(id, data.id); fetchAll(); loadSideData(); }
+                  setShowCreateTagModal(false); setNewTagName('');
+                }}
+                className="flex-1 py-2 rounded-lg text-xs text-white hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: '#9747FF' }}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {doc.status !== 'complete' ? null : (
         <>
-          {/* Document tags */}
-          {doc.tags && doc.tags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {doc.tags.map(dt => (
-                <span key={dt.tagId} className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                  style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '25', color: dt.tag.color ?? '#9747FF' }}>
-                  {dt.tag.name}
-                </span>
-              ))}
-              <div className="relative">
-                <button onClick={() => setShowDocTagDropdown(v => !v)}
-                  className="text-xs px-2 py-1 rounded-full border border-black/10 text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
-                  + Add Tag
-                </button>
-                {showDocTagDropdown && allDocTags.length > 0 && (
-                  <div className="absolute left-0 top-full mt-1 z-20 bg-[var(--bg-input)] border border-black/10 rounded-xl shadow-xl min-w-[160px] overflow-hidden">
-                    {allDocTags.map(t => (
-                      <button key={t.id} className="w-full text-left px-3 py-2 text-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                        onClick={async () => {
-                          const { documentsApi: dApi } = await import('@/lib/api/documents');
-                          await dApi.addTag(id, t.id);
-                          setShowDocTagDropdown(false);
-                          fetchAll();
-                        }}>
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color ?? '#9747FF' }} />
-                        {t.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Tabs */}
-          <div className="flex gap-1 mb-6 p-1 rounded-lg w-fit" style={{ backgroundColor: 'var(--bg-page)' }}>
-            {(['notes', 'flashcards', 'quiz', 'podcast'] as Tab[]).map((t) => (
+          {/* Tabs — animated underline */}
+          <div className="relative flex gap-0 mb-6" style={{ borderBottom: '1px solid var(--border)' }}>
+            {tabs.map((t, i) => (
               <button
                 key={t}
+                ref={el => { tabRefs.current[i] = el; }}
                 onClick={async () => {
                   setTab(t);
+                  setActiveTabIndex(i);
                   if (t === 'quiz' && !quiz) {
                     const { data } = await quizzesApi.getByDocument(id);
                     if (data) setQuiz(data);
                   }
                 }}
-                className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize"
-                style={tab === t ? { backgroundColor: '#9747FF', color: '#fff' } : { color: 'var(--text-2)' }}
+                className="px-4 py-2 text-xs relative"
+                style={{
+                  color: tab === t ? 'var(--text-1)' : 'var(--text-3)',
+                  fontWeight: tab === t ? 600 : 400,
+                  transition: 'color 0.15s, font-weight 0.15s',
+                }}
               >
-                {t === 'podcast' ? 'Podcast' : t}
+                {t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
+            {/* Animated underline — computed from active button */}
+            <span
+              className="absolute bottom-0 h-0.5 rounded-full bg-white"
+              style={{
+                left: tabRefs.current[activeTabIndex]?.offsetLeft ?? 0,
+                width: tabRefs.current[activeTabIndex]?.offsetWidth ?? 0,
+                transition: 'left 0.2s ease, width 0.2s ease',
+              }}
+            />
           </div>
 
           {/* Notes Tab */}
@@ -509,82 +630,10 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
                 <p className="text-xs text-[var(--text-2)]">
                   {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
                 </p>
-                <div className="flex items-center gap-2">
-                  {/* Note tags */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {noteTags.map(tag => (
-                      <span key={tag.id} className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer hover:opacity-80"
-                        style={{ backgroundColor: tag.color + '25', color: tag.color }}
-                        onClick={async () => {
-                          if (!note) return;
-                          await noteTagsApi.unassign(tag.id, note.id);
-                          setNoteTags(prev => prev.filter(t => t.id !== tag.id));
-                        }}>
-                        {tag.name} ×
-                      </span>
-                    ))}
-                    <div className="relative">
-                      <button onClick={() => setShowNoteTagDropdown(v => !v)}
-                        className="text-xs px-2 py-0.5 rounded-full border border-black/10 text-[var(--text-2)] hover:text-[var(--text-1)]">
-                        + Tag
-                      </button>
-                      {showNoteTagDropdown && allNoteTags.length > 0 && (
-                        <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--bg-input)] border border-black/10 rounded-xl shadow-xl min-w-[160px] overflow-hidden">
-                          {allNoteTags.filter(t => !noteTags.find(nt => nt.id === t.id)).map(t => (
-                            <button key={t.id} className="w-full text-left px-3 py-2 text-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                              onClick={async () => {
-                                if (!note) return;
-                                await noteTagsApi.assign(t.id, note.id);
-                                setNoteTags(prev => [...prev, t]);
-                                setShowNoteTagDropdown(false);
-                              }}>
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                              {t.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleShare}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-1)] hover:opacity-80 transition-opacity"
-                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
-                  >
-                    Share
-                  </button>
-                </div>
               </div>
-              <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+              <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
                 <EditorContent editor={editor} />
               </div>
-
-              {/* Weak Topics for this document */}
-              {docWeakTopics.length > 0 && (
-                <div className="mt-6 rounded-xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-[var(--text-1)] flex items-center gap-2">
-                      ⚠️ Topics to Review
-                      <span className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>
-                        {docWeakTopics.length}
-                      </span>
-                    </h3>
-                    <a href="/dashboard/weak-topics" className="text-xs text-purple-400 hover:text-purple-300">View all</a>
-                  </div>
-                  <div className="space-y-1.5">
-                    {docWeakTopics.slice(0, 5).map(wt => (
-                      <div key={wt.id} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: '#EF4444' }} />
-                        <span className="text-sm text-[var(--text-1)] flex-1 truncate">{wt.topic}</span>
-                        <span className="text-xs text-[var(--text-3)] shrink-0">missed {wt.missedCount}×</span>
-                      </div>
-                    ))}
-                    {docWeakTopics.length > 5 && (
-                      <p className="text-xs text-[var(--text-3)] px-3">+{docWeakTopics.length - 5} more topics</p>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -854,6 +903,28 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
               )}
             </div>
           )}
+          {/* Weak Topics Tab */}
+          {tab === 'weak-topics' && (
+            <div>
+              {docWeakTopics.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                  <p className="text-2xl">✅</p>
+                  <p className="text-body-sm text-[var(--text-2)]">No weak topics for this note</p>
+                  <p className="text-xs text-[var(--text-3)]">Take a quiz to identify areas that need review</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {docWeakTopics.map(wt => (
+                    <WeakTopicItem
+                      key={wt.id}
+                      topic={wt}
+                      onResolved={updated => setDocWeakTopics(prev => prev.map(t => t.id === updated.id ? updated : t))}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -901,6 +972,25 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           </div>
         </div>
       )}
+    </div>
+    {/* Resize handle + Tutor Panel */}
+    {showTutorPanel && note && (
+      <>
+        <div
+          onMouseDown={handleResizeMouseDown}
+          className="w-px shrink-0 cursor-col-resize hover:bg-[var(--border-md)] transition-colors"
+          style={{ backgroundColor: 'var(--border)' }}
+        />
+        <div style={{ width: tutorPanelWidth, minWidth: 280, maxWidth: 700, flexShrink: 0 }}>
+          <TutorPanel
+            noteId={note.id}
+            sessionId={tutorSessionId}
+            onSessionCreated={setTutorSessionId}
+            onClose={() => setShowTutorPanel(false)}
+          />
+        </div>
+      </>
+    )}
     </div>
   );
 }

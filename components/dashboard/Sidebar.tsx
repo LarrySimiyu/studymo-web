@@ -30,8 +30,8 @@ function CountBadge({ n }: { n: number | undefined }) {
   if (!n) return null;
   return (
     <span
-      className="ml-auto shrink-0 text-[10px] font-medium px-1.5 rounded leading-5 min-w-[18px] text-center"
-      style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-3)' }}
+      className="ml-auto shrink-0 text-[10px] font-medium leading-5 min-w-[18px] text-center"
+      style={{ color: 'var(--text-3)' }}
     >
       {n}
     </span>
@@ -48,11 +48,11 @@ function SectionHeader({
   if (collapsed) return <Divider />;
   return (
     <button onClick={onToggle} className="w-full flex items-center gap-1 px-2.5 pt-3 pb-1">
-      <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-3)' }}>
+      <span className="flex-1 text-left text-xs font-semibold" style={{ color: 'var(--text-1)' }}>
         {label}
       </span>
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-        style={{ color: 'var(--text-3)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+        style={{ color: 'var(--text-1)', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
         <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </button>
@@ -67,11 +67,11 @@ function NavLink({ href, icon, label, count, isActive, collapsed }: {
       href={href}
       title={collapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-body font-medium transition-colors',
+        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
         collapsed ? 'justify-center' : '',
         isActive
-          ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
-          : 'text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
+          ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+          : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
       )}
     >
       <span className="text-sm leading-none shrink-0">{icon}</span>
@@ -167,27 +167,14 @@ export default function Sidebar() {
   return (
     <aside
       className="shrink-0 flex flex-col transition-all duration-200"
-      style={{ width: collapsed ? 52 : 220, backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
+      style={{ width: collapsed ? 52 : 220, backgroundColor: 'var(--bg-card)' }}
     >
       {/* Logo + collapse + global upload */}
       <div
         className="flex items-center justify-between px-3 py-3.5 shrink-0"
-        style={{ borderBottom: '1px solid var(--border)' }}
       >
         {!collapsed && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:open-upload'))}
-              title="New note"
-              className="flex items-center justify-center w-5 h-5 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
-              style={{ color: 'var(--text-3)' }}
-            >
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                <path d="M6 1v10M1 6h10" />
-              </svg>
-            </button>
-          </div>
+          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
         )}
         <button
           onClick={toggleCollapsed}
@@ -233,10 +220,10 @@ export default function Sidebar() {
                 <Link
                   href={folderHref('none')}
                   className={cn(
-                    'flex items-center gap-2 px-2 py-1 rounded-md text-body-sm transition-colors',
+                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
                     isFolderActive('none')
-                      ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
-                      : 'text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]'
+                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                      : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
                   )}
                 >
                   <span className="shrink-0 text-xs">📭</span>
@@ -252,7 +239,7 @@ export default function Sidebar() {
                       'flex items-center gap-2 py-1 rounded-md text-body-sm transition-colors',
                       isFolderActive(f.id)
                         ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
-                        : 'text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]'
+                        : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
                     )}
                     style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                   >
@@ -264,10 +251,10 @@ export default function Sidebar() {
 
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-body-sm transition-colors text-[var(--text-3)] hover:text-[var(--text-2)] hover:bg-[var(--bg-hover)]"
+                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-1)] hover:bg-[var(--bg-hover)]"
                 >
                   <span className="text-xs opacity-60">+</span>
-                  <span>New Folder</span>
+                  <span>New Collection</span>
                 </button>
               </div>
             )}
@@ -300,11 +287,11 @@ export default function Sidebar() {
       </nav>
 
       {/* User footer — click name to go to settings */}
-      <div className="px-1.5 pb-2 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="px-1.5 pb-2 pt-1">
         {!collapsed ? (
           <Link
             href="/dashboard/settings"
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] group"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
@@ -312,15 +299,9 @@ export default function Sidebar() {
             >
               {initials}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-body-sm font-medium truncate" style={{ color: 'var(--text-1)' }}>
-                {displayName}
-              </p>
-              <p className="text-[10px] truncate" style={{ color: 'var(--text-3)' }}>Settings & account</p>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--text-3)' }}>
-              <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <p className="text-xs font-medium truncate flex-1 min-w-0" style={{ color: 'var(--text-1)' }}>
+              {displayName}
+            </p>
           </Link>
         ) : (
           <Link

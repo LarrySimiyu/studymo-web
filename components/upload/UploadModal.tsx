@@ -70,7 +70,7 @@ function ProcessingOverlay({
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: '#9747FF' }} />
-        <p className="text-[var(--text-1)] font-medium text-sm">Processing your document…</p>
+        <p className="text-[var(--text-1)] font-medium text-sm">Processing your note…</p>
         <p className="text-[var(--text-2)] text-xs text-center">This may take a minute. You can close this — it will appear in your library when ready.</p>
         <button
           onClick={onClose}
@@ -92,7 +92,7 @@ function ProcessingOverlay({
       </div>
       <div>
         <p className="text-[var(--text-1)] font-medium">Upload failed</p>
-        <p className="text-[var(--text-2)] text-xs mt-1">Something went wrong while processing your document.</p>
+        <p className="text-[var(--text-2)] text-xs mt-1">Something went wrong while processing your note.</p>
       </div>
       <div className="flex gap-3">
         <button
@@ -167,7 +167,7 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-[var(--text-1)]">Upload Document</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-1)]">Upload Note</h2>
               <button onClick={onClose} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xl leading-none">×</button>
             </div>
 
@@ -293,7 +293,7 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
           onChange={(e) => setTitle(e.target.value)}
           className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
           style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
-          placeholder="Document title"
+          placeholder="Note title"
         />
       </div>
       <button
