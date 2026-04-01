@@ -404,6 +404,21 @@ export default function LibraryPage() {
     return () => window.removeEventListener('library:refetch', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { documentId } = (e as CustomEvent<{ documentId: string }>).detail;
+      setDocuments(prev => {
+        const idx = prev.findIndex(d => d.id === documentId);
+        if (idx <= 0) return prev;
+        const next = [...prev];
+        const [doc] = next.splice(idx, 1);
+        return [{ ...doc, updatedAt: new Date().toISOString() }, ...next];
+      });
+    };
+    window.addEventListener('library:doc-touched', handler);
+    return () => window.removeEventListener('library:doc-touched', handler);
+  }, []);
+
   // Auto-select: prefer ?note= param on first load, otherwise keep current or pick first
   useEffect(() => {
     if (documents.length === 0) { selectDoc(null); return; }

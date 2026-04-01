@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="flex gap-6 items-start max-w-6xl mx-auto py-2">
+    <div className="flex flex-col lg:flex-row gap-6 items-start py-2">
       {welcomeToast && (
         <div
           className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium text-white"
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Right column: sticky calendar */}
-      <div className="w-[360px] shrink-0 sticky top-0">
+      <div className="w-full lg:w-[360px] shrink-0 lg:sticky lg:top-0">
         <UnifiedCalendar onAddTask={date => { setTaskModalDueDate(date); setShowTaskModal(true); }} />
       </div>
 
