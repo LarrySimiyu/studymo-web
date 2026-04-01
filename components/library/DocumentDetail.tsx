@@ -1,9 +1,21 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+
+// Module-level: survives component unmount so the library page can trigger a save
+// before switching notes (before DocumentDetail even starts unmounting).
+let _pendingNoteSave: (() => Promise<void>) | null = null;
+export function flushPendingNoteSave(): Promise<void> {
+  const fn = _pendingNoteSave;
+  _pendingNoteSave = null;
+  return fn ? fn() : Promise.resolve();
+}
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import Highlight from '@tiptap/extension-highlight';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
 import { marked } from 'marked';
 import {
   documentsApi,
@@ -26,8 +38,12 @@ import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import TagDropdown from '@/components/ui/TagDropdown';
 import TutorPanel from '@/components/library/TutorPanel';
+import {
+  Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
+  List, ListOrdered, Quote, Code, Highlighter, Baseline,
+} from 'lucide-react';
 
-type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics';
+type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics' | 'transcript';
 
 interface QuizQuestion {
   type: 'multiple_choice' | 'short_answer';
@@ -144,7 +160,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [tab, setTab] = useState<Tab>('notes');
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | ''>('');
   const [shareUrl, setShareUrl] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [docTasks, setDocTasks] = useState<Task[]>([]);
@@ -175,8 +191,15 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSettingContent = useRef(false);
+  const pendingContent = useRef<{ noteId: string; html: string } | null>(null);
+  const noteRef = useRef(note);
+  useEffect(() => { noteRef.current = note; }, [note]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics'];
+  const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null);
+  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+  const [showHighlightPicker, setShowHighlightPicker] = useState(false);
+  const isAudioDoc = doc ? ['audio', 'recording', 'video_url'].includes(doc.type) : false;
+  const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics', ...(isAudioDoc ? ['transcript' as Tab] : [])];
   const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
 
   const fetchAll = useCallback(async () => {
@@ -328,6 +351,9 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: 'Your notes will appear here…' }),
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
     ],
     content: note ? convertNoteToHTML(note.content) : '',
     editorProps: {
@@ -336,15 +362,39 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
       },
     },
     onUpdate: ({ editor }) => {
-      if (!note) return;
+      const currentNote = noteRef.current;
+      if (!currentNote) return;
       if (isSettingContent.current) return;
+      const html = editor.getHTML();
+      pendingContent.current = { noteId: currentNote.id, html };
+      _pendingNoteSave = () => notesApi.update(currentNote.id, html).then(() => {
+        pendingContent.current = null;
+        _pendingNoteSave = null;
+      });
+      setSaveStatus('unsaved');
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      setSaveStatus('saving');
       debounceRef.current = setTimeout(async () => {
-        await notesApi.update(note.id, editor.getHTML());
+        _pendingNoteSave = null;
+        await notesApi.update(currentNote.id, html);
+        pendingContent.current = null;
+        setDoc(prev => prev ? { ...prev, updatedAt: new Date().toISOString() } : prev);
+        window.dispatchEvent(new CustomEvent('library:refetch'));
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus(''), 2000);
-      }, 1000);
+      }, 30000);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      if (from === to) {
+        setBubblePos(null);
+        setShowTextColorPicker(false);
+        setShowHighlightPicker(false);
+        return;
+      }
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) { setBubblePos(null); return; }
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      setBubblePos({ top: rect.top + window.scrollY - 48, left: rect.left + window.scrollX });
     },
   });
 
@@ -359,6 +409,50 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
       setNoteTags(note.tags.map(t => t.tag));
     }
   }, [editor, note]);
+
+  // Flush pending save immediately
+  async function flushSave() {
+    if (!pendingContent.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const { noteId, html } = pendingContent.current;
+    pendingContent.current = null;
+    setSaveStatus('saving');
+    await notesApi.update(noteId, html);
+    setDoc(prev => prev ? { ...prev, updatedAt: new Date().toISOString() } : prev);
+    window.dispatchEvent(new CustomEvent('library:refetch'));
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus(''), 2000);
+  }
+
+  // Save when tab changes away from notes
+  useEffect(() => {
+    if (tab !== 'notes') {
+      flushSave();
+    }
+  }, [tab]);
+
+  // Save on unmount (navigating to another note, back, etc.)
+  useEffect(() => {
+    return () => {
+      if (pendingContent.current) {
+        const { noteId, html } = pendingContent.current;
+        notesApi.update(noteId, html);
+      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  // Save on page close / refresh
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!pendingContent.current) return;
+      const { noteId, html } = pendingContent.current;
+      navigator.sendBeacon(`/api/notes/${noteId}`, JSON.stringify({ content: html }));
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
 
   async function handleShare() {
     if (!note) return;
@@ -397,7 +491,137 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     window.addEventListener('mouseup', onUp);
   }
 
+  const TEXT_COLORS = ['#000000', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280'];
+  const HIGHLIGHT_COLORS = ['#FEF08A', '#BBF7D0', '#BAE6FD', '#DDD6FE', '#FCA5A5', '#FED7AA', '#F9A8D4'];
+
+  const sep = <div className="w-px h-4 mx-0.5 shrink-0" style={{ backgroundColor: 'var(--border)' }} />;
+
+  const mkBtn = (icon: React.ReactNode, action: () => void, active: boolean, title: string) => (
+    <button
+      key={title}
+      onClick={action}
+      title={title}
+      className="p-1.5 rounded transition-colors shrink-0"
+      style={{ color: active ? '#9747FF' : 'var(--text-2)', backgroundColor: active ? 'rgba(151,71,255,0.1)' : 'transparent' }}
+    >
+      {icon}
+    </button>
+  );
+
   return (
+    <>
+    {bubblePos && editor && (
+      <div
+        style={{
+          position: 'fixed',
+          top: bubblePos.top,
+          left: bubblePos.left,
+          transform: 'translateY(-100%)',
+          marginTop: '-6px',
+          zIndex: 50,
+        }}
+        onMouseDown={e => e.preventDefault()}
+      >
+        {/* Main toolbar row */}
+        <div
+          className="flex items-center gap-0.5 px-2 py-1.5 rounded-lg shadow-xl"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          {mkBtn(<Bold size={13} />, () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'), 'Bold')}
+          {mkBtn(<Italic size={13} />, () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'), 'Italic')}
+          {mkBtn(<Strikethrough size={13} />, () => editor.chain().focus().toggleStrike().run(), editor.isActive('strike'), 'Strikethrough')}
+          {mkBtn(<Code size={13} />, () => editor.chain().focus().toggleCode().run(), editor.isActive('code'), 'Code')}
+
+          {sep}
+
+          {/* Text color button */}
+          <button
+            title="Text Color"
+            onClick={() => { setShowHighlightPicker(false); setShowTextColorPicker(v => !v); }}
+            className="p-1.5 rounded transition-colors shrink-0 flex flex-col items-center gap-0.5"
+            style={{ color: showTextColorPicker ? '#9747FF' : 'var(--text-2)', backgroundColor: showTextColorPicker ? 'rgba(151,71,255,0.1)' : 'transparent' }}
+          >
+            <Baseline size={13} />
+            <div className="h-0.5 w-3 rounded-full" style={{ backgroundColor: (editor.getAttributes('textStyle').color as string | undefined) ?? 'var(--text-1)' }} />
+          </button>
+
+          {/* Highlight button */}
+          <button
+            title="Highlight"
+            onClick={() => { setShowTextColorPicker(false); setShowHighlightPicker(v => !v); }}
+            className="p-1.5 rounded transition-colors shrink-0 flex flex-col items-center gap-0.5"
+            style={{ color: showHighlightPicker ? '#9747FF' : 'var(--text-2)', backgroundColor: showHighlightPicker ? 'rgba(151,71,255,0.1)' : 'transparent' }}
+          >
+            <Highlighter size={13} />
+            <div className="h-0.5 w-3 rounded-full" style={{ backgroundColor: (editor.getAttributes('highlight').color as string | undefined) ?? '#FEF08A' }} />
+          </button>
+
+          {sep}
+
+          {mkBtn(<Heading1 size={13} />, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive('heading', { level: 1 }), 'H1')}
+          {mkBtn(<Heading2 size={13} />, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }), 'H2')}
+          {mkBtn(<Heading3 size={13} />, () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }), 'H3')}
+
+          {sep}
+
+          {mkBtn(<List size={13} />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'), 'Bullet List')}
+          {mkBtn(<ListOrdered size={13} />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'), 'Numbered List')}
+          {mkBtn(<Quote size={13} />, () => editor.chain().focus().toggleBlockquote().run(), editor.isActive('blockquote'), 'Blockquote')}
+        </div>
+
+        {/* Text color swatches */}
+        {showTextColorPicker && (
+          <div
+            className="flex items-center gap-1 px-2 py-2 mt-1 rounded-lg shadow-xl"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            {TEXT_COLORS.map(color => (
+              <button
+                key={color}
+                title={color}
+                onClick={() => { editor.chain().focus().setColor(color).run(); setShowTextColorPicker(false); }}
+                className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
+                style={{ backgroundColor: color, borderColor: editor.getAttributes('textStyle').color === color ? '#9747FF' : 'transparent' }}
+              />
+            ))}
+            <button
+              title="Remove color"
+              onClick={() => { editor.chain().focus().unsetColor().run(); setShowTextColorPicker(false); }}
+              className="text-xs px-1.5 py-0.5 rounded transition-colors"
+              style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Highlight color swatches */}
+        {showHighlightPicker && (
+          <div
+            className="flex items-center gap-1 px-2 py-2 mt-1 rounded-lg shadow-xl"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
+            {HIGHLIGHT_COLORS.map(color => (
+              <button
+                key={color}
+                title={color}
+                onClick={() => { editor.chain().focus().setHighlight({ color }).run(); setShowHighlightPicker(false); }}
+                className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
+                style={{ backgroundColor: color, borderColor: editor.getAttributes('highlight').color === color ? '#9747FF' : 'transparent' }}
+              />
+            ))}
+            <button
+              title="Remove highlight"
+              onClick={() => { editor.chain().focus().unsetHighlight().run(); setShowHighlightPicker(false); }}
+              className="text-xs px-1.5 py-0.5 rounded transition-colors"
+              style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+    )}
     <div className="flex h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
     <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
       {/* Path label + action buttons */}
@@ -609,7 +833,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
                   transition: 'color 0.15s, font-weight 0.15s',
                 }}
               >
-                {t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
             {/* Animated underline — computed from active button */}
@@ -628,7 +852,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <p className="text-xs text-[var(--text-2)]">
-                  {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : ''}
+                  {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'unsaved' ? 'Unsaved changes' : ''}
                 </p>
               </div>
               <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
@@ -903,6 +1127,22 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
               )}
             </div>
           )}
+          {/* Transcript Tab */}
+          {tab === 'transcript' && (
+            <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
+              {doc?.transcript ? (
+                <p className="text-sm text-[var(--text-1)] whitespace-pre-wrap leading-relaxed">
+                  {doc.transcript}
+                </p>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                  <p className="text-2xl">📝</p>
+                  <p className="text-body-sm text-[var(--text-2)]">No transcript available</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Weak Topics Tab */}
           {tab === 'weak-topics' && (
             <div>
@@ -992,5 +1232,6 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
       </>
     )}
     </div>
+    </>
   );
 }

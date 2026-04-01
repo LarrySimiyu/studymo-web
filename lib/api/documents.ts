@@ -98,7 +98,7 @@ export const documentsApi = {
 };
 
 export const notesApi = {
-  getAll: () => api.get<{ id: string; summary: string | null; document: { id: string; title: string } }[]>('/notes'),
+  getAll: () => api.get<{ id: string; summary: string | null; updatedAt: string; document: { id: string; title: string } }[]>('/notes'),
   getByDocument: (documentId: string) => api.get<Note>(`/notes/${documentId}`),
   update: (id: string, content: string) => api.patch<Note>(`/notes/${id}`, { content }),
   share: (id: string) => api.post<{ shareUrl: string; note: Note }>(`/notes/${id}/share`, {}),

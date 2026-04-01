@@ -7,7 +7,21 @@ import { notesApi } from '@/lib/api/documents';
 interface NoteSummary {
   id: string;
   summary: string | null;
+  updatedAt: string;
   document: { id: string; title: string };
+}
+
+function timeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 2) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 export default function NotesPage() {
@@ -66,7 +80,10 @@ export default function NotesPage() {
                     <p className="text-[var(--text-2)] text-xs mt-1 line-clamp-2">{note.summary}</p>
                   )}
                 </div>
-                <span className="text-xs text-[var(--text-3)] shrink-0">View →</span>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-xs text-[var(--text-3)]">{timeAgo(note.updatedAt)}</span>
+                  <span className="text-xs text-[var(--text-3)]">View →</span>
+                </div>
               </div>
             </Link>
           ))}

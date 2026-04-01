@@ -7,7 +7,6 @@ import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 export default function WeakTopicsPage() {
   const [topics, setTopics] = useState<WeakTopic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showResolved, setShowResolved] = useState(false);
   const [filterDocId, setFilterDocId] = useState<string>('');
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -36,7 +35,7 @@ export default function WeakTopicsPage() {
   ).entries()).map(([id, doc]) => ({ id, title: doc.title }));
 
   const filtered = topics.filter(t => {
-    if (!showResolved && t.resolved) return false;
+    if (t.resolved) return false;
     if (filterDocId && t.documentId !== filterDocId) return false;
     return true;
   });
@@ -107,19 +106,6 @@ export default function WeakTopicsPage() {
           )}
         </div>
 
-        <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-2)' }}>
-          <div
-            onClick={() => setShowResolved(s => !s)}
-            className="w-8 h-4 rounded-full relative transition-colors cursor-pointer shrink-0"
-            style={{ backgroundColor: showResolved ? '#9747FF' : 'var(--border)' }}
-          >
-            <div
-              className="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform"
-              style={{ left: showResolved ? '17px' : '2px' }}
-            />
-          </div>
-          Show resolved
-        </label>
       </div>
 
       {/* Content */}
@@ -133,10 +119,10 @@ export default function WeakTopicsPage() {
         <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: 'var(--success-subtle)' }}>🎉</div>
           <h2 className="text-body-lg font-semibold text-[var(--text-1)] mb-1">
-            {unresolvedCount === 0 && !showResolved ? 'No weak topics!' : 'No topics match'}
+            {unresolvedCount === 0 ? 'No weak topics!' : 'No topics match'}
           </h2>
           <p className="text-body-sm max-w-xs" style={{ color: 'var(--text-2)' }}>
-            {unresolvedCount === 0 && !showResolved
+            {unresolvedCount === 0
               ? 'Take quizzes to identify areas that need more review'
               : 'Try adjusting your filters'}
           </p>
