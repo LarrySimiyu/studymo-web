@@ -318,6 +318,8 @@ export default function LibraryPage() {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [debouncedDocId, setDebouncedDocId] = useState<string | null>(null);
   const debounceDocRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Capture the ?note= param once on mount so we can pre-select that doc
+  const noteParamRef = useRef(searchParams.get('note'));
 
   const selectDoc = (id: string | null) => {
     setSelectedDocId(id);
@@ -383,10 +385,15 @@ export default function LibraryPage() {
 
   useEffect(() => { fetchAll().finally(() => setLoading(false)); }, [fetchAll]);
 
-  // Auto-select the first (most recent) doc whenever the list changes
+  // Auto-select: prefer ?note= param on first load, otherwise keep current or pick first
   useEffect(() => {
     if (documents.length === 0) { selectDoc(null); return; }
     setSelectedDocId(prev => {
+      if (!prev && noteParamRef.current && documents.some(d => d.id === noteParamRef.current)) {
+        const id = noteParamRef.current!;
+        selectDoc(id);
+        return id;
+      }
       const next = prev && documents.some(d => d.id === prev) ? prev : documents[0].id;
       if (next !== prev) selectDoc(next);
       return next;

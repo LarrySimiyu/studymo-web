@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { tasksApi, subjectTagsApi, Task, SubjectTag } from '@/lib/api/tasks';
 import { useStudyTimer } from '@/context/StudyTimerContext';
+import TaskItem from '@/components/tasks/TaskItem';
+import TaskModal from '@/components/tasks/TaskModal';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 function PlusIcon() {
@@ -17,13 +19,6 @@ function TagIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
       <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
-function CheckIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-      <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
@@ -55,144 +50,6 @@ function XIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
     </svg>
-  );
-}
-
-// ─── Modals ───────────────────────────────────────────────────────────────────
-interface TaskModalProps {
-  task?: Task | null;
-  tags: SubjectTag[];
-  onClose: () => void;
-  onSave: () => void;
-}
-
-function TaskModal({ task, tags, onClose, onSave }: TaskModalProps) {
-  const [title, setTitle] = useState(task?.title ?? '');
-  const [description, setDescription] = useState(task?.description ?? '');
-  const [estimatedMins, setEstimatedMins] = useState(task?.estimatedMins ?? 45);
-  const [dueDate, setDueDate] = useState(task?.dueDate ? task.dueDate.split('T')[0] : '');
-  const [subjectTagId, setSubjectTagId] = useState(task?.subjectTagId ?? '');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) { setError('Title is required'); return; }
-    setSaving(true);
-    setError('');
-    const payload = {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      estimatedMins,
-      dueDate: dueDate || undefined,
-      subjectTagId: subjectTagId || undefined,
-    };
-    const { error: apiError } = task
-      ? await tasksApi.update(task.id, payload)
-      : await tasksApi.create(payload);
-    setSaving(false);
-    if (apiError) { setError(apiError); return; }
-    onSave();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="border rounded-2xl w-full max-w-md p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-[var(--text-1)]">{task ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors"><XIcon /></button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs text-[var(--text-2)] mb-1">Title *</label>
-            <input
-              autoFocus
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
-              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
-              placeholder="Task title"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-[var(--text-2)] mb-1">Description</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 resize-none"
-              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
-              placeholder="Optional description"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-[var(--text-2)] mb-1">Estimated duration</label>
-              <select
-                value={estimatedMins}
-                onChange={e => setEstimatedMins(Number(e.target.value))}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
-                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
-              >
-                {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map(m => (
-                  <option key={m} value={m}>
-                    {m < 60 ? `${m} min` : `${m / 60}h${m % 60 ? ` ${m % 60}m` : ''}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-[var(--text-2)] mb-1">Due Date</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
-                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-[var(--text-2)] mb-1">Subject Tag</label>
-            <select
-              value={subjectTagId}
-              onChange={e => setSubjectTagId(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50"
-              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)' }}
-            >
-              <option value="">No tag</option>
-              {tags.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {error && <p className="text-red-400 text-xs">{error}</p>}
-
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2 rounded-lg text-sm transition-colors"
-              style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-2 rounded-lg bg-[#9747FF] text-white text-sm font-medium hover:bg-[#8535ee] disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Saving...' : task ? 'Save Changes' : 'Create Task'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
   );
 }
 
@@ -323,80 +180,6 @@ function TagManager({ tags, onClose, onChange }: TagManagerProps) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Task Row ─────────────────────────────────────────────────────────────────
-interface TaskRowProps {
-  task: Task;
-  onEdit: (t: Task) => void;
-  onDelete: (id: string) => void;
-  onToggle: (t: Task) => void;
-}
-
-function TaskRow({ task, onEdit, onDelete, onToggle }: TaskRowProps) {
-  const elapsed = Math.round(task.elapsedMins);
-  const estimated = task.estimatedMins;
-  const progress = estimated > 0 ? Math.min(1, elapsed / estimated) : 0;
-
-  return (
-    <div
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${task.completed ? 'opacity-50' : ''}`}
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: `1px solid ${task.completed ? 'var(--border)' : 'var(--border-md)'}`,
-      }}
-    >
-      {/* Checkbox */}
-      <button
-        onClick={() => onToggle(task)}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-[#9747FF] border-[#9747FF]' : 'border-[var(--border-md)] hover:border-[#9747FF]'}`}
-      >
-        {task.completed && <CheckIcon />}
-      </button>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-[var(--text-3)]' : 'text-[var(--text-1)]'}`}>
-          {task.title}
-        </p>
-        <div className="flex items-center gap-2 mt-0.5">
-          {task.subjectTag && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: task.subjectTag.color + '30', color: task.subjectTag.color }}>
-              {task.subjectTag.name}
-            </span>
-          )}
-          {task.dueDate && (
-            <span className="text-xs text-[var(--text-3)]">
-              Due {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Progress / time */}
-      <div className="flex-shrink-0 text-right min-w-[80px]">
-        <div className="flex items-center gap-1 justify-end text-xs text-[var(--text-3)]">
-          <TimerIcon />
-          <span>{elapsed}m / {estimated}m</span>
-        </div>
-        {!task.completed && (
-          <div className="w-20 h-1 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
-            <div className="h-full bg-[#9747FF] rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <button onClick={() => onEdit(task)} className="p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] rounded-lg hover:bg-black/5 transition-all">
-          <EditIcon />
-        </button>
-        <button onClick={() => onDelete(task.id)} className="p-1.5 text-[var(--text-3)] hover:text-red-400 rounded-lg hover:bg-black/5 transition-all">
-          <TrashIcon />
-        </button>
       </div>
     </div>
   );
@@ -570,7 +353,7 @@ export default function TasksPage() {
               </div>
               <div className="space-y-2">
                 {group.tasks.map(task => (
-                  <TaskRow
+                  <TaskItem
                     key={task.id}
                     task={task}
                     onEdit={t => { setEditingTask(t); setShowTaskModal(true); }}
@@ -588,7 +371,6 @@ export default function TasksPage() {
       {showTaskModal && (
         <TaskModal
           task={editingTask}
-          tags={tags}
           onClose={() => setShowTaskModal(false)}
           onSave={() => { setShowTaskModal(false); loadData(); }}
         />

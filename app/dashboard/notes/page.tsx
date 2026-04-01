@@ -55,7 +55,7 @@ export default function NotesPage() {
           {notes.map((note) => (
             <Link
               key={note.id}
-              href={`/dashboard/library/${note.document.id}`}
+              href={`/dashboard/library?note=${note.document.id}`}
               className="block p-4 rounded-xl transition-colors hover:border-purple-500/50"
               style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
