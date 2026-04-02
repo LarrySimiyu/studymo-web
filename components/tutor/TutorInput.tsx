@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { SendHorizontal } from 'lucide-react';
 
 export interface ContextNote { id: string; title: string }
 
@@ -63,8 +64,8 @@ export default function TutorInput({
 
       {/* Input box */}
       <div
-        className="rounded-xl focus-within:ring-1 focus-within:ring-[#9747FF]/40 transition-shadow"
-        style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+        className="rounded-xl transition-shadow"
+        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)' }}
       >
         <textarea
           ref={ref}
@@ -108,18 +109,13 @@ export default function TutorInput({
             onClick={onSend}
             disabled={!value.trim() || disabled}
             className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+            <SendHorizontal size={14} color="white" />
           </button>
         </div>
       </div>
 
-      <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--text-3)' }}>
-        Enter to send · Shift+Enter for new line
-      </p>
     </div>
   );
 }

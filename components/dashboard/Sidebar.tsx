@@ -78,8 +78,8 @@ function NavLink({ href, icon, label, count, isActive, collapsed, small }: {
         small ? 'text-xs' : 'text-sm',
         collapsed ? 'justify-center' : '',
         isActive
-          ? 'active text-[var(--text-1)] bg-[var(--brand-subtle)]'
-          : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+          ? 'active text-[var(--text-1)] bg-[var(--bg-hover)]'
+          : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
       )}
     >
       <span className="leading-none shrink-0 flex items-center">{icon}</span>
@@ -157,7 +157,10 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (!isLibraryActive) return;
+    if (!isLibraryActive) {
+      setCollapsed(false);
+      return;
+    }
     foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
   }, [isLibraryActive]);
 
@@ -182,16 +185,18 @@ export default function Sidebar() {
         {!collapsed && (
           <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
         )}
-        <button
-          onClick={toggleCollapsed}
-          className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--brand-subtle)]', collapsed && 'mx-auto')}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
-            style={{ color: 'var(--text-3)', transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-            <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        {isLibraryActive && (
+          <button
+            onClick={toggleCollapsed}
+            className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--bg-hover)]', collapsed && 'mx-auto')}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+              style={{ color: 'var(--text-3)', transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+              <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -219,8 +224,8 @@ export default function Sidebar() {
                     className={cn(
                       'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
                       isLibraryActive && selectedFolder === 'all'
-                        ? 'text-[var(--text-1)] bg-[var(--brand-subtle)]'
-                        : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
                     )}
                   >
                     <span className="truncate flex-1">All Notes</span>
@@ -231,8 +236,8 @@ export default function Sidebar() {
                     className={cn(
                       'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
                       isFolderActive('none')
-                        ? 'text-[var(--text-1)] bg-[var(--brand-subtle)]'
-                        : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
                     )}
                   >
                     <span className="truncate flex-1">No Collection</span>
@@ -246,8 +251,8 @@ export default function Sidebar() {
                       className={cn(
                         'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
                         isFolderActive(f.id)
-                          ? 'text-[var(--brand)] bg-[var(--brand-subtle)]'
-                          : 'text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]'
+                          ? 'text-[var(--brand)] bg-[var(--bg-hover)]'
+                          : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
                       )}
                       style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                     >
@@ -259,7 +264,7 @@ export default function Sidebar() {
 
                   <button
                     onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--brand-subtle)] hover:text-[var(--text-1)]"
+                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
                   >
                     <span className="text-xs opacity-60">+</span>
                     <span>New Collection</span>
@@ -317,7 +322,7 @@ export default function Sidebar() {
         {!collapsed ? (
           <Link
             href="/dashboard/settings"
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--brand-subtle)]"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
@@ -333,7 +338,7 @@ export default function Sidebar() {
           <Link
             href="/dashboard/settings"
             title="Settings"
-            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--brand-subtle)]"
+            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
           >
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"

@@ -295,13 +295,13 @@ export default function TutorPage() {
 
       {/* ── Left sidebar ── */}
       <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)', borderRight: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between px-4 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 60 }}>
           <h2 className="text-sm font-semibold text-[var(--text-1)]">AI Tutor</h2>
           <button
             onClick={createSession}
             disabled={creatingSession}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-base font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
             title="New session"
           >
             {creatingSession ? (
@@ -313,7 +313,7 @@ export default function TutorPage() {
         <div className="flex-1 overflow-y-auto">
           {sessionsLoading ? (
             <div className="flex justify-center py-8">
-              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#9747FF', borderTopColor: 'transparent' }} />
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
             </div>
           ) : sessions.length === 0 ? (
             <p className="text-xs text-[var(--text-3)] text-center py-8 px-4">No sessions yet — start one to begin</p>
@@ -323,19 +323,17 @@ export default function TutorPage() {
                 <div
                   key={s.id}
                   onClick={() => loadSession(s.id)}
-                  className="block p-3 rounded-xl transition-colors hover:border-purple-500/50 cursor-pointer group"
+                  className="block p-3 rounded-xl transition-colors cursor-pointer group"
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: activeSession?.id === s.id ? '1px solid #9747FF' : '1px solid var(--border)',
+                    backgroundColor: activeSession?.id === s.id ? 'var(--bg-hover)' : 'var(--bg-card)',
                   }}
+                  onMouseEnter={e => { if (activeSession?.id !== s.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
+                  onMouseLeave={e => { if (activeSession?.id !== s.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--text-1)] truncate">{s.title}</p>
-                      <p className="text-xs text-[var(--text-3)] mt-0.5">{timeAgo(s.updatedAt)}</p>
-                      {s.lastMessage && (
-                        <p className="text-xs text-[var(--text-2)] mt-1 truncate">{s.lastMessage}</p>
-                      )}
+<p className="text-xs text-[var(--text-3)] mt-0.5">{timeAgo(s.updatedAt)}</p>
                     </div>
                     <button
                       onClick={e => deleteSession(s.id, e)}
@@ -378,7 +376,7 @@ export default function TutorPage() {
                     onClick={createSession}
                     disabled={creatingSession}
                     className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: '#9747FF' }}
+                    style={{ backgroundColor: 'var(--brand)' }}
                   >
                     {creatingSession ? 'Creating…' : 'Start Study Session'}
                   </button>
@@ -392,7 +390,7 @@ export default function TutorPage() {
           // ── Chat view ──
           <>
             {/* Top bar */}
-            <div className="flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-5 shrink-0" style={{ height: 60 }}>
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {editingTitle ? (
                   <input
@@ -403,7 +401,7 @@ export default function TutorPage() {
                     onBlur={saveTitle}
                     onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
                     className="text-sm font-semibold text-[var(--text-1)] bg-transparent border-b focus:outline-none flex-1 min-w-0"
-                    style={{ borderColor: '#9747FF' }}
+                    style={{ borderColor: 'var(--brand)' }}
                   />
                 ) : (
                   <button
@@ -423,7 +421,7 @@ export default function TutorPage() {
                   className="text-[var(--text-3)] hover:text-red-400 transition-colors p-1"
                   title="Delete session"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
                   </svg>
                 </button>
@@ -457,7 +455,7 @@ export default function TutorPage() {
               {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex items-center gap-1.5">
                   {[0, 150, 300].map(delay => (
-                    <div key={delay} className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: '#9747FF', animationDelay: `${delay}ms` }} />
+                    <div key={delay} className="w-2 h-2 rounded-full animate-bounce" style={{ backgroundColor: 'var(--brand)', animationDelay: `${delay}ms` }} />
                   ))}
                 </div>
               )}
@@ -473,7 +471,7 @@ export default function TutorPage() {
                       key={i}
                       onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
                       className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
-                      style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: '#9747FF' }}
+                      style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: 'var(--brand)' }}
                     >
                       {s}
                     </button>
@@ -482,17 +480,17 @@ export default function TutorPage() {
               )}
               {offerSaved && (
                 <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center gap-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   Added to notes successfully.
                 </div>
               )}
 
               {noteOffer && (
                 <div className="mb-2 px-3 py-2.5 rounded-xl text-sm flex items-start gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--brand-border)' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2" className="shrink-0 mt-0.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" className="shrink-0 mt-0.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-[var(--text-1)] mb-0.5">
-                      Save &ldquo;{noteOffer.heading}&rdquo; to <span style={{ color: '#9747FF' }}>{noteOffer.noteTitle}</span>?
+                      Save &ldquo;{noteOffer.heading}&rdquo; to <span style={{ color: 'var(--brand)' }}>{noteOffer.noteTitle}</span>?
                     </p>
                     <p className="text-xs text-[var(--text-3)] truncate">{noteOffer.content.slice(0, 80)}{noteOffer.content.length > 80 ? '…' : ''}</p>
                   </div>
@@ -501,7 +499,7 @@ export default function TutorPage() {
                       onClick={acceptOffer}
                       disabled={offerSaving}
                       className="text-xs px-2.5 py-1 rounded-lg font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                      style={{ backgroundColor: '#9747FF' }}
+                      style={{ backgroundColor: 'var(--brand)' }}
                     >
                       {offerSaving ? 'Saving…' : 'Add to notes'}
                     </button>
