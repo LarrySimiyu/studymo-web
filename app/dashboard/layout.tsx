@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/dashboard/Sidebar';
-import { StudyTimerProvider } from '@/context/StudyTimerContext';
-import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
+// import { StudyTimerProvider } from '@/context/StudyTimerContext';
+// import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
 import UploadModal from '@/components/upload/UploadModal';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
@@ -161,13 +161,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <StudyTimerProvider>
-      {/* AssistantProvider and AssistantPanel shelved — will restore when re-enabling */}
-      {/* <AssistantProvider> */}
-        <DashboardInner>{children}</DashboardInner>
-        <StudyTimerPanel />
-        {/* <AssistantPanel /> */}
-      {/* </AssistantProvider> */}
-    </StudyTimerProvider>
+    <>
+      {/* <StudyTimerProvider> */}
+      <DashboardInner>{children}</DashboardInner>
+      {/* <StudyTimerPanel /> */}
+      {/* </StudyTimerProvider> */}
+    </>
   );
 }

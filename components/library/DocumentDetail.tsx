@@ -31,10 +31,11 @@ import {
   Quiz,
 } from '@/lib/api/documents';
 import { tasksApi, Task } from '@/lib/api/tasks';
-import { useStudyTimer } from '@/context/StudyTimerContext';
+// import { useStudyTimer } from '@/context/StudyTimerContext';
 import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
+import SlidingTabs from '@/components/ui/SlidingTabs';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
@@ -203,7 +204,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const simplifyRangeRef = useRef<{ from: number; to: number } | null>(null);
   const isAudioDoc = doc ? ['audio', 'recording', 'video_url'].includes(doc.type) : false;
   const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics', ...(isAudioDoc ? ['transcript' as Tab] : [])];
-  const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
+  // const { startSession, status: timerStatus, isCollapsed, toggleCollapsed } = useStudyTimer();
 
   const fetchAll = useCallback(async () => {
     const { data: docData } = await documentsApi.getById(id);
@@ -741,23 +742,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         )}
         <span className="text-xs text-[var(--text-1)] truncate flex-1">{doc.title}</span>
         <div className="flex items-center gap-2 shrink-0">
-          {docTasks.filter(t => !t.completed).length > 0 && (
-            <button
-              onClick={async () => {
-                const activeTasks = docTasks.filter(t => !t.completed);
-                if (timerStatus !== 'idle') { if (isCollapsed) toggleCollapsed(); return; }
-                await startSession('timeblock', activeTasks.map(t => t.id));
-                if (isCollapsed) toggleCollapsed();
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs transition-all"
-              style={{ borderColor: 'rgba(151,71,255,0.3)', color: '#9747FF' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-              </svg>
-              {timerStatus === 'idle' ? 'Study Tasks' : 'View Timer'}
-            </button>
-          )}
+          {/* Study Tasks timer button — shelved with StudyTimerPanel */}
           {note && (
             <button
               onClick={() => setShowTutorPanel(v => !v)}
@@ -928,37 +913,21 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
 
       {doc.status !== 'complete' ? null : (
         <>
-          {/* Tabs — animated underline */}
-          <div className="relative flex gap-0 mb-6" style={{ borderBottom: '1px solid var(--border)' }}>
-            {tabs.map((t, i) => (
-              <button
-                key={t}
-                ref={el => { tabRefs.current[i] = el; }}
-                onClick={async () => {
-                  setTab(t);
-                  setActiveTabIndex(i);
-                  if (t === 'quiz' && !quiz) {
-                    const { data } = await quizzesApi.getByDocument(id);
-                    if (data) setQuiz(data);
-                  }
-                }}
-                className="px-4 py-2 text-xs relative"
-                style={{
-                  color: tab === t ? 'var(--text-1)' : 'var(--text-3)',
-                  fontWeight: tab === t ? 600 : 400,
-                  transition: 'color 0.15s, font-weight 0.15s',
-                }}
-              >
-                {t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-            {/* Animated underline — computed from active button */}
-            <span
-              className="absolute bottom-0 h-0.5 rounded-full bg-white"
-              style={{
-                left: tabRefs.current[activeTabIndex]?.offsetLeft ?? 0,
-                width: tabRefs.current[activeTabIndex]?.offsetWidth ?? 0,
-                transition: 'left 0.2s ease, width 0.2s ease',
+          {/* Tabs — sliding underline */}
+          <div className="mb-6">
+            <SlidingTabs
+              tabs={tabs.map(t => ({
+                value: t,
+                label: t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1),
+              }))}
+              active={tab}
+              onChange={async (t) => {
+                setTab(t);
+                setActiveTabIndex(tabs.indexOf(t));
+                if (t === 'quiz' && !quiz) {
+                  const { data } = await quizzesApi.getByDocument(id);
+                  if (data) setQuiz(data);
+                }
               }}
             />
           </div>

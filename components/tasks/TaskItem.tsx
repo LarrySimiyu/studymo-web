@@ -2,13 +2,6 @@
 
 import { Task } from '@/lib/api/tasks';
 
-function CheckIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
 function EditIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -25,13 +18,6 @@ function TrashIcon() {
     </svg>
   );
 }
-function TimerIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
 
 interface TaskItemProps {
   task: Task;
@@ -42,48 +28,41 @@ interface TaskItemProps {
 }
 
 export default function TaskItem({ task, size = 'default', onToggle, onEdit, onDelete }: TaskItemProps) {
-  const elapsed = Math.round(task.elapsedMins);
-  const estimated = task.estimatedMins;
-  const progress = estimated > 0 ? Math.min(1, elapsed / estimated) : 0;
-
   if (size === 'compact') {
     return (
       <div
-        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors ${task.completed ? 'opacity-60' : ''}`}
+        className={`group flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors ${task.completed ? 'opacity-50' : ''}`}
         style={{ backgroundColor: 'var(--bg-card)' }}
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
       >
         <button
           onClick={() => onToggle(task)}
-          className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors"
+          className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
           style={{
             backgroundColor: task.completed ? 'var(--brand)' : 'transparent',
-            border: task.completed ? 'none' : '2px solid var(--border-md)',
+            border: task.completed ? 'none' : '1.5px solid var(--border-md)',
           }}
+          onMouseEnter={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--brand)'; }}
+          onMouseLeave={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--border-md)'; }}
         >
-          {task.completed && <CheckIcon />}
+          {task.completed && (
+            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
         </button>
         <div className="flex-1 min-w-0">
-          <p
-            className={`text-xs font-medium truncate ${task.completed ? 'line-through' : ''}`}
-            style={{ color: task.completed ? 'var(--text-3)' : 'var(--text-1)' }}
-          >
+          <p className="text-xs font-medium truncate" style={{ color: task.completed ? 'var(--text-3)' : 'var(--text-1)', textDecoration: task.completed ? 'line-through' : 'none' }}>
             {task.title}
           </p>
           {task.tags[0]?.tag && (
-            <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 inline-block"
-              style={{ backgroundColor: task.tags[0]?.tag.color + '25', color: task.tags[0]?.tag.color }}
-            >
-              {task.tags[0]?.tag.name}
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full mt-0.5 inline-block" style={{ backgroundColor: task.tags[0].tag.color + '25', color: task.tags[0].tag.color }}>
+              {task.tags[0].tag.name}
             </span>
           )}
         </div>
-        {estimated > 0 && (
-          <span className="text-[10px] shrink-0" style={{ color: 'var(--text-3)' }}>{estimated}m</span>
-        )}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {onEdit && (
             <button onClick={() => onEdit(task)} className="p-1 rounded transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]">
               <EditIcon />
@@ -101,7 +80,7 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
 
   return (
     <div
-      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${task.completed ? 'opacity-50' : ''}`}
+      className={`group flex items-start gap-3 px-4 py-3 rounded-xl transition-colors ${task.completed ? 'opacity-50' : ''}`}
       style={{ backgroundColor: 'var(--bg-card)' }}
       onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
@@ -109,58 +88,72 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
       {/* Checkbox */}
       <button
         onClick={() => onToggle(task)}
-        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+        className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-all"
         style={{
           backgroundColor: task.completed ? 'var(--brand)' : 'transparent',
-          border: task.completed ? 'none' : '2px solid var(--border-md)',
+          border: task.completed ? 'none' : '1.5px solid var(--border-md)',
         }}
         onMouseEnter={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--brand)'; }}
         onMouseLeave={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--border-md)'; }}
       >
-        {task.completed && <CheckIcon />}
+        {task.completed && (
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
       </button>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-[var(--text-3)]' : 'text-[var(--text-1)]'}`}>
+        <p
+          className="text-sm font-medium leading-snug"
+          style={{
+            color: task.completed ? 'var(--text-3)' : 'var(--text-1)',
+            textDecoration: task.completed ? 'line-through' : 'none',
+          }}
+        >
           {task.title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {task.tags[0]?.tag && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: task.tags[0]?.tag.color + '30', color: task.tags[0]?.tag.color }}>
-              {task.tags[0]?.tag.name}
-            </span>
-          )}
-          {task.dueDate && (
-            <span className="text-xs text-[var(--text-3)]">
-              Due {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </span>
-          )}
-        </div>
-      </div>
 
-      {/* Progress / time — hidden on mobile */}
-      <div className="hidden sm:flex flex-col items-end flex-shrink-0 min-w-[72px]">
-        <div className="flex items-center gap-1 text-xs text-[var(--text-3)]">
-          <TimerIcon />
-          <span>{elapsed}m / {estimated}m</span>
-        </div>
-        {!task.completed && (
-          <div className="w-16 h-1 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--bg-input)' }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${progress * 100}%`, backgroundColor: 'var(--brand)' }} />
+        {/* Meta row */}
+        {(task.tags[0]?.tag || task.dueDate) && (
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {task.tags[0]?.tag && (
+              <span
+                className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ backgroundColor: task.tags[0].tag.color + '22', color: task.tags[0].tag.color }}
+              >
+                {task.tags[0].tag.name}
+              </span>
+            )}
+            {task.dueDate && (
+              <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+                Due {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
           </div>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+      {/* Actions — visible on hover */}
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5">
         {onEdit && (
-          <button onClick={() => onEdit(task)} className="p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] rounded-lg transition-colors">
+          <button
+            onClick={() => onEdit(task)}
+            className="p-1.5 rounded-lg transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]"
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
             <EditIcon />
           </button>
         )}
         {onDelete && (
-          <button onClick={() => onDelete(task.id)} className="p-1.5 text-[var(--text-3)] hover:text-red-400 rounded-lg transition-colors">
+          <button
+            onClick={() => onDelete(task.id)}
+            className="p-1.5 rounded-lg transition-colors text-[var(--text-3)] hover:text-red-400"
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
             <TrashIcon />
           </button>
         )}

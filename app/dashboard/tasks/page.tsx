@@ -3,38 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { tasksApi, Task, Tag } from '@/lib/api/tasks';
 import { docTagsApi } from '@/lib/api/documents';
-import { useStudyTimer } from '@/context/StudyTimerContext';
 import TaskItem from '@/components/tasks/TaskItem';
 import TaskModal from '@/components/tasks/TaskModal';
 import TagDropdown from '@/components/ui/TagDropdown';
+import SlidingTabs from '@/components/ui/SlidingTabs';
+import { Plus } from 'lucide-react';
 
-function TimerIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
 function XIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
       <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-function EditIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-}
-function TrashIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
     </svg>
   );
 }
@@ -182,8 +160,6 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
 
-  const { startSession, status, toggleCollapsed, isCollapsed } = useStudyTimer();
-
   const loadData = useCallback(async () => {
     const [tasksRes, tagsRes] = await Promise.all([
       tasksApi.getAll(),
@@ -205,15 +181,6 @@ export default function TasksPage() {
     if (!confirm('Delete this task?')) return;
     await tasksApi.delete(id);
     loadData();
-  };
-
-  const handleStartTimer = async (selectedTaskIds: string[]) => {
-    if (status !== 'idle') {
-      if (isCollapsed) toggleCollapsed();
-      return;
-    }
-    const err = await startSession('timeblock', selectedTaskIds);
-    if (!err && isCollapsed) toggleCollapsed();
   };
 
   const filteredTasks = tasks.filter(t => {
@@ -246,79 +213,51 @@ export default function TasksPage() {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-[var(--text-1)]">Tasks</h1>
-          <p className="text-sm text-[var(--text-2)] mt-1 hidden sm:block">
-            {activeTasks.length} active · {completedCount} completed · ~{Math.round(totalEstimated / 60)}h estimated
-          </p>
-          <p className="text-xs text-[var(--text-2)] mt-0.5 sm:hidden">
-            {activeTasks.length} active · {completedCount} done
-          </p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          {activeTasks.length > 0 && (
-            <button
-              onClick={() => handleStartTimer(activeTasks.map(t => t.id))}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-sm transition-colors"
-              style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-            >
-              <TimerIcon />
-              <span className="hidden sm:inline">{status === 'idle' ? 'Start Session' : 'View Timer'}</span>
-            </button>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-1)]">Tasks</h1>
+        <div className="flex items-center gap-2 shrink-0">
+          {tags.length > 0 && (
+            <TagDropdown
+              tags={tags}
+              value={tagFilter || undefined}
+              onChange={id => setTagFilter(prev => prev === id ? '' : id)}
+              onManageTags={() => setShowTagManager(true)}
+              align="right"
+            />
           )}
           <button
             onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity"
             style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <Plus size={14} />
             <span className="hidden sm:inline">New Task</span>
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: 'var(--bg-card)' }}>
-          {(['all', 'active', 'completed'] as FilterTab[]).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-lg text-sm capitalize transition-all"
-              style={{
-                backgroundColor: filter === f ? 'var(--brand)' : 'transparent',
-                color: filter === f ? '#fff' : 'var(--text-2)',
-              }}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {tags.length > 0 && (
-          <TagDropdown
-            tags={tags}
-            value={tagFilter || undefined}
-            onChange={id => setTagFilter(prev => prev === id ? '' : id)}
-            onManageTags={() => setShowTagManager(true)}
-            align="left"
-          />
-        )}
-
+      {/* Sliding tabs + active tag chip */}
+      <div className="flex items-end justify-between gap-3 mb-5">
+        <SlidingTabs
+          tabs={[
+            { value: 'active' as FilterTab, label: 'Active', count: activeTasks.length },
+            { value: 'all' as FilterTab, label: 'All', count: tasks.length },
+            { value: 'completed' as FilterTab, label: 'Completed', count: completedCount },
+          ]}
+          active={filter}
+          onChange={setFilter}
+        />
         {tagFilter && (
           <button
             onClick={() => setTagFilter('')}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors"
+            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg mb-1 transition-colors shrink-0"
             style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
           >
-            {tags.find(t => t.id === tagFilter)?.name}
+            <span style={{ color: tags.find(t => t.id === tagFilter)?.color }}>
+              {tags.find(t => t.id === tagFilter)?.name}
+            </span>
             <XIcon />
           </button>
         )}
@@ -331,25 +270,27 @@ export default function TasksPage() {
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className="text-center py-20">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.5">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" strokeWidth="1.5">
               <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
             </svg>
           </div>
           <p className="text-[var(--text-2)] text-sm">
-            {filter === 'completed' ? 'No completed tasks yet' : 'No tasks yet. Create one to get started!'}
+            {filter === 'completed' ? 'No completed tasks yet' : 'No tasks. Add one to get started!'}
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {grouped.map(group => (
             <div key={group.label}>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 px-1">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
-                <span className="text-xs font-medium text-[var(--text-2)] uppercase tracking-wider">{group.label}</span>
-                <span className="text-xs text-[var(--text-3)]">({group.tasks.length})</span>
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>
+                  {group.label}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-3)' }}>{group.tasks.length}</span>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {group.tasks.map(task => (
                   <TaskItem
                     key={task.id}
