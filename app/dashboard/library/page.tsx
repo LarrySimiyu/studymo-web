@@ -211,10 +211,10 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
   return (
     <div
       onClick={onClick}
-      className="group relative mx-2 my-1 px-3 py-2.5 cursor-pointer transition-colors rounded-xl"
-      style={{
-        backgroundColor: isSelected ? 'var(--bg-hover)' : 'transparent',
-      }}
+      className="group relative mx-2 my-2 px-3 py-2.5 cursor-pointer transition-colors rounded-xl"
+      style={{ backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-card)' }}
+      onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
+      onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">

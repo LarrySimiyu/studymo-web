@@ -172,7 +172,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
         {showContextPanel && session && (
           <ContextPicker
             loadedNotes={session.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
-            availableNotes={availableNotes}
+            availableNotes={availableNotes.map(n => ({ id: n.id, title: n.document.title }))}
             noteSearch={noteSearch}
             onNoteSearchChange={setNoteSearch}
             onRemove={removeNote}
