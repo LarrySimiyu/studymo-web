@@ -202,7 +202,18 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
         <NavLink href="/dashboard" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
-        <NavLink href="/dashboard/tutor" icon={<Star size={16} />} label="AI Tutor" isActive={isActive('/dashboard/tutor')} collapsed={collapsed} />
+        <Link
+          href="/dashboard/tutor"
+          title={collapsed ? 'AI Tutor' : undefined}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-opacity text-sm text-white hover:opacity-90',
+            collapsed ? 'justify-center' : '',
+          )}
+          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+        >
+          <Star size={16} className="shrink-0" fill="white" />
+          {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
+        </Link>
 
         {/* ── NOTES ── */}
         <SectionHeader label="Notes" icon={FolderIcon} collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />

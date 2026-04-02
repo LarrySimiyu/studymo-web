@@ -762,8 +762,11 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
             <button
               onClick={() => setShowTutorPanel(v => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #9747FF 0%, #6366f1 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #FF6500 0%, #FF9A3C 100%)' }}
             >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
               AI Tutor
             </button>
           )}
@@ -834,9 +837,14 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           </span>
         ))}
         <TagDropdown
-          tags={allDocTags.filter(t => !(doc.tags ?? []).some(dt => dt.tagId === t.id))}
+          tags={allDocTags}
           placeholder="+ Tag"
-          onChange={async tagId => { await documentsApi.addTag(id, tagId); fetchAll(); }}
+          selectedIds={new Set((doc.tags ?? []).map(dt => dt.tagId))}
+          onChange={async tagId => {
+            const isApplied = (doc.tags ?? []).some(dt => dt.tagId === tagId);
+            if (isApplied) { await documentsApi.removeTag(id, tagId); } else { await documentsApi.addTag(id, tagId); }
+            fetchAll();
+          }}
           onManageTags={() => setShowCreateTagModal(true)}
         />
       </div>
