@@ -8,6 +8,7 @@ import UploadModal from '@/components/upload/UploadModal';
 import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
+import AddButton from '@/components/ui/AddButton';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
 
@@ -472,30 +473,39 @@ export default function LibraryPage() {
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-body-sm font-semibold text-[var(--text-1)]">{folderName}</h1>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="flex items-center justify-center w-7 h-7 rounded-lg text-white hover:opacity-90 transition-opacity text-xl leading-none"
-                style={{ backgroundColor: '#9747FF' }}
-              >
-                +
-              </button>
+              <AddButton onClick={() => setShowUpload(true)} title="New note" />
             </div>
-            {/* Search */}
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search notes…"
-              className="w-full px-3 py-1.5 rounded-lg text-body-sm outline-none text-[var(--text-1)] placeholder-[var(--text-3)] mb-2"
-              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
-            />
-            {/* Tag filter pill */}
-            <TagDropdown
-              tags={availableTags}
-              value={tagFilter}
-              onChange={setTagFilter}
-              onManageTags={() => setShowManageTags(true)}
-            />
-            {/* Manage Tags link */}
+            {/* Search + filter */}
+            <div className="flex items-center gap-1.5">
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search notes…"
+                className="flex-1 px-3 py-1.5 rounded-lg text-body-sm outline-none text-[var(--text-1)] placeholder-[var(--text-3)]"
+                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
+              />
+              <TagDropdown
+                tags={availableTags}
+                value={tagFilter}
+                onChange={setTagFilter}
+                onManageTags={() => setShowManageTags(true)}
+                align="right"
+              />
+            </div>
+            {tagFilter && (() => {
+              const tag = availableTags.find(t => t.id === tagFilter);
+              return tag ? (
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span
+                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
+                    style={{ backgroundColor: (tag.color ?? 'var(--brand)') + '25', color: tag.color ?? 'var(--brand)' }}
+                  >
+                    {tag.name}
+                    <button onClick={() => setTagFilter('')} className="leading-none hover:opacity-70 ml-0.5">×</button>
+                  </span>
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* Note list */}

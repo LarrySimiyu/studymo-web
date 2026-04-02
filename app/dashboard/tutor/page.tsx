@@ -15,6 +15,7 @@ import {
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
 import TutorInput from '@/components/tutor/TutorInput';
+import AddButton from '@/components/ui/AddButton';
 import UserBubble from '@/components/tutor/UserBubble';
 import ContextPicker from '@/components/tutor/ContextPicker';
 
@@ -297,17 +298,7 @@ export default function TutorPage() {
       <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)', borderRight: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 60 }}>
           <h2 className="text-sm font-semibold text-[var(--text-1)]">AI Tutor</h2>
-          <button
-            onClick={createSession}
-            disabled={creatingSession}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-base font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: 'var(--brand)' }}
-            title="New session"
-          >
-            {creatingSession ? (
-              <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-            ) : '+'}
-          </button>
+          <AddButton onClick={createSession} loading={creatingSession} title="New session" />
         </div>
 
         <div className="flex-1 overflow-y-auto">

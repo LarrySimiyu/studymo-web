@@ -2,7 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Heart, ArrowLeft } from 'lucide-react';
 import { documentsApi, quizzesApi, Document, Quiz } from '@/lib/api/documents';
+import NewNoteButton from '@/components/ui/NewNoteButton';
+import ProgressBar from '@/components/ui/ProgressBar';
+import QuestionCard from '@/components/ui/QuestionCard';
+
+const PALETTE: [string, string][] = [
+  ['#FF6500', 'rgba(255,101,0,0.12)'],
+  ['#22C55E', 'rgba(34,197,94,0.12)'],
+  ['#3B82F6', 'rgba(59,130,246,0.12)'],
+  ['#F59E0B', 'rgba(245,158,11,0.12)'],
+  ['#EC4899', 'rgba(236,72,153,0.12)'],
+  ['#8B5CF6', 'rgba(139,92,246,0.12)'],
+  ['#14B8A6', 'rgba(20,184,166,0.12)'],
+];
+
+function getPalette(id: string): [string, string] {
+  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return PALETTE[hash % PALETTE.length];
+}
 
 interface DeckEntry {
   document: Document;
@@ -15,6 +34,28 @@ interface QuizQuestion {
   options?: string[];
   correctAnswer: string;
   explanation: string;
+}
+
+function StartScreen({ documentId, title, count, onStart }: { documentId: string; title: string; count: number; onStart: () => void }) {
+  const [iconColor, iconBg] = getPalette(documentId);
+  return (
+    <div className="flex flex-col items-center gap-6 py-20 text-center">
+      <div className="w-28 h-28 rounded-full flex items-center justify-center" style={{ backgroundColor: iconBg }}>
+        <Heart size={52} style={{ color: iconColor }} fill={iconColor} />
+      </div>
+      <div>
+        <p className="text-3xl font-bold text-[var(--text-1)]">{count} Questions</p>
+        <p className="text-sm text-[var(--text-3)] mt-1">{title}</p>
+      </div>
+      <button
+        onClick={onStart}
+        className="px-8 py-3 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
+        style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+      >
+        Start Quiz
+      </button>
+    </div>
+  );
 }
 
 // ── Inline quiz runner ──────────────────────────────────────────────
@@ -67,32 +108,23 @@ function QuizRunner({ deck, onBack }: { deck: DeckEntry; onBack: () => void }) {
 
   return (
     <div className="max-w-2xl mx-auto py-4">
-      <div className="flex items-center gap-3 mb-8">
+      <div className="mb-8">
         <button onClick={onBack} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
-          ← Back
+          <ArrowLeft size={20} />
         </button>
-        <div>
-          <h1 className="text-lg font-bold text-[var(--text-1)]">{deck.document.title}</h1>
-          <p className="text-xs text-[var(--text-2)]">{questions.length} questions</p>
-        </div>
       </div>
 
       {!started ? (
-        <div className="flex flex-col items-center gap-4 py-12 text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{ backgroundColor: 'var(--bg-input)' }}>❓</div>
-          <p className="text-[var(--text-1)] font-medium">{questions.length} questions ready</p>
-          <button
-            onClick={() => setStarted(true)}
-            className="px-6 py-2.5 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
-          >
-            Start Quiz
-          </button>
-        </div>
+        <StartScreen
+          documentId={deck.document.id}
+          title={deck.document.title}
+          count={questions.length}
+          onStart={() => setStarted(true)}
+        />
       ) : done ? (
         <div className="flex flex-col items-center gap-4 py-12 text-center">
           <p className="text-5xl font-bold text-[var(--text-1)]">{score} / {questions.length}</p>
-          <p className="text-2xl font-semibold" style={{ color: '#9747FF' }}>
+          <p className="text-2xl font-semibold" style={{ color: 'var(--brand)' }}>
             {Math.round((score / questions.length) * 100)}%
           </p>
           <p className="text-[var(--text-2)] text-sm">
@@ -102,7 +134,7 @@ function QuizRunner({ deck, onBack }: { deck: DeckEntry; onBack: () => void }) {
             <button
               onClick={reset}
               className="px-5 py-2.5 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: '#9747FF' }}
+              style={{ backgroundColor: 'var(--brand)' }}
             >
               Retake Quiz
             </button>
@@ -118,107 +150,22 @@ function QuizRunner({ deck, onBack }: { deck: DeckEntry; onBack: () => void }) {
       ) : (
         <div>
           {/* Progress bar */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-input)' }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${((qIndex) / questions.length) * 100}%`, backgroundColor: '#9747FF' }}
-              />
-            </div>
-            <span className="text-xs shrink-0" style={{ color: 'var(--text-3)' }}>
-              {qIndex + 1} / {questions.length}
-            </span>
+          <div className="mb-6">
+            <ProgressBar index={qIndex} total={questions.length} />
           </div>
 
-          <div className="rounded-xl p-6 mb-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-[var(--text-1)] font-medium mb-5">{questions[qIndex].question}</p>
-
-            {questions[qIndex].type === 'multiple_choice' && (
-              <div className="space-y-2">
-                {questions[qIndex].options?.map(opt => {
-                  const isCorrect = opt === questions[qIndex].correctAnswer;
-                  const isSelected = selected === opt;
-                  let bg = 'var(--bg-input)';
-                  let border = 'var(--border-md)';
-                  if (selected) {
-                    if (isCorrect) { bg = '#16a34a15'; border = '#16a34a'; }
-                    else if (isSelected) { bg = '#dc262615'; border = '#dc2626'; }
-                  }
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => handleAnswer(opt)}
-                      className="w-full text-left px-4 py-3 rounded-lg text-sm text-[var(--text-1)] transition-colors"
-                      style={{ backgroundColor: bg, border: `1px solid ${border}` }}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {questions[qIndex].type === 'true_false' && (
-              <div className="flex gap-3">
-                {['True', 'False'].map(opt => {
-                  const isCorrect = opt === questions[qIndex].correctAnswer;
-                  const isSelected = selected === opt;
-                  let bg = 'var(--bg-input)';
-                  let border = 'var(--border-md)';
-                  if (selected) {
-                    if (isCorrect) { bg = '#16a34a15'; border = '#16a34a'; }
-                    else if (isSelected) { bg = '#dc262615'; border = '#dc2626'; }
-                  }
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => handleAnswer(opt)}
-                      className="flex-1 py-3 rounded-lg text-sm font-medium text-[var(--text-1)] transition-colors"
-                      style={{ backgroundColor: bg, border: `1px solid ${border}` }}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {questions[qIndex].type === 'short_answer' && (
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={shortAnswer}
-                  onChange={e => setShortAnswer(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !selected && shortAnswer && handleAnswer(shortAnswer)}
-                  disabled={selected !== null}
-                  className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] focus:outline-none"
-                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
-                  placeholder="Type your answer…"
-                />
-                {selected === null && (
-                  <button
-                    onClick={() => shortAnswer && handleAnswer(shortAnswer)}
-                    disabled={!shortAnswer}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-opacity"
-                    style={{ backgroundColor: '#9747FF' }}
-                  >
-                    Submit
-                  </button>
-                )}
-              </div>
-            )}
-
-            {selected !== null && questions[qIndex].explanation && (
-              <div className="mt-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
-                <p className="font-medium mb-1" style={{ color: '#9747FF' }}>
-                  {questions[qIndex].type === 'short_answer'
-                    ? `Expected: ${questions[qIndex].correctAnswer}`
-                    : selected === questions[qIndex].correctAnswer ? '✓ Correct!' : '✗ Incorrect'}
-                </p>
-                <p className="text-[var(--text-1)]">{questions[qIndex].explanation}</p>
-              </div>
-            )}
-          </div>
+          <QuestionCard
+            question={questions[qIndex].question}
+            type={questions[qIndex].type}
+            options={questions[qIndex].options}
+            correctAnswer={questions[qIndex].correctAnswer}
+            explanation={questions[qIndex].explanation}
+            revealAnswer={true}
+            selected={selected}
+            shortAnswerValue={shortAnswer}
+            onShortAnswerChange={setShortAnswer}
+            onAnswer={handleAnswer}
+          />
 
           <div className="flex gap-2">
             {selected === null && (
@@ -234,9 +181,9 @@ function QuizRunner({ deck, onBack }: { deck: DeckEntry; onBack: () => void }) {
               <button
                 onClick={next}
                 className="flex-1 py-2.5 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#9747FF' }}
+                style={{ backgroundColor: 'var(--brand)' }}
               >
-                {qIndex + 1 >= questions.length ? 'See Results' : 'Next →'}
+                {qIndex + 1 >= questions.length ? 'See Results' : 'Next'}
               </button>
             )}
           </div>
@@ -289,18 +236,12 @@ export default function QuizzesPage() {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[var(--text-1)]">Quizzes</h1>
-        <Link
-          href="/dashboard/library"
-          className="text-xs px-3 py-1.5 rounded-lg font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
-        >
-          + Upload Note
-        </Link>
+        <NewNoteButton />
       </div>
 
       {loading || deckLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#9747FF' }} />
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--brand)' }} />
         </div>
       ) : decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -310,34 +251,43 @@ export default function QuizzesPage() {
           <Link
             href="/dashboard/library"
             className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
           >
             Go to Notes
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {decks.map(entry => (
-            <button
-              key={entry.document.id}
-              onClick={() => openDeck(entry)}
-              className="block p-5 rounded-xl transition-colors hover:border-purple-500/50 text-left"
-              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                  style={{ backgroundColor: 'var(--bg-input)' }}
-                >
-                  ❓
+          {decks.map(entry => {
+            const [iconColor, iconBg] = getPalette(entry.document.id);
+            const count = questions(entry.quiz);
+            return (
+              <button
+                key={entry.document.id}
+                onClick={() => openDeck(entry)}
+                className="p-5 rounded-xl transition-colors text-left"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}
+                  >
+                    <Heart size={26} style={{ color: iconColor }} fill={iconColor} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">{count}</p>
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">Questions</p>
+                    </div>
+                    <p className="text-xs text-[var(--text-3)] truncate mt-1">{entry.document.title}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[var(--text-1)] font-medium text-sm truncate">{entry.document.title}</p>
-                  <p className="text-[var(--text-2)] text-xs mt-0.5">{questions(entry.quiz)} questions</p>
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

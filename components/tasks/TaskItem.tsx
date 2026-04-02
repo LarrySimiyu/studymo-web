@@ -27,7 +27,7 @@ function TrashIcon() {
 }
 function TimerIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
     </svg>
   );
@@ -35,7 +35,6 @@ function TimerIcon() {
 
 interface TaskItemProps {
   task: Task;
-  /** 'default' = full tasks-page row; 'compact' = smaller calendar row */
   size?: 'default' | 'compact';
   onToggle: (task: Task) => void;
   onEdit?: (task: Task) => void;
@@ -50,22 +49,21 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
   if (size === 'compact') {
     return (
       <div
-        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg ${task.completed ? 'opacity-60' : ''}`}
-        style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}
+        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-colors ${task.completed ? 'opacity-60' : ''}`}
+        style={{ backgroundColor: 'var(--bg-card)' }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
       >
-        {/* Checkbox */}
         <button
           onClick={() => onToggle(task)}
           className="w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors"
           style={{
-            backgroundColor: task.completed ? '#9747FF' : 'transparent',
+            backgroundColor: task.completed ? 'var(--brand)' : 'transparent',
             border: task.completed ? 'none' : '2px solid var(--border-md)',
           }}
         >
           {task.completed && <CheckIcon />}
         </button>
-
-        {/* Title + tag */}
         <div className="flex-1 min-w-0">
           <p
             className={`text-xs font-medium truncate ${task.completed ? 'line-through' : ''}`}
@@ -82,27 +80,17 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
             </span>
           )}
         </div>
-
-        {/* Est. time */}
         {estimated > 0 && (
           <span className="text-[10px] shrink-0" style={{ color: 'var(--text-3)' }}>{estimated}m</span>
         )}
-
-        {/* Actions */}
         <div className="flex items-center gap-1 shrink-0">
           {onEdit && (
-            <button
-              onClick={() => onEdit(task)}
-              className="p-1 rounded transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]"
-            >
+            <button onClick={() => onEdit(task)} className="p-1 rounded transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]">
               <EditIcon />
             </button>
           )}
           {onDelete && (
-            <button
-              onClick={() => onDelete(task.id)}
-              className="p-1 rounded transition-colors text-[var(--text-3)] hover:text-red-400"
-            >
+            <button onClick={() => onDelete(task.id)} className="p-1 rounded transition-colors text-[var(--text-3)] hover:text-red-400">
               <TrashIcon />
             </button>
           )}
@@ -111,19 +99,23 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
     );
   }
 
-  // Default (full) size
   return (
     <div
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${task.completed ? 'opacity-50' : ''}`}
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: `1px solid ${task.completed ? 'var(--border)' : 'var(--border-md)'}`,
-      }}
+      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${task.completed ? 'opacity-50' : ''}`}
+      style={{ backgroundColor: 'var(--bg-card)' }}
+      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
     >
       {/* Checkbox */}
       <button
         onClick={() => onToggle(task)}
-        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${task.completed ? 'bg-[#9747FF] border-[#9747FF]' : 'border-[var(--border-md)] hover:border-[#9747FF]'}`}
+        className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+        style={{
+          backgroundColor: task.completed ? 'var(--brand)' : 'transparent',
+          border: task.completed ? 'none' : '2px solid var(--border-md)',
+        }}
+        onMouseEnter={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--brand)'; }}
+        onMouseLeave={e => { if (!task.completed) e.currentTarget.style.borderColor = 'var(--border-md)'; }}
       >
         {task.completed && <CheckIcon />}
       </button>
@@ -133,7 +125,7 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
         <p className={`text-sm font-medium truncate ${task.completed ? 'line-through text-[var(--text-3)]' : 'text-[var(--text-1)]'}`}>
           {task.title}
         </p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {task.tags[0]?.tag && (
             <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: task.tags[0]?.tag.color + '30', color: task.tags[0]?.tag.color }}>
               {task.tags[0]?.tag.name}
@@ -147,15 +139,15 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
         </div>
       </div>
 
-      {/* Progress / time */}
-      <div className="flex-shrink-0 text-right min-w-[80px]">
-        <div className="flex items-center gap-1 justify-end text-xs text-[var(--text-3)]">
+      {/* Progress / time — hidden on mobile */}
+      <div className="hidden sm:flex flex-col items-end flex-shrink-0 min-w-[72px]">
+        <div className="flex items-center gap-1 text-xs text-[var(--text-3)]">
           <TimerIcon />
           <span>{elapsed}m / {estimated}m</span>
         </div>
         {!task.completed && (
-          <div className="w-20 h-1 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
-            <div className="h-full bg-[#9747FF] rounded-full transition-all" style={{ width: `${progress * 100}%` }} />
+          <div className="w-16 h-1 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--bg-input)' }}>
+            <div className="h-full rounded-full transition-all" style={{ width: `${progress * 100}%`, backgroundColor: 'var(--brand)' }} />
           </div>
         )}
       </div>
@@ -163,12 +155,12 @@ export default function TaskItem({ task, size = 'default', onToggle, onEdit, onD
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
         {onEdit && (
-          <button onClick={() => onEdit(task)} className="p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] rounded-lg hover:bg-black/5 transition-all">
+          <button onClick={() => onEdit(task)} className="p-1.5 text-[var(--text-3)] hover:text-[var(--text-1)] rounded-lg transition-colors">
             <EditIcon />
           </button>
         )}
         {onDelete && (
-          <button onClick={() => onDelete(task.id)} className="p-1.5 text-[var(--text-3)] hover:text-red-400 rounded-lg hover:bg-black/5 transition-all">
+          <button onClick={() => onDelete(task.id)} className="p-1.5 text-[var(--text-3)] hover:text-red-400 rounded-lg transition-colors">
             <TrashIcon />
           </button>
         )}
