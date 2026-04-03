@@ -53,8 +53,10 @@ async function request<T>(
 
     // Invalidate related GET cache on mutations
     if (!isGet) {
-      // Strip query string to get the base resource path
-      const basePath = path.split('?')[0];
+      // Use top-level resource (e.g. '/notes' from '/notes/abc123') so mutations
+      // correctly invalidate GET endpoints that use different IDs (note ID vs document ID)
+      const segments = path.split('?')[0].split('/');
+      const basePath = '/' + segments[1];
       invalidatePrefix(basePath);
     }
 
