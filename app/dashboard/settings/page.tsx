@@ -28,7 +28,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-2">
+    <div className="max-w-2xl mx-auto px-6 py-6">
       <h1 className="text-2xl font-bold text-[var(--text-1)] mb-6">Settings</h1>
 
       {/* Profile */}

@@ -7,7 +7,7 @@ import TaskItem from '@/components/tasks/TaskItem';
 import TaskModal from '@/components/tasks/TaskModal';
 import TagDropdown from '@/components/ui/TagDropdown';
 import SlidingTabs from '@/components/ui/SlidingTabs';
-import { Plus } from 'lucide-react';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 
 function XIcon() {
   return (
@@ -211,33 +211,23 @@ export default function TasksPage() {
   const totalEstimated = activeTasks.reduce((s, t) => s + t.estimatedMins, 0);
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-1)]">Tasks</h1>
-        <div className="flex items-center gap-2 shrink-0">
-          {tags.length > 0 && (
-            <TagDropdown
-              tags={tags}
-              value={tagFilter || undefined}
-              onChange={id => setTagFilter(prev => prev === id ? '' : id)}
-              onManageTags={() => setShowTagManager(true)}
-              align="right"
-            />
-          )}
-          <button
-            onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-          >
-            <Plus size={14} />
-            <span className="hidden sm:inline">New Task</span>
-          </button>
-        </div>
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <PageHeader
+        title="Tasks"
+        actionSlot={tags.length > 0 ? (
+          <TagDropdown
+            tags={tags}
+            value={tagFilter || undefined}
+            onChange={id => setTagFilter(prev => prev === id ? '' : id)}
+            onManageTags={() => setShowTagManager(true)}
+            align="right"
+          />
+        ) : undefined}
+        action={{ label: 'New Task', onClick: () => { setEditingTask(null); setShowTaskModal(true); } }}
+      />
 
       {/* Sliding tabs + active tag chip */}
-      <div className="flex items-end justify-between gap-3 mb-5">
+      <div className="flex items-end justify-between gap-3 mb-5 flex-wrap">
         <SlidingTabs
           tabs={[
             { value: 'active' as FilterTab, label: 'Active', count: activeTasks.length },

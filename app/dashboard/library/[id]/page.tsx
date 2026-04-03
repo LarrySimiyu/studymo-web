@@ -5,5 +5,9 @@ import DocumentDetail from '@/components/library/DocumentDetail';
 
 export default function DocumentDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  return <DocumentDetail id={params.id} onBack={() => router.push('/dashboard/library')} />;
+  return (
+    <div className="p-6 h-full">
+      <DocumentDetail id={params.id} onBack={() => router.push('/dashboard/library')} />
+    </div>
+  );
 }

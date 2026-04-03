@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart, ArrowLeft } from 'lucide-react';
 import { documentsApi, quizzesApi, Document, Quiz } from '@/lib/api/documents';
-import NewNoteButton from '@/components/ui/NewNoteButton';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import ProgressBar from '@/components/ui/ProgressBar';
 import QuestionCard from '@/components/ui/QuestionCard';
 
@@ -107,7 +107,7 @@ function QuizRunner({ deck, onBack }: { deck: DeckEntry; onBack: () => void }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-4">
+    <div className="max-w-2xl mx-auto py-4 px-4 sm:px-6">
       <div className="mb-8">
         <button onClick={onBack} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
           <ArrowLeft size={20} />
@@ -233,11 +233,8 @@ export default function QuizzesPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-1)]">Quizzes</h1>
-        <NewNoteButton />
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <PageHeader title="Quizzes" action={{ label: 'New Quiz', href: '/dashboard/library' }} />
 
       {loading || deckLoading ? (
         <div className="flex items-center justify-center py-20">

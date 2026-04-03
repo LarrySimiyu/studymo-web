@@ -36,6 +36,8 @@ import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 import SlidingTabs from '@/components/ui/SlidingTabs';
+import FlipCard from '@/components/flashcards/FlipCard';
+import QuizRunner from '@/components/quiz/QuizRunner';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
@@ -179,6 +181,13 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const dotsMenuRef = useRef<HTMLDivElement>(null);
   const [showTutorPanel, setShowTutorPanel] = useState(false);
   const [tutorPanelWidth, setTutorPanelWidth] = useState(380);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const [tutorSessionId, setTutorSessionId] = useState<string | null>(null);
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
@@ -802,7 +811,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           }, 600);
         }}
         placeholder="Untitled"
-        className="w-full bg-transparent border-none outline-none text-2xl font-semibold text-[var(--text-1)] placeholder-[var(--text-3)] mb-3"
+        className="w-full bg-transparent border-none outline-none text-heading-sm md:text-heading font-semibold text-[var(--text-1)] placeholder-[var(--text-3)] mb-3"
       />
 
       {/* Tags row */}
@@ -948,7 +957,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
 
           {/* Flashcards Tab */}
           {tab === 'flashcards' && (
-            <div>
+            <div className="flex flex-col items-center">
               {flashcards.length === 0 ? (
                 <GeneratePrompt
                   icon="🗂"
@@ -960,55 +969,13 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
                   }}
                 />
               ) : (
-                <div className="flex flex-col items-center gap-6">
-                  <p className="text-sm text-[var(--text-2)]">{flashcards.length} Flashcards · Space to flip · ← → to navigate</p>
-                  <div className="w-full max-w-lg" style={{ height: 280, perspective: 1000 }}>
-                    <div
-                      className="relative w-full h-full cursor-pointer"
-                      style={{
-                        transformStyle: 'preserve-3d',
-                        transition: 'transform 0.5s',
-                        transform: cardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                      }}
-                      onClick={() => setCardFlipped((f) => !f)}
-                    >
-                      <div
-                        className="absolute inset-0 flex items-center justify-center p-8 rounded-2xl"
-                        style={{ backfaceVisibility: 'hidden', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-                      >
-                        <p className="text-center text-[var(--text-1)] text-lg font-medium">{flashcards[cardIndex]?.front}</p>
-                      </div>
-                      <div
-                        className="absolute inset-0 flex items-center justify-center p-8 rounded-2xl"
-                        style={{
-                          backfaceVisibility: 'hidden',
-                          transform: 'rotateY(180deg)',
-                          backgroundColor: 'var(--bg-card)',
-                          border: '1px solid #9747FF',
-                        }}
-                      >
-                        <p className="text-center text-[var(--text-1)] text-base">{flashcards[cardIndex]?.back}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => { setCardIndex((i) => Math.max(i - 1, 0)); setCardFlipped(false); }}
-                      disabled={cardIndex === 0}
-                      className="px-4 py-2 rounded-lg text-sm text-[var(--text-1)] disabled:opacity-30 hover:bg-black/5 transition-colors"
-                    >
-                      ← Prev
-                    </button>
-                    <span className="text-sm text-[var(--text-2)]">{cardIndex + 1} / {flashcards.length}</span>
-                    <button
-                      onClick={() => { setCardIndex((i) => Math.min(i + 1, flashcards.length - 1)); setCardFlipped(false); }}
-                      disabled={cardIndex === flashcards.length - 1}
-                      className="px-4 py-2 rounded-lg text-sm text-[var(--text-1)] disabled:opacity-30 hover:bg-black/5 transition-colors"
-                    >
-                      Next →
-                    </button>
-                  </div>
-                </div>
+                <FlipCard
+                  cards={flashcards}
+                  index={cardIndex}
+                  onPrev={() => setCardIndex(i => Math.max(0, i - 1))}
+                  onNext={() => setCardIndex(i => Math.min(flashcards.length - 1, i + 1))}
+                  onRestart={() => setCardIndex(0)}
+                />
               )}
             </div>
           )}
@@ -1016,128 +983,15 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           {/* Quiz Tab */}
           {tab === 'quiz' && (
             <div>
-              {!quiz || questions.length === 0 ? (
+              {!quiz ? (
                 <QuizGeneratePrompt
                   onGenerate={async (types) => {
                     const { data } = await quizzesApi.generate(id, types);
                     if (data) setQuiz(data);
                   }}
                 />
-              ) : !quizStarted ? (
-                <div className="flex flex-col items-center gap-4 py-10">
-                  <p className="text-[var(--text-1)] font-medium">{questions.length} questions</p>
-                  <button
-                    onClick={() => setQuizStarted(true)}
-                    className="px-6 py-2.5 rounded-lg font-medium text-white hover:opacity-90"
-                    style={{ backgroundColor: '#9747FF' }}
-                  >
-                    Start Quiz
-                  </button>
-                </div>
-              ) : quizDone ? (
-                <div className="flex flex-col items-center gap-4 py-10 text-center">
-                  <p className="text-5xl font-bold text-[var(--text-1)]">{score} / {questions.length}</p>
-                  <p className="text-2xl font-semibold" style={{ color: '#9747FF' }}>
-                    {Math.round((score / questions.length) * 100)}%
-                  </p>
-                  <p className="text-[var(--text-2)]">
-                    {score / questions.length >= 0.8 ? 'Great job! 🎉' : 'Keep studying! 📚'}
-                  </p>
-                  <button
-                    onClick={resetQuiz}
-                    className="px-6 py-2.5 rounded-lg font-medium text-white hover:opacity-90 mt-2"
-                    style={{ backgroundColor: '#9747FF' }}
-                  >
-                    Retake Quiz
-                  </button>
-                </div>
               ) : (
-                <div className="max-w-xl mx-auto">
-                  <p className="text-sm text-[var(--text-2)] mb-4">Question {qIndex + 1} of {questions.length}</p>
-                  <div className="rounded-xl p-6 mb-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                    <p className="text-[var(--text-1)] font-medium mb-4">{questions[qIndex].question}</p>
-
-                    {questions[qIndex].type === 'multiple_choice' && (
-                      <div className="space-y-2">
-                        {questions[qIndex].options?.map((opt) => {
-                          const isCorrect = opt === questions[qIndex].correctAnswer;
-                          const isSelected = selected === opt;
-                          let bg = 'var(--bg-input)';
-                          let border = 'var(--border-md)';
-                          if (selected) {
-                            if (isCorrect) { bg = '#16a34a20'; border = '#16a34a'; }
-                            else if (isSelected) { bg = '#dc262620'; border = '#dc2626'; }
-                          }
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() => handleAnswer(opt)}
-                              className="w-full text-left px-4 py-3 rounded-lg text-sm text-[var(--text-1)] transition-colors"
-                              style={{ backgroundColor: bg, border: `1px solid ${border}` }}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {questions[qIndex].type === 'short_answer' && (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={shortAnswer}
-                          onChange={(e) => setShortAnswer(e.target.value)}
-                          disabled={selected !== null}
-                          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
-                          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
-                          placeholder="Your answer…"
-                        />
-                        {selected === null && (
-                          <button
-                            onClick={() => handleAnswer(shortAnswer)}
-                            disabled={!shortAnswer}
-                            className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40"
-                            style={{ backgroundColor: '#9747FF' }}
-                          >
-                            Submit Answer
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {selected !== null && (
-                      <div className="mt-4 p-3 rounded-lg text-sm" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--brand-border)' }}>
-                        <p className="text-purple-500 font-medium mb-1">
-                          {questions[qIndex].type === 'short_answer'
-                            ? `Expected: ${questions[qIndex].correctAnswer}`
-                            : selected === questions[qIndex].correctAnswer ? '✓ Correct!' : '✗ Incorrect'}
-                        </p>
-                        <p className="text-[var(--text-1)]">{questions[qIndex].explanation}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {selected === null && (
-                      <button
-                        onClick={skipQuestion}
-                        className="px-4 py-2.5 rounded-lg text-sm text-[var(--text-2)] hover:text-[var(--text-1)] border border-black/10 hover:border-black/20 transition-colors"
-                      >
-                        Skip
-                      </button>
-                    )}
-                    {selected !== null && (
-                      <button
-                        onClick={nextQuestion}
-                        className="flex-1 py-2.5 rounded-lg font-medium text-white hover:opacity-90"
-                        style={{ backgroundColor: '#9747FF' }}
-                      >
-                        {qIndex + 1 >= questions.length ? 'See Results' : 'Next Question →'}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <QuizRunner document={doc} quiz={quiz} />
               )}
             </div>
           )}
@@ -1145,63 +999,61 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           {/* Podcast Tab */}
           {tab === 'podcast' && (
             <div>
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-[var(--text-2)] text-sm">{podcasts.length} podcast{podcasts.length !== 1 ? 's' : ''} generated</p>
-                <button
-                  onClick={() => setShowGeneratePodcast(true)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: '#9747FF' }}
-                >
-                  Generate Podcast
-                </button>
-              </div>
-
               {podcasts.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="text-5xl mb-4">🎙️</div>
-                  <p className="text-[var(--text-2)] mb-2">No podcasts yet</p>
+                  <p className="text-[var(--text-2)] mb-2 font-medium">No podcasts yet</p>
                   <p className="text-[var(--text-3)] text-sm mb-6">Turn your notes into an audio lecture you can listen to anywhere</p>
                   <button
                     onClick={() => setShowGeneratePodcast(true)}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#9747FF' }}
+                    style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
                   >
                     Generate Podcast
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={() => setShowGeneratePodcast(true)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
+                      style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+                    >
+                      + Generate Podcast
+                    </button>
+                  </div>
                   {podcasts.map(podcast => (
-                    <div key={podcast.id} className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                      <div className="flex items-start justify-between mb-3">
+                    <div
+                      key={podcast.id}
+                      className="relative rounded-xl p-3 transition-colors"
+                      style={{ backgroundColor: 'var(--bg-input)' }}
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6500" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[var(--text-1)] font-medium text-sm truncate">{podcast.title}</p>
-                          <p className="text-xs text-[var(--text-2)] mt-0.5">
+                          <p className="text-[var(--text-1)] font-semibold text-sm truncate">{podcast.title}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
                             {podcast.lengthMins} min · {podcast.voice} · {new Date(podcast.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                         <button
-                          onClick={async () => {
-                            await podcastsApi.delete(podcast.id);
-                            setPodcasts(prev => prev.filter(p => p.id !== podcast.id));
-                          }}
-                          className="ml-3 text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0"
-                          title="Delete podcast"
+                          onClick={async () => { await podcastsApi.delete(podcast.id); setPodcasts(prev => prev.filter(p => p.id !== podcast.id)); }}
+                          className="text-[var(--text-3)] hover:text-red-400 transition-colors shrink-0 p-1"
                         >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                          </svg>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                         </button>
                       </div>
-
                       {podcast.status === 'generating' && (
-                        <div className="flex items-center gap-2 text-sm text-yellow-400 py-2">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-400" />
+                        <div className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#F59E0B]" />
                           Generating audio… this takes a minute
                         </div>
                       )}
                       {podcast.status === 'failed' && (
-                        <p className="text-sm text-red-400 py-2">Generation failed. Please try again.</p>
+                        <p className="text-xs py-1.5 px-2 rounded-lg" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>Generation failed. Please try again.</p>
                       )}
                       {podcast.status === 'complete' && podcast.audioUrl && (
                         <PodcastPlayer audioUrl={podcast.audioUrl} title={podcast.title} />
@@ -1298,23 +1150,44 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
         </div>
       )}
     </div>
-    {/* Resize handle + Tutor Panel */}
+    {/* Tutor Panel — overlay on mobile, side panel on md+ */}
     {showTutorPanel && note && (
-      <>
-        <div
-          onMouseDown={handleResizeMouseDown}
-          className="w-px shrink-0 cursor-col-resize hover:bg-[var(--border-md)] transition-colors"
-          style={{ backgroundColor: 'var(--border)' }}
-        />
-        <div style={{ width: tutorPanelWidth, minWidth: 280, maxWidth: 700, flexShrink: 0 }}>
-          <TutorPanel
-            noteId={note.id}
-            sessionId={tutorSessionId}
-            onSessionCreated={setTutorSessionId}
-            onClose={() => setShowTutorPanel(false)}
+      isMobile ? (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
+            onClick={() => setShowTutorPanel(false)}
           />
-        </div>
-      </>
+          <div
+            className="fixed top-0 right-0 h-full z-50 flex flex-col shadow-2xl w-full"
+            style={{ backgroundColor: 'var(--bg-page)', borderLeft: '1px solid var(--border)' }}
+          >
+            <TutorPanel
+              noteId={note.id}
+              sessionId={tutorSessionId}
+              onSessionCreated={setTutorSessionId}
+              onClose={() => setShowTutorPanel(false)}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            onMouseDown={handleResizeMouseDown}
+            className="w-px shrink-0 cursor-col-resize hover:bg-[var(--border-md)] transition-colors"
+            style={{ backgroundColor: 'var(--border)' }}
+          />
+          <div style={{ width: tutorPanelWidth, minWidth: 280, maxWidth: 700, flexShrink: 0 }}>
+            <TutorPanel
+              noteId={note.id}
+              sessionId={tutorSessionId}
+              onSessionCreated={setTutorSessionId}
+              onClose={() => setShowTutorPanel(false)}
+            />
+          </div>
+        </>
+      )
     )}
     </div>
     </>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 
@@ -51,21 +52,20 @@ export default function WeakTopicsPage() {
   const unresolvedCount = topics.filter(t => !t.resolved).length;
 
   return (
-    <div className="max-w-5xl mx-auto py-2">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-heading-sm text-[var(--text-1)]">Weak Topics</h1>
-          <p className="text-body-sm mt-0.5 flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
+    <div className="max-w-5xl mx-auto px-6 py-6">
+      <PageHeader
+        title="Weak Topics"
+        subtitle={
+          <span className="flex items-center gap-2">
             Topics you&apos;ve consistently missed on quizzes
             {unresolvedCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444', border: '1px solid var(--danger-border)' }}>
                 {unresolvedCount} to review
               </span>
             )}
-          </p>
-        </div>
-      </div>
+          </span>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">

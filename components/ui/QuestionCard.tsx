@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import MultipleChoiceOptions from './MultipleChoiceOptions';
+import { Input } from './Input';
 
 interface Props {
   question: string;
@@ -126,14 +127,12 @@ export default function QuestionCard({
 
       {/* Short answer */}
       {type === 'short_answer' && (
-        <input
+        <Input
           type="text"
           value={shortAnswer}
           onChange={e => setShortAnswer(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !answered && shortAnswer && onAnswer(shortAnswer)}
           disabled={answered}
-          className="w-full px-3 py-2.5 rounded-lg text-sm text-[var(--text-1)] focus:outline-none"
-          style={{ backgroundColor: 'var(--bg-input)' }}
           placeholder="Type your answer…"
         />
       )}

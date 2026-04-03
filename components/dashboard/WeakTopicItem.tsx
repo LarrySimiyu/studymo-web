@@ -6,9 +6,14 @@ import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 
 interface Props {
   topic: WeakTopic;
-  /** If true, shows a "View note" button that navigates to the document */
   linkToDocument?: boolean;
   onResolved?: (updated: WeakTopic) => void;
+}
+
+function severityColor(missedCount: number) {
+  if (missedCount >= 5) return { bar: '#EF4444', badge: 'rgba(239,68,68,0.12)', text: '#EF4444' };
+  if (missedCount >= 3) return { bar: '#F59E0B', badge: 'rgba(245,158,11,0.12)', text: '#F59E0B' };
+  return { bar: 'var(--text-3)', badge: 'var(--bg-input)', text: 'var(--text-3)' };
 }
 
 export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Props) {
@@ -29,108 +34,81 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
     }
   }
 
-  // Severity-based colors for the missed badge
-  const missedBg =
-    current.resolved ? 'var(--bg-input)' :
-    current.missedCount >= 5 ? 'var(--danger-subtle)' :
-    current.missedCount >= 3 ? 'rgba(245,158,11,0.15)' :
-    'var(--bg-input)';
-
-  const missedColor =
-    current.resolved ? 'var(--text-3)' :
-    current.missedCount >= 5 ? '#EF4444' :
-    current.missedCount >= 3 ? '#F59E0B' :
-    'var(--text-2)';
-
-  const missedBorder =
-    current.resolved ? 'var(--border)' :
-    current.missedCount >= 5 ? 'var(--danger-border)' :
-    current.missedCount >= 3 ? 'rgba(245,158,11,0.35)' :
-    'var(--border)';
+  const colors = severityColor(current.resolved ? 0 : current.missedCount);
 
   return (
     <div
-      className="flex flex-col gap-3 p-4 rounded-xl"
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: `1px solid ${current.resolved ? 'var(--success-border)' : 'var(--border)'}`,
-        opacity: current.resolved ? 0.75 : 1,
-      }}
+      className="flex gap-3 px-4 py-4 rounded-xl transition-colors"
+      style={{ backgroundColor: 'var(--bg-card)' }}
+      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
     >
-      {/* Missed badge + resolved indicator */}
-      <div className="flex items-center gap-2">
-        <span
-          className="text-xs font-medium px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: missedBg, color: missedColor, border: `1px solid ${missedBorder}` }}
-        >
-          {current.missedCount}× missed
-        </span>
-        {current.resolved && (
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success-border)' }}>
-            Resolved
-          </span>
-        )}
-      </div>
+      {/* Severity accent bar */}
+      <div
+        className="w-1 rounded-full shrink-0 self-stretch"
+        style={{ backgroundColor: current.resolved ? 'var(--success)' : colors.bar }}
+      />
 
-      {/* Topic name */}
-      <p className="text-body-sm font-semibold text-[var(--text-1)] leading-snug">{current.topic}</p>
-
-      {/* Date row — only show when resolved */}
-      {current.resolved && current.resolvedAt && (
-        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-3)' }}>
-          <span style={{ color: 'var(--success)' }}>
-            Resolved {new Date(current.resolvedAt).toLocaleDateString()}
-          </span>
+      {/* Content */}
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        {/* Top row: topic + missed badge */}
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-body-sm font-semibold text-[var(--text-1)] leading-snug">{current.topic}</p>
+          {current.resolved ? (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)' }}>
+              Resolved
+            </span>
+          ) : (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: colors.badge, color: colors.text }}>
+              {current.missedCount}× missed
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Revealed answer */}
-      {answerVisible && current.correctAnswer && (
-        <div
-          className="px-3 py-2.5 rounded-lg text-xs leading-relaxed"
-          style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success-border)' }}
-        >
-          <span className="font-semibold">Answer: </span>{current.correctAnswer}
-        </div>
-      )}
-
-      {/* Action row */}
-      <div className="flex items-center gap-2 pt-1" onClick={e => e.stopPropagation()}>
-        {/* View note */}
-        {linkToDocument && current.document?.id && (
-          <button
-            onClick={() => router.push(`/dashboard/library?note=${current.document!.id}`)}
-            className="text-xs px-2.5 py-1.5 rounded-xl transition-colors hover:opacity-80"
-            style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+        {/* Answer block */}
+        {answerVisible && current.correctAnswer && (
+          <div
+            className="px-3 py-2 rounded-lg text-xs font-bold leading-relaxed"
+            style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success-border)' }}
           >
-            View note
-          </button>
+            {current.correctAnswer}
+          </div>
         )}
 
-        <div className="flex items-center gap-2 ml-auto">
-          {/* Show answer */}
-          {!current.resolved && !answerVisible && current.correctAnswer && (
-            <button
-              onClick={e => { e.stopPropagation(); setAnswerVisible(true); }}
-              className="text-xs px-2.5 py-1.5 rounded-xl transition-opacity hover:opacity-80"
-              style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.35)' }}
-            >
-              Show answer
-            </button>
-          )}
 
-          {/* Resolve */}
-          {!current.resolved && (answerVisible || !current.correctAnswer) && (
-            <button
-              onClick={handleResolve}
-              disabled={resolving}
-              className="text-xs px-2.5 py-1.5 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success-border)' }}
-            >
-              {resolving ? '…' : 'Resolve ✓'}
-            </button>
-          )}
-        </div>
+        {/* Actions */}
+        {!current.resolved && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {linkToDocument && current.document?.id && (
+              <button
+                onClick={e => { e.stopPropagation(); router.push(`/dashboard/library?note=${current.document!.id}`); }}
+                className="text-xs px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
+              >
+                View note
+              </button>
+            )}
+            {!answerVisible && current.correctAnswer && (
+              <button
+                onClick={e => { e.stopPropagation(); setAnswerVisible(true); }}
+                className="text-xs px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+              >
+                Show answer
+              </button>
+            )}
+            {(answerVisible || !current.correctAnswer) && (
+              <button
+                onClick={handleResolve}
+                disabled={resolving}
+                className="text-xs px-2.5 py-1 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)' }}
+              >
+                {resolving ? '…' : 'Resolve'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
