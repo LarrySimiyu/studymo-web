@@ -1,26 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { House, Star, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Menu, LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { foldersApi, Folder } from '@/lib/api/organization';
+import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
+import { documentsApi } from '@/lib/api/documents';
+import { podcastsApi } from '@/lib/api/podcasts';
 
-const NAV_ITEMS = [
-  { label: 'Home', href: '/dashboard', icon: '⌂' },
-  { label: 'Library', href: '/dashboard/library', icon: '📚' },
-  { label: 'Flashcards', href: '/dashboard/flashcards', icon: '🗂' },
-  { label: 'Quizzes', href: '/dashboard/quizzes', icon: '❓' },
-  { label: 'Weak Topics', href: '/dashboard/weak-topics', icon: '⚠' },
-  { label: 'Practice Exams', href: '/dashboard/practice-exams', icon: '📋' },
-  { label: 'Tasks', href: '/dashboard/tasks', icon: '✓' },
-  { label: 'Study Plan', href: '/dashboard/study-plan', icon: '📅' },
-  { label: 'AI Tutor', href: '/dashboard/tutor', icon: '🎓' },
-  { label: 'Podcasts', href: '/dashboard/podcasts', icon: '🎙️' },
-  { label: 'Analytics', href: '/dashboard/analytics', icon: '📊' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
-];
+interface Counts {
+  notes: number;
+  flashcardDecks: number;
+  quizDecks: number;
+  exams: number;
+  podcasts: number;
+}
 
 function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number })[] {
   const result: (Folder & { depth: number })[] = [];
@@ -31,22 +28,373 @@ function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number
   return result;
 }
 
+function CountBadge({ n }: { n: number | undefined }) {
+  if (!n) return null;
+  return (
+    <span className="ml-auto shrink-0 text-[10px] font-medium leading-5 min-w-[18px] text-center text-[var(--text-3)] group-hover:text-white group-[.active]:text-white">
+      {n}
+    </span>
+  );
+}
+
+function Divider() {
+  return <div className="mx-2 my-1.5" style={{ height: 1, backgroundColor: 'var(--border)' }} />;
+}
+
+function SectionHeader({
+  label, icon: Icon, collapsed, open, onToggle,
+}: { label: string; icon?: LucideIcon; collapsed: boolean; open: boolean; onToggle: () => void }) {
+  if (collapsed) {
+    return Icon ? (
+      <button onClick={onToggle} className="group w-full flex justify-center py-1.5">
+        <Icon size={16} className="text-white transition-colors" />
+      </button>
+    ) : null;
+  }
+  return (
+    <button onClick={onToggle} className="group w-full flex items-center gap-1.5 px-2.5 pt-2 pb-1">
+      {Icon && <Icon size={14} className="text-white transition-colors" />}
+      <span className="flex-1 text-left text-sm font-semibold text-white transition-colors">
+        {label}
+      </span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
+        className="text-white transition-colors"
+        style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+        <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}
+
+function NavLink({ href, icon, label, count, isActive, collapsed, small }: {
+  href: string; icon: React.ReactNode; label: string; count?: number; isActive: boolean; collapsed: boolean; small?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      title={collapsed ? label : undefined}
+      className={cn(
+        'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-colors',
+        small ? 'text-xs' : 'text-sm',
+        collapsed ? 'justify-center' : '',
+        isActive
+          ? 'active text-white bg-[var(--bg-hover)]'
+          : 'text-white hover:bg-[var(--bg-hover)]'
+      )}
+    >
+      <span className="leading-none shrink-0 flex items-center">{icon}</span>
+      {!collapsed && (
+        <>
+          <span className="truncate flex-1">{label}</span>
+          <CountBadge n={count} />
+        </>
+      )}
+    </Link>
+  );
+}
+
+interface SidebarContentProps {
+  collapsed: boolean;
+  pathname: string;
+  selectedFolder: string;
+  isLibraryActive: boolean;
+  folders: Folder[];
+  counts: Partial<Counts>;
+  unfiledCount: number;
+  sectionOpen: { notes: boolean; study: boolean; tools: boolean };
+  toggleSection: (key: 'notes' | 'study' | 'tools') => void;
+  toggleCollapsed?: () => void;
+  showCollapseBtn?: boolean;
+  displayName: string;
+  initials: string;
+}
+
+function SidebarContent({
+  collapsed,
+  pathname,
+  selectedFolder,
+  isLibraryActive,
+  folders,
+  counts,
+  unfiledCount,
+  sectionOpen,
+  toggleSection,
+  toggleCollapsed,
+  showCollapseBtn,
+  displayName,
+  initials,
+}: SidebarContentProps) {
+  const flat = flattenFolders(folders);
+
+  function isActive(href: string, exact = false) {
+    return exact ? pathname === href : pathname.startsWith(href);
+  }
+
+  function isFolderActive(value: string) {
+    if (!isLibraryActive || pathname !== '/dashboard/library') return false;
+    return selectedFolder === value;
+  }
+
+  function folderHref(value: string) {
+    return value === 'all' ? '/dashboard/library' : `/dashboard/library?folder=${value}`;
+  }
+
+  return (
+    <>
+      {/* Logo + collapse */}
+      <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
+        {!collapsed && (
+          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
+        )}
+        {showCollapseBtn && isLibraryActive && (
+          <button
+            onClick={toggleCollapsed}
+            className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--bg-hover)]', collapsed && 'mx-auto')}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+              style={{ color: 'var(--text-3)', transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+              <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
+        <NavLink href="/dashboard" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
+        <Link
+          href="/dashboard/tutor"
+          title={collapsed ? 'AI Tutor' : undefined}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-opacity text-sm text-white hover:opacity-90',
+            collapsed ? 'justify-center' : '',
+          )}
+          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+        >
+          <Star size={16} className="shrink-0" fill="white" />
+          {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
+        </Link>
+
+        {/* ── NOTES ── */}
+        <SectionHeader label="Notes" icon={FolderIcon} collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
+
+        <AnimatePresence initial={false}>
+          {sectionOpen.notes && (
+            <motion.div
+              key="notes-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className="overflow-hidden space-y-1"
+            >
+              {!collapsed && (
+                <div className="ml-4 space-y-0.5 overflow-hidden">
+                  <Link
+                    href="/dashboard/library"
+                    className={cn(
+                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                      isLibraryActive && selectedFolder === 'all'
+                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                    )}
+                  >
+                    <span className="truncate flex-1">All Notes</span>
+                    <CountBadge n={counts.notes} />
+                  </Link>
+                  <Link
+                    href={folderHref('none')}
+                    className={cn(
+                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                      isFolderActive('none')
+                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                    )}
+                  >
+                    <span className="truncate flex-1">No Collection</span>
+                    <CountBadge n={unfiledCount} />
+                  </Link>
+
+                  {flat.map((f) => (
+                    <Link
+                      key={f.id}
+                      href={folderHref(f.id)}
+                      className={cn(
+                        'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
+                        isFolderActive(f.id)
+                          ? 'text-[var(--brand)] bg-[var(--bg-hover)]'
+                          : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                      )}
+                      style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
+                    >
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <CountBadge n={f._count?.documents} />
+                    </Link>
+                  ))}
+
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
+                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
+                  >
+                    <span className="text-xs opacity-60">+</span>
+                    <span>New Collection</span>
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── STUDY MATERIALS ── */}
+        <SectionHeader label="Study Materials" icon={Library} collapsed={collapsed} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
+
+        <AnimatePresence initial={false}>
+          {sectionOpen.study && (
+            <motion.div
+              key="study-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
+            >
+              <NavLink href="/dashboard/flashcards" icon={<Layers size={14} />} label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/quizzes" icon={<Heart size={14} />} label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/practice-exams" icon={<ClipboardList size={14} />} label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/podcasts" icon={<Mic size={14} />} label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} collapsed={collapsed} small />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── TOOLS ── */}
+        <SectionHeader label="Tools" icon={Wrench} collapsed={collapsed} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
+
+        <AnimatePresence initial={false}>
+          {sectionOpen.tools && (
+            <motion.div
+              key="tools-section"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
+            >
+              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/study-plan" icon={<CalendarDays size={14} />} label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} small />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* User footer */}
+      <div className="px-1.5 pb-2 pt-1">
+        {!collapsed ? (
+          <Link
+            href="/dashboard/settings"
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              {initials}
+            </div>
+            <p className="text-xs font-medium truncate flex-1 min-w-0" style={{ color: 'var(--text-1)' }}>
+              {displayName}
+            </p>
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard/settings"
+            title="Settings"
+            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+          >
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              {initials}
+            </div>
+          </Link>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function Sidebar() {
-  const { signOut, currentUser, dbUser } = useAuth();
+  const { currentUser, dbUser } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
+
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [counts, setCounts] = useState<Partial<Counts>>({});
+  const [unfiledCount, setUnfiledCount] = useState(0);
+  const [sectionOpen, setSectionOpen] = useState({ notes: true, study: false, tools: false });
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('sidebar-collapsed') === 'true';
+    return false;
+  });
+
+  // Responsive: true when viewport < 1024px
+  const [isSmall, setIsSmall] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const overlayCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const check = () => setIsSmall(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const isLibraryActive = pathname.startsWith('/dashboard/library');
   const selectedFolder = searchParams.get('folder') ?? 'all';
 
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('sidebar-collapsed', String(next));
+  }
+
+  function toggleSection(key: keyof typeof sectionOpen) {
+    setSectionOpen(s => ({ ...s, [key]: !s[key] }));
+  }
+
   useEffect(() => {
-    if (!isLibraryActive) return;
+    async function load() {
+      const [foldersRes, docsRes, podcastsRes, examsRes] = await Promise.all([
+        foldersApi.getAll(),
+        documentsApi.getAll(),
+        podcastsApi.getAll(),
+        practiceExamsApi.getAll(),
+      ]);
+      if (foldersRes.data) setFolders(foldersRes.data);
+      const docs = docsRes.data ?? [];
+      const completeDocs = docs.filter(d => d.status === 'complete');
+      setUnfiledCount(completeDocs.filter(d => !d.folderId).length);
+      setCounts({
+        notes: docs.length,
+        flashcardDecks: completeDocs.length,
+        quizDecks: completeDocs.length,
+        exams: examsRes.data?.length ?? 0,
+        podcasts: podcastsRes.data?.length ?? 0,
+      });
+    }
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!isLibraryActive) {
+      setCollapsed(false);
+      return;
+    }
     foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
   }, [isLibraryActive]);
 
-  // Refresh folders when library signals a change (e.g. after create/delete)
   useEffect(() => {
     if (!isLibraryActive) return;
     const handler = () => foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
@@ -54,130 +402,92 @@ export default function Sidebar() {
     return () => window.removeEventListener('library:folders-changed', handler);
   }, [isLibraryActive]);
 
+  // Close overlay when route changes
+  useEffect(() => { setOverlayOpen(false); }, [pathname]);
+
+  // Listen for open/close events dispatched by TopNav hamburger
+  useEffect(() => {
+    if (!isSmall) return;
+    function handleOpen() {
+      if (overlayCloseTimer.current) clearTimeout(overlayCloseTimer.current);
+      setOverlayOpen(true);
+    }
+    function handleCloseIntent() {
+      overlayCloseTimer.current = setTimeout(() => setOverlayOpen(false), 200);
+    }
+    window.addEventListener('sidebar:open', handleOpen);
+    window.addEventListener('sidebar:close-intent', handleCloseIntent);
+    return () => {
+      window.removeEventListener('sidebar:open', handleOpen);
+      window.removeEventListener('sidebar:close-intent', handleCloseIntent);
+    };
+  }, [isSmall]);
+
   const displayName = dbUser?.name ?? currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'User';
   const initials = displayName.slice(0, 2).toUpperCase();
 
-  const flat = flattenFolders(folders);
+  const sharedProps = {
+    pathname,
+    selectedFolder,
+    isLibraryActive,
+    folders,
+    counts,
+    unfiledCount,
+    sectionOpen,
+    toggleSection,
+    displayName,
+    initials,
+  };
 
-  function folderHref(value: string) {
-    return value === 'all' ? '/dashboard/library' : `/dashboard/library?folder=${value}`;
+  // ── Small screen: overlay only (hamburger lives in TopNav) ──────────
+  if (isSmall) {
+    function handleOverlayEnter() {
+      if (overlayCloseTimer.current) clearTimeout(overlayCloseTimer.current);
+    }
+    function handleOverlayLeave() {
+      overlayCloseTimer.current = setTimeout(() => setOverlayOpen(false), 200);
+    }
+
+    return (
+      <AnimatePresence>
+        {overlayOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOverlayOpen(false)} />
+            <motion.div
+              key="sidebar-overlay"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -20, opacity: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="fixed top-14 left-3 bottom-3 z-50 flex flex-col rounded-2xl overflow-hidden shadow-2xl"
+              style={{ width: 280, backgroundColor: 'var(--bg-card)' }}
+              onMouseEnter={handleOverlayEnter}
+              onMouseLeave={handleOverlayLeave}
+            >
+              <SidebarContent
+                {...sharedProps}
+                collapsed={false}
+                showCollapseBtn={false}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    );
   }
 
-  function isFolderActive(value: string) {
-    if (!isLibraryActive) return false;
-    // Only match exact library path (not /dashboard/library/[id]) for folder selection
-    const onListPage = pathname === '/dashboard/library';
-    if (!onListPage) return false;
-    return selectedFolder === value;
-  }
-
+  // ── Large screen: regular collapsible sidebar ────────────────────────
   return (
-    <aside className="w-60 shrink-0 flex flex-col" style={{ backgroundColor: '#1A1A1A', borderRight: '1px solid #2A2A2A' }}>
-      {/* Logo */}
-      <div className="p-5" style={{ borderBottom: '1px solid #2A2A2A' }}>
-        <span className="text-lg font-bold text-white tracking-tight">Studymo</span>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-3 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === '/dashboard'
-            ? pathname === '/dashboard'
-            : pathname.startsWith(item.href);
-
-          return (
-            <div key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                )}
-                style={isActive ? { backgroundColor: '#9747FF20', color: '#9747FF' } : {}}
-              >
-                <span className="text-base leading-none">{item.icon}</span>
-                {item.label}
-              </Link>
-
-              {/* Library folder expansion */}
-              {item.href === '/dashboard/library' && isLibraryActive && (
-                <div className="ml-3 mt-0.5 mb-1 space-y-0.5">
-                  {/* All Documents */}
-                  <Link
-                    href={folderHref('all')}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors',
-                      isFolderActive('all') ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                    )}
-                    style={isFolderActive('all') ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}}
-                  >
-                    <span>📚</span> All Documents
-                  </Link>
-
-                  {/* Unfiled */}
-                  <Link
-                    href={folderHref('none')}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors',
-                      isFolderActive('none') ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                    )}
-                    style={isFolderActive('none') ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}}
-                  >
-                    <span>📭</span> Unfiled
-                  </Link>
-
-                  {/* User folders */}
-                  {flat.map((f) => (
-                    <Link
-                      key={f.id}
-                      href={folderHref(f.id)}
-                      className={cn(
-                        'flex items-center gap-2 py-1.5 rounded-lg text-xs transition-colors',
-                        isFolderActive(f.id) ? 'text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                      )}
-                      style={{
-                        paddingLeft: `${12 + f.depth * 12}px`,
-                        paddingRight: '12px',
-                        ...(isFolderActive(f.id) ? { backgroundColor: '#9747FF15', color: '#9747FF' } : {}),
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
-                      <span className="truncate">{f.name}</span>
-                    </Link>
-                  ))}
-
-                  {/* New folder */}
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-gray-600 hover:text-gray-400 hover:bg-white/5 transition-colors"
-                  >
-                    + New Folder
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* User */}
-      <div className="p-3" style={{ borderTop: '1px solid #2A2A2A' }}>
-        <div className="flex items-center gap-3 px-2 py-2 mb-1">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0"
-            style={{ backgroundColor: '#9747FF' }}
-          >
-            {initials}
-          </div>
-          <p className="text-xs text-gray-400 truncate flex-1">{currentUser?.email}</p>
-        </div>
-        <button
-          onClick={() => signOut()}
-          className="w-full text-left text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-white/5"
-        >
-          Sign out
-        </button>
-      </div>
+    <aside
+      className="shrink-0 flex flex-col transition-all duration-200 my-3 ml-3 rounded-2xl overflow-hidden"
+      style={{ width: collapsed ? 60 : 330, backgroundColor: 'var(--bg-card)' }}
+    >
+      <SidebarContent
+        {...sharedProps}
+        collapsed={collapsed}
+        toggleCollapsed={toggleCollapsed}
+        showCollapseBtn={true}
+      />
     </aside>
   );
 }

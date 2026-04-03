@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { documentsApi } from '@/lib/api/documents';
+import { documentsApi, notesApi } from '@/lib/api/documents';
 
-type Tab = 'file' | 'video' | 'record';
+type Tab = 'file' | 'video' | 'record' | 'blank';
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 
 interface Props {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (documentId?: string) => void;
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
@@ -70,11 +70,11 @@ function ProcessingOverlay({
     return (
       <div className="flex flex-col items-center justify-center py-10 gap-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: '#9747FF' }} />
-        <p className="text-white font-medium text-sm">Processing your document…</p>
-        <p className="text-gray-500 text-xs text-center">This may take a minute. You can close this — it will appear in your library when ready.</p>
+        <p className="text-[var(--text-1)] font-medium text-sm">Processing your note…</p>
+        <p className="text-[var(--text-2)] text-xs text-center">This may take a minute. You can close this — it will appear in your library when ready.</p>
         <button
           onClick={onClose}
-          className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          className="mt-2 text-xs text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
         >
           Close
         </button>
@@ -86,13 +86,13 @@ function ProcessingOverlay({
     <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-        style={{ backgroundColor: '#EF444420' }}
+        style={{ backgroundColor: 'var(--danger-subtle)' }}
       >
         ✕
       </div>
       <div>
-        <p className="text-white font-medium">Upload failed</p>
-        <p className="text-gray-500 text-xs mt-1">Something went wrong while processing your document.</p>
+        <p className="text-[var(--text-1)] font-medium">Upload failed</p>
+        <p className="text-[var(--text-2)] text-xs mt-1">Something went wrong while processing your note.</p>
       </div>
       <div className="flex gap-3">
         <button
@@ -104,8 +104,8 @@ function ProcessingOverlay({
         </button>
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition-colors"
-          style={{ color: '#9CA3AF', border: '1px solid #2A2A2A' }}
+          className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-black/5 transition-colors"
+          style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}
         >
           Cancel
         </button>
@@ -132,7 +132,7 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
     setUploadState('processing');
     stopPollRef.current = await pollDocumentStatus(
       docId,
-      () => { onSuccess(); },
+      () => { onSuccess(docId); },
       () => setUploadState('failed'),
     );
   }
@@ -154,10 +154,10 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
       onClick={(e) => e.target === e.currentTarget && !isOverlay && onClose()}
     >
-      <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+      <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         {isOverlay ? (
           <ProcessingOverlay
             state={uploadState as 'processing' | 'failed'}
@@ -167,20 +167,20 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-white">Upload Document</h2>
-              <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-xl leading-none">×</button>
+              <h2 className="text-lg font-semibold text-[var(--text-1)]">Upload Note</h2>
+              <button onClick={onClose} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xl leading-none">×</button>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-5 p-1 rounded-lg" style={{ backgroundColor: '#111' }}>
-              {(['file', 'video', 'record'] as Tab[]).map((t) => (
+            <div className="flex gap-1 mb-5 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-page)' }}>
+              {(['file', 'video', 'record', 'blank'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setTab(t); setError(''); }}
-                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors capitalize"
-                  style={tab === t ? { backgroundColor: '#9747FF', color: '#fff' } : { color: '#888' }}
+                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors"
+                  style={tab === t ? { backgroundColor: '#9747FF', color: '#fff' } : { color: 'var(--text-2)' }}
                 >
-                  {t === 'file' ? 'Upload File' : t === 'video' ? 'Video URL' : 'Record Audio'}
+                  {t === 'file' ? 'Upload File' : t === 'video' ? 'Video URL' : t === 'record' ? 'Record Audio' : 'Blank Note'}
                 </button>
               ))}
             </div>
@@ -210,6 +210,12 @@ export default function UploadModal({ onClose, onSuccess }: Props) {
                 loading={uploadState === 'uploading'}
                 onStart={handleUploadStart}
                 onSuccess={handleUploadSuccess}
+                onError={handleUploadError}
+              />
+            )}
+            {tab === 'blank' && (
+              <BlankNoteTab
+                onSuccess={(docId) => onSuccess(docId)}
                 onError={handleUploadError}
               />
             )}
@@ -264,8 +270,8 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
         onDrop={handleDrop}
         className="rounded-xl p-8 text-center cursor-pointer transition-colors"
         style={{
-          border: `2px dashed ${dragging ? '#9747FF' : '#333'}`,
-          backgroundColor: dragging ? '#9747FF10' : '#111',
+          border: `2px dashed ${dragging ? '#9747FF' : 'var(--border-md)'}`,
+          backgroundColor: dragging ? 'var(--brand-subtle)' : 'var(--bg-page)',
         }}
       >
         <input
@@ -277,23 +283,23 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
         />
         <div className="text-3xl mb-2">📁</div>
         {file ? (
-          <p className="text-sm text-white font-medium">{file.name}</p>
+          <p className="text-sm text-[var(--text-1)] font-medium">{file.name}</p>
         ) : (
           <>
-            <p className="text-sm text-gray-300">Drag and drop a PDF or audio file</p>
-            <p className="text-xs text-gray-500 mt-1">or click to browse</p>
+            <p className="text-sm text-[var(--text-1)]">Drag and drop a PDF or audio file</p>
+            <p className="text-xs text-[var(--text-2)] mt-1">or click to browse</p>
           </>
         )}
       </div>
       <div>
-        <label className="block text-xs text-gray-400 mb-1">Title</label>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-          style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
-          placeholder="Document title"
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+          placeholder="Note title"
         />
       </div>
       <button
@@ -329,24 +335,24 @@ function VideoTab({ loading, onStart, onSuccess, onError }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs text-gray-400 mb-1">YouTube URL</label>
+        <label className="block text-xs text-[var(--text-2)] mb-1">YouTube URL</label>
         <input
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-          style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
           placeholder="https://www.youtube.com/watch?v=..."
         />
       </div>
       <div>
-        <label className="block text-xs text-gray-400 mb-1">Title</label>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-          style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
           placeholder="Video title"
         />
       </div>
@@ -357,6 +363,54 @@ function VideoTab({ loading, onStart, onSuccess, onError }: {
         style={{ backgroundColor: '#9747FF' }}
       >
         {loading ? 'Importing…' : 'Import Video'}
+      </button>
+    </div>
+  );
+}
+
+// ─── Blank note tab ──────────────────────────────────────────────────────────
+function BlankNoteTab({ onSuccess, onError }: {
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleCreate() {
+    setLoading(true);
+    const { data, error } = await notesApi.createBlank(title.trim() || undefined);
+    setLoading(false);
+    if (error || !data) { onError(error ?? 'Failed to create note'); return; }
+    onSuccess(data.documentId);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl p-8 text-center" style={{ backgroundColor: 'var(--bg-page)', border: '2px dashed var(--border-md)' }}>
+        <div className="text-3xl mb-2">📝</div>
+        <p className="text-sm text-[var(--text-1)]">Start with an empty note</p>
+        <p className="text-xs text-[var(--text-2)] mt-1">Write freely — no upload needed</p>
+      </div>
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleCreate()}
+          autoFocus
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+          placeholder="Untitled Note"
+        />
+      </div>
+      <button
+        onClick={handleCreate}
+        disabled={loading}
+        className="w-full py-2.5 rounded-lg font-medium text-white text-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
+        style={{ backgroundColor: '#9747FF' }}
+      >
+        {loading ? 'Creating…' : 'Create Note'}
       </button>
     </div>
   );
@@ -458,8 +512,8 @@ function RecordTab({ loading, onStart, onSuccess, onError }: {
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center gap-3 py-4">
-        <canvas ref={canvasRef} width={300} height={48} className="w-full rounded-lg" style={{ backgroundColor: '#111' }} />
-        <p className="text-2xl font-mono text-white tabular-nums">{fmt(elapsed)}</p>
+        <canvas ref={canvasRef} width={300} height={48} className="w-full rounded-lg" style={{ backgroundColor: 'var(--bg-page)' }} />
+        <p className="text-2xl font-mono text-[var(--text-1)] tabular-nums">{fmt(elapsed)}</p>
 
         {!recording && !audioBlob && (
           <button
@@ -487,13 +541,13 @@ function RecordTab({ loading, onStart, onSuccess, onError }: {
       {audioBlob && (
         <>
           <div>
-            <label className="block text-xs text-gray-400 mb-1">Title</label>
+            <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-white text-sm focus:outline-none"
-              style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
+              className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
               placeholder="Recording title"
             />
           </div>

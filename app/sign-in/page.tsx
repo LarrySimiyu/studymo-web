@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SignInPage() {
-  const { signIn, googleSignIn } = useAuth();
+  const { signIn, googleSignIn, currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && currentUser) router.replace('/dashboard');
+  }, [currentUser, authLoading, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

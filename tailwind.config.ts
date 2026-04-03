@@ -37,6 +37,22 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        brand: 'var(--brand)',
+        page: 'var(--bg-page)',
+        surface: 'var(--bg-card)',
+      },
+      fontSize: {
+        'xs':         ['0.75rem',   { lineHeight: '1rem' }],
+        'body-sm':    ['0.875rem',  { lineHeight: '1.25rem' }],
+        'body':       ['1rem',      { lineHeight: '1.5rem' }],
+        'body-lg':    ['1.125rem',  { lineHeight: '1.625rem' }],
+        'heading-sm': ['1.25rem',   { lineHeight: '1.75rem',  fontWeight: '600' }],
+        'heading':    ['1.5rem',    { lineHeight: '2rem',     fontWeight: '600' }],
+        'title':      ['1.75rem',   { lineHeight: '2.25rem',  fontWeight: '700' }],
+        'display':    ['2.25rem',   { lineHeight: '2.75rem',  fontWeight: '700' }],
+      },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, #FF6500, #FF9A3C)',
       },
       borderRadius: {
         lg: 'var(--radius)',
