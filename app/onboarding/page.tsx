@@ -3,16 +3,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  School, GraduationCap, BookOpen, Briefcase, Globe,
+  Headphones, HelpCircle, Shuffle,
+  Brain, Lightbulb, Smartphone, Clock, Moon, Zap, Heart, LayoutList, Flame,
+  Target, TrendingUp, FolderOpen, Timer, Play, ArrowLeft, ArrowRight, CalendarDays,
+  type LucideIcon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { saveOnboardingData, getOnboardingData } from '@/lib/onboarding';
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
 const GRADE_OPTIONS = [
-  { id: 'high_school', label: 'High School', icon: '🏫' },
-  { id: 'undergrad',   label: 'Undergrad',   icon: '🎓' },
-  { id: 'grad',        label: 'Grad School', icon: '📚' },
-  { id: 'self_learner',label: 'Self Learner',icon: '💼' },
-  { id: 'other',       label: 'Other',       icon: '🌍' },
+  { id: 'high_school',  label: 'High School',  Icon: School,         color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
+  { id: 'undergrad',    label: 'Undergrad',    Icon: GraduationCap,  color: '#FF6500', bg: 'rgba(255,101,0,0.12)'   },
+  { id: 'grad',         label: 'Grad School',  Icon: BookOpen,       color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
+  { id: 'self_learner', label: 'Self Learner', Icon: Briefcase,      color: '#22C55E', bg: 'rgba(34,197,94,0.12)'   },
+  { id: 'other',        label: 'Other',        Icon: Globe,          color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
 ];
 
 const PRESET_SUBJECTS = [
@@ -24,37 +32,37 @@ const PRESET_SUBJECTS = [
 ];
 
 const LEARNING_STYLES = [
-  { id: 'notes',     label: 'Reading notes and summaries', icon: '📖' },
-  { id: 'listening', label: 'Listening to explanations',   icon: '🎧' },
-  { id: 'quizzing',  label: 'Being quizzed on material',   icon: '❓' },
-  { id: 'mix',       label: 'A mix of everything',         icon: '🔀' },
+  { id: 'notes',     label: 'Reading notes and summaries', Icon: BookOpen,    color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
+  { id: 'listening', label: 'Listening to explanations',   Icon: Headphones,  color: '#EC4899', bg: 'rgba(236,72,153,0.12)'  },
+  { id: 'quizzing',  label: 'Being quizzed on material',   Icon: HelpCircle,  color: '#FF6500', bg: 'rgba(255,101,0,0.12)'   },
+  { id: 'mix',       label: 'A mix of everything',         Icon: Shuffle,     color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
 ];
 
 const STRUGGLE_OPTIONS = [
-  { id: 'understanding',    label: 'Understanding the material',          icon: '😵' },
-  { id: 'remembering',      label: 'Remembering what I studied',          icon: '🧠' },
-  { id: 'distractions',     label: 'Staying focused / avoiding distractions', icon: '📱' },
-  { id: 'time_management',  label: 'Time management',                     icon: '⏰' },
-  { id: 'procrastination',  label: 'Procrastination',                     icon: '😴' },
-  { id: 'adhd',             label: 'ADHD or focus challenges',            icon: '⚡' },
-  { id: 'mental_health',    label: 'Mental health affecting my focus',    icon: '💭' },
-  { id: 'organizing',       label: 'Staying organized',                   icon: '📋' },
-  { id: 'all',              label: 'All of the above',                    icon: '🔥' },
+  { id: 'understanding',   label: 'Understanding the material',               Icon: Brain,       color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
+  { id: 'remembering',     label: 'Remembering what I studied',               Icon: Lightbulb,   color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
+  { id: 'distractions',    label: 'Staying focused / avoiding distractions',  Icon: Smartphone,  color: '#EF4444', bg: 'rgba(239,68,68,0.12)'   },
+  { id: 'time_management', label: 'Time management',                          Icon: Clock,       color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
+  { id: 'procrastination', label: 'Procrastination',                          Icon: Moon,        color: '#14B8A6', bg: 'rgba(20,184,166,0.12)'  },
+  { id: 'adhd',            label: 'ADHD or focus challenges',                 Icon: Zap,         color: '#FF6500', bg: 'rgba(255,101,0,0.12)'   },
+  { id: 'mental_health',   label: 'Mental health affecting my focus',         Icon: Heart,       color: '#EC4899', bg: 'rgba(236,72,153,0.12)'  },
+  { id: 'organizing',      label: 'Staying organized',                        Icon: LayoutList,  color: '#22C55E', bg: 'rgba(34,197,94,0.12)'   },
+  { id: 'all',             label: 'All of the above',                         Icon: Flame,       color: '#EF4444', bg: 'rgba(239,68,68,0.12)'   },
 ];
 
 const FOCUS_STRUGGLES = new Set(['procrastination','adhd','distractions','time_management','mental_health','all']);
 
 const GOALS = [
-  { id: 'pass_exams',       label: 'Pass my upcoming exams',         icon: '🎯' },
-  { id: 'improve_grades',   label: 'Improve my grades',              icon: '📈' },
-  { id: 'learn_faster',     label: 'Learn faster and retain more',   icon: '⚡' },
-  { id: 'stay_organized',   label: 'Stay organized this semester',   icon: '🗂️' },
+  { id: 'pass_exams',     label: 'Pass my upcoming exams',       Icon: Target,     color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
+  { id: 'improve_grades', label: 'Improve my grades',            Icon: TrendingUp, color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
+  { id: 'learn_faster',   label: 'Learn faster and retain more', Icon: Zap,        color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  { id: 'stay_organized', label: 'Stay organized this semester', Icon: FolderOpen, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
 ];
 
 const STATS = [
-  { number: '40%',  desc: 'less time studying for the same results' },
-  { number: '3x',   desc: 'more practice exams completed before test day' },
-  { number: '2x',   desc: 'more consistent studying with time blocking' },
+  { number: '40%', desc: 'less time studying for the same results',         Icon: Clock,     color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
+  { number: '3x',  desc: 'more practice exams completed before test day',   Icon: Target,    color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
+  { number: '2x',  desc: 'more consistent studying with time blocking',     Icon: CalendarDays, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
 ];
 
 // ─── animation variants ─────────────────────────────────────────────────────
@@ -79,38 +87,63 @@ function fmt1dp(v: number) {
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
+function IconBadge({ Icon, color, bg, size = 20 }: { Icon: LucideIcon; color: string; bg: string; size?: number }) {
+  return (
+    <div className="rounded-xl flex items-center justify-center shrink-0" style={{ width: size + 20, height: size + 20, backgroundColor: bg }}>
+      <Icon size={size} style={{ color }} />
+    </div>
+  );
+}
+
 function OptionCard({
-  icon, label, selected, onClick,
-}: { icon: string; label: string; selected: boolean; onClick: () => void }) {
+  Icon, color, bg, label, selected, onClick,
+}: { Icon: LucideIcon; color: string; bg: string; label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-2 p-5 rounded-2xl transition-all text-center"
+      className="flex flex-col items-center gap-3 p-4 sm:p-5 rounded-2xl transition-all text-center w-full"
       style={{
-        backgroundColor: selected ? '#1A0A2E' : '#1A1A1A',
-        border: `1.5px solid ${selected ? '#9747FF' : '#2A2A2A'}`,
+        backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
+        border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
       }}
     >
-      <span className="text-3xl">{icon}</span>
+      <IconBadge Icon={Icon} color={color} bg={bg} size={22} />
       <span className="text-sm font-medium text-white leading-snug">{label}</span>
     </button>
   );
 }
 
+function RowCard({
+  Icon, color, bg, label, selected, onClick,
+}: { Icon: LucideIcon; color: string; bg: string; label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 p-4 rounded-2xl transition-all text-left w-full"
+      style={{
+        backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
+        border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+      }}
+    >
+      <IconBadge Icon={Icon} color={color} bg={bg} size={20} />
+      <span className="text-sm font-medium text-white leading-snug flex-1 text-left">{label}</span>
+    </button>
+  );
+}
+
 function Pill({
-  icon, label, selected, onClick,
-}: { icon?: string; label: string; selected: boolean; onClick: () => void }) {
+  label, selected, onClick,
+}: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
       className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
       style={{
-        backgroundColor: selected ? '#9747FF20' : '#1A1A1A',
-        border: `1px solid ${selected ? '#9747FF' : '#2A2A2A'}`,
-        color: selected ? '#9747FF' : '#9CA3AF',
+        backgroundColor: selected ? 'rgba(255,101,0,0.1)' : '#1A1A1A',
+        border: `1px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+        color: selected ? '#FF6500' : '#9CA3AF',
       }}
     >
-      {icon && <span>{icon}</span>}
       {label}
     </button>
   );
@@ -119,20 +152,20 @@ function Pill({
 function GpaSelector({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex flex-col gap-2 items-center">
-      <span className="text-xs text-gray-500 font-medium">{label}</span>
+      <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</span>
       <div className="flex items-center gap-4">
         <button
           onClick={() => onChange(clamp(+(value - 0.1).toFixed(1), 0, 4))}
           disabled={value <= 0}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
+          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#FF6500' }}
         >−</button>
-        <span className="text-3xl font-bold text-white w-14 text-center tabular-nums">{fmt1dp(value)}</span>
+        <span className="text-4xl font-bold text-white w-16 text-center tabular-nums">{fmt1dp(value)}</span>
         <button
           onClick={() => onChange(clamp(+(value + 0.1).toFixed(1), 0, 4))}
           disabled={value >= 4}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
+          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#FF6500' }}
         >+</button>
       </div>
     </div>
@@ -152,21 +185,14 @@ export default function OnboardingPage() {
   const [statIndex, setStatIndex] = useState(0);
   const customInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-rotate stats on step 10
   useEffect(() => {
     if (step !== 10) return;
     const t = setInterval(() => setStatIndex(i => (i + 1) % STATS.length), 3000);
     return () => clearInterval(t);
   }, [step]);
 
-  // Determine which steps exist (step 6 is conditional)
   const hasFocusStruggles = data.struggles.some(s => FOCUS_STRUGGLES.has(s));
   const TOTAL_STEPS = 10;
-
-  // Calculate step for display (step 6 may be skipped)
-  const displayStep = step;
-  const displayTotal = TOTAL_STEPS;
-
   const progress = (step / TOTAL_STEPS) * 100;
 
   function go(next: number, direction = 1) {
@@ -175,14 +201,12 @@ export default function OnboardingPage() {
   }
 
   function next(nextStep?: number) {
-    const n = nextStep ?? step + 1;
-    go(n, 1);
+    go(nextStep ?? step + 1, 1);
   }
 
   function back() {
-    if (step <= 1) return;
+    if (step <= 1) { router.push('/'); return; }
     let prev = step - 1;
-    // Skip step 6 going back if no focus struggles
     if (prev === 6 && !hasFocusStruggles) prev = 5;
     go(prev, -1);
   }
@@ -235,7 +259,7 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
               {GRADE_OPTIONS.slice(0, 4).map(o => (
                 <OptionCard
-                  key={o.id} icon={o.icon} label={o.label}
+                  key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.gradeLevel === o.id}
                   onClick={() => saveAndNext({ gradeLevel: o.id }, 2)}
                 />
@@ -243,7 +267,8 @@ export default function OnboardingPage() {
               <div className="col-span-2 flex justify-center">
                 <div className="w-1/2">
                   <OptionCard
-                    icon={GRADE_OPTIONS[4].icon} label={GRADE_OPTIONS[4].label}
+                    Icon={GRADE_OPTIONS[4].Icon} color={GRADE_OPTIONS[4].color} bg={GRADE_OPTIONS[4].bg}
+                    label={GRADE_OPTIONS[4].label}
                     selected={data.gradeLevel === GRADE_OPTIONS[4].id}
                     onClick={() => saveAndNext({ gradeLevel: GRADE_OPTIONS[4].id }, 2)}
                   />
@@ -257,9 +282,9 @@ export default function OnboardingPage() {
       case 2:
         return (
           <StepWrapper heading="What's your current GPA?" sub="And what are you aiming for?">
-            <div className="flex flex-col gap-8 items-center">
+            <div className="flex flex-col gap-8 items-center w-full max-w-xs">
               <GpaSelector label="Current GPA" value={data.gpa} onChange={gpa => setData(d => ({ ...d, gpa }))} />
-              <div className="h-px w-full max-w-[200px]" style={{ backgroundColor: '#2A2A2A' }} />
+              <div className="h-px w-full" style={{ backgroundColor: '#2A2A2A' }} />
               <GpaSelector label="Goal GPA" value={data.goalGpa} onChange={goalGpa => setData(d => ({ ...d, goalGpa }))} />
             </div>
             <ContinueBtn onClick={() => saveAndNext({ gpa: data.gpa, goalGpa: data.goalGpa }, 3)} />
@@ -270,7 +295,7 @@ export default function OnboardingPage() {
       case 3:
         return (
           <StepWrapper heading="What are you currently studying?" sub="Select all that apply — you can always add more later">
-            <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+            <div className="flex flex-wrap gap-2 justify-center w-full max-w-lg">
               {PRESET_SUBJECTS.map(s => (
                 <Pill key={s} label={s} selected={data.subjects.includes(s)} onClick={() => toggleSubject(s)} />
               ))}
@@ -288,12 +313,12 @@ export default function OnboardingPage() {
                     onKeyDown={e => { if (e.key === 'Enter') addCustomSubject(); if (e.key === 'Escape') setShowCustomInput(false); }}
                     placeholder="Subject name…"
                     className="px-3 py-1.5 rounded-full text-sm text-white focus:outline-none"
-                    style={{ backgroundColor: '#1A1A1A', border: '1px solid #9747FF', width: 160 }}
+                    style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,101,0,0.5)', width: 160 }}
                   />
                   <button
                     onClick={addCustomSubject}
                     className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: '#9747FF' }}
+                    style={{ backgroundColor: '#FF6500' }}
                   >
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="white">
                       <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
@@ -310,10 +335,7 @@ export default function OnboardingPage() {
                 </button>
               )}
             </div>
-            <ContinueBtn
-              disabled={data.subjects.length === 0}
-              onClick={() => saveAndNext({ subjects: data.subjects }, 4)}
-            />
+            <ContinueBtn disabled={data.subjects.length === 0} onClick={() => saveAndNext({ subjects: data.subjects }, 4)} />
           </StepWrapper>
         );
 
@@ -323,8 +345,8 @@ export default function OnboardingPage() {
           <StepWrapper heading="How do you learn best?" sub="We'll use this to tailor how we teach you">
             <div className="flex flex-col gap-3 w-full max-w-sm">
               {LEARNING_STYLES.map(o => (
-                <OptionCard
-                  key={o.id} icon={o.icon} label={o.label}
+                <RowCard
+                  key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.learningStyle === o.id}
                   onClick={() => saveAndNext({ learningStyle: o.id }, 5)}
                 />
@@ -337,9 +359,9 @@ export default function OnboardingPage() {
       case 5:
         return (
           <StepWrapper heading="What gets in the way of your studying?" sub="Select everything that applies — no judgment here">
-            <div className="flex flex-wrap gap-2 justify-center max-w-md">
+            <div className="flex flex-wrap gap-2 justify-center w-full max-w-md">
               {STRUGGLE_OPTIONS.map(o => (
-                <Pill key={o.id} icon={o.icon} label={o.label} selected={data.struggles.includes(o.id)} onClick={() => toggleStruggle(o.id)} />
+                <Pill key={o.id} label={o.label} selected={data.struggles.includes(o.id)} onClick={() => toggleStruggle(o.id)} />
               ))}
             </div>
             <ContinueBtn
@@ -357,32 +379,25 @@ export default function OnboardingPage() {
       case 6:
         return (
           <StepWrapper heading="We've got something for that" sub="Studymo has a built-in time blocking system designed for exactly this">
-            <div className="w-full max-w-sm rounded-2xl p-6 flex flex-col gap-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
+            <div className="w-full max-w-sm rounded-2xl p-5 sm:p-6 flex flex-col gap-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#9747FF20' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
+                  <Timer size={20} style={{ color: '#8B5CF6' }} />
                 </div>
                 <p className="font-semibold text-white">Time Block Mode</p>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
                 Break your study sessions into focused time blocks. Each task gets its own countdown timer. When the session is done your progress is saved automatically.
               </p>
-              {/* Mini timer pill mockup */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full self-start" style={{ backgroundColor: '#9747FF20', border: '1px solid #9747FF40' }}>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-full self-start" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-purple-300 font-mono">25:00</span>
+                <span className="text-xs font-mono" style={{ color: '#A78BFA' }}>25:00</span>
                 <span className="text-xs text-gray-500">· Studying Biology</span>
               </div>
             </div>
-            <button
-              onClick={() => next(7)}
-              className="mt-2 px-6 py-3 rounded-xl font-medium text-white text-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#9747FF' }}
-            >
+            <Button variant="brand" size="lg" className="mt-2 w-full max-w-sm" onClick={() => next(7)}>
               That sounds helpful →
-            </button>
+            </Button>
           </StepWrapper>
         );
 
@@ -392,8 +407,8 @@ export default function OnboardingPage() {
           <StepWrapper heading="What's your main goal with Studymo?">
             <div className="flex flex-col gap-3 w-full max-w-sm">
               {GOALS.map(o => (
-                <OptionCard
-                  key={o.id} icon={o.icon} label={o.label}
+                <RowCard
+                  key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.mainGoal === o.id}
                   onClick={() => saveAndNext({ mainGoal: o.id }, 8)}
                 />
@@ -409,14 +424,16 @@ export default function OnboardingPage() {
             <div className="flex flex-col gap-3 w-full max-w-sm">
               <button
                 onClick={() => setTestChoice(testChoice === 'yes' ? null : 'yes')}
-                className="p-5 rounded-2xl text-left transition-all"
+                className="p-4 sm:p-5 rounded-2xl text-left transition-all"
                 style={{
-                  backgroundColor: testChoice === 'yes' ? '#1A0A2E' : '#1A1A1A',
-                  border: `1.5px solid ${testChoice === 'yes' ? '#9747FF' : '#2A2A2A'}`,
+                  backgroundColor: testChoice === 'yes' ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
+                  border: `1.5px solid ${testChoice === 'yes' ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">✅</span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+                    <Target size={20} style={{ color: '#22C55E' }} />
+                  </div>
                   <span className="font-medium text-white text-sm">Yes, I have a test coming up</span>
                 </div>
                 {testChoice === 'yes' && (
@@ -444,7 +461,10 @@ export default function OnboardingPage() {
                         style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
                       />
                     </div>
-                    <button
+                    <Button
+                      variant="brand"
+                      size="default"
+                      className="w-full"
                       onClick={() => {
                         if (data.upcomingTest?.subject && data.upcomingTest?.date) {
                           saveOnboardingData({ upcomingTest: data.upcomingTest });
@@ -452,25 +472,22 @@ export default function OnboardingPage() {
                         }
                       }}
                       disabled={!data.upcomingTest?.subject || !data.upcomingTest?.date}
-                      className="py-2.5 rounded-xl font-medium text-white text-sm disabled:opacity-40"
-                      style={{ backgroundColor: '#9747FF' }}
                     >
                       Got it →
-                    </button>
+                    </Button>
                   </div>
                 )}
               </button>
 
               <button
                 onClick={() => { saveOnboardingData({ upcomingTest: null }); next(9); }}
-                className="p-5 rounded-2xl text-left transition-all"
-                style={{
-                  backgroundColor: testChoice === 'skip' ? '#1A0A2E' : '#1A1A1A',
-                  border: '1.5px solid #2A2A2A',
-                }}
+                className="p-4 sm:p-5 rounded-2xl text-left transition-all"
+                style={{ backgroundColor: '#1A1A1A', border: '1.5px solid #2A2A2A' }}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">➡️</span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(107,114,128,0.12)' }}>
+                    <ArrowRight size={20} style={{ color: '#9CA3AF' }} />
+                  </div>
                   <span className="font-medium text-white text-sm">Skip for now</span>
                 </div>
               </button>
@@ -487,10 +504,8 @@ export default function OnboardingPage() {
                 className="w-full rounded-2xl flex flex-col items-center justify-center gap-3 py-14"
                 style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
               >
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: '#9747FF20' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
+                  <Play size={28} style={{ color: '#FF6500' }} fill="#FF6500" />
                 </div>
                 <p className="text-xs text-gray-600 text-center">[ Demo video — add final video here ]</p>
               </div>
@@ -504,8 +519,7 @@ export default function OnboardingPage() {
         return (
           <StepWrapper heading="You're in good company" sub="Here's what students are saying about Studymo">
             <div className="w-full max-w-sm flex flex-col gap-6 items-center">
-              {/* Rotating stat card */}
-              <div className="relative w-full h-36 overflow-hidden">
+              <div className="relative w-full h-40 overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={statIndex}
@@ -513,10 +527,15 @@ export default function OnboardingPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.4 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl p-6"
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl p-6"
                     style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
                   >
-                    <span className="text-5xl font-extrabold" style={{ color: '#9747FF' }}>
+                    {(() => { const StatIcon = STATS[statIndex].Icon; return (
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: STATS[statIndex].bg }}>
+                      <StatIcon size={22} style={{ color: STATS[statIndex].color }} />
+                    </div>
+                    ); })()}
+                    <span className="text-4xl font-extrabold" style={{ color: STATS[statIndex].color }}>
                       {STATS[statIndex].number}
                     </span>
                     <p className="text-sm text-gray-400 text-center">{STATS[statIndex].desc}</p>
@@ -524,27 +543,22 @@ export default function OnboardingPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Dot indicators */}
               <div className="flex gap-2">
                 {STATS.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setStatIndex(i)}
-                    className="w-2 h-2 rounded-full transition-colors"
-                    style={{ backgroundColor: i === statIndex ? '#9747FF' : '#2A2A2A' }}
+                    className="w-2 h-2 rounded-full transition-all"
+                    style={{ backgroundColor: i === statIndex ? '#FF6500' : '#2A2A2A', width: i === statIndex ? 20 : 8 }}
                   />
                 ))}
               </div>
 
               <p className="text-sm text-gray-500 text-center">Join thousands of students studying smarter</p>
 
-              <button
-                onClick={() => router.push('/sign-up')}
-                className="w-full py-4 rounded-xl font-semibold text-white text-base transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#9747FF' }}
-              >
+              <Button variant="brand" size="lg" className="w-full" onClick={() => router.push('/sign-up')}>
                 Create your account →
-              </button>
+              </Button>
             </div>
           </StepWrapper>
         );
@@ -558,31 +572,23 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#111111' }}>
       {/* Progress bar */}
       <div className="h-1 w-full" style={{ backgroundColor: '#1A1A1A' }}>
-        <div
-          className="h-1 transition-all duration-500"
-          style={{ width: `${progress}%`, backgroundColor: '#9747FF' }}
-        />
+        <div className="h-1 transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: '#FF6500' }} />
       </div>
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4">
         <button
           onClick={back}
-          className="text-gray-500 hover:text-white transition-colors"
+          className="text-gray-500 hover:text-white transition-colors p-1 -ml-1"
           style={{ visibility: step > 1 ? 'visible' : 'hidden' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ArrowLeft size={20} />
         </button>
 
-        <span className="text-xs text-gray-600">{displayStep} of {displayTotal}</span>
+        <span className="text-xs text-gray-600">{step} of {TOTAL_STEPS}</span>
 
         {skippable.includes(step) ? (
-          <button
-            onClick={() => next(step + 1)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-          >
+          <button onClick={() => next(step + 1)} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
             Skip
           </button>
         ) : (
@@ -591,7 +597,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 flex items-center justify-center px-6 pb-10 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-10 overflow-hidden">
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={step}
@@ -613,13 +619,11 @@ export default function OnboardingPage() {
 
 // ─── shared layout components ────────────────────────────────────────────────
 
-function StepWrapper({
-  heading, sub, children,
-}: { heading: string; sub?: string; children: React.ReactNode }) {
+function StepWrapper({ heading, sub, children }: { heading: string; sub?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-lg text-center">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-white leading-tight">{heading}</h1>
+      <div className="flex flex-col gap-2 px-2">
+        <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">{heading}</h1>
         {sub && <p className="text-sm text-gray-500">{sub}</p>}
       </div>
       {children}
@@ -629,13 +633,8 @@ function StepWrapper({
 
 function ContinueBtn({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="mt-2 w-full max-w-xs py-3 rounded-xl font-medium text-white text-sm transition-opacity hover:opacity-90 disabled:opacity-30"
-      style={{ backgroundColor: '#9747FF' }}
-    >
+    <Button variant="brand" size="lg" className="mt-2 w-full max-w-xs" onClick={onClick} disabled={disabled}>
       Continue
-    </button>
+    </Button>
   );
 }

@@ -144,7 +144,7 @@ function SidebarContent({
       {/* Logo + collapse */}
       <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
         {!collapsed && (
-          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
+          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>StudyMo</span>
         )}
         {showCollapseBtn && isLibraryActive && (
           <button

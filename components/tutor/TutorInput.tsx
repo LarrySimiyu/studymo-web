@@ -45,7 +45,6 @@ export default function TutorInput({
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', color: 'var(--text-1)' }}
           >
-            {/* Doc icon */}
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0" style={{ color: 'var(--text-3)' }}>
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
@@ -88,7 +87,6 @@ export default function TutorInput({
 
         {/* Bottom toolbar */}
         <div className="flex items-center justify-between px-3 pb-2.5">
-          {/* Reveal toggle */}
           <button
             onClick={onToggleReveal}
             title="Get the direct answer with your next message"
@@ -104,7 +102,6 @@ export default function TutorInput({
             {revealAnswer && <span>Just tell me</span>}
           </button>
 
-          {/* Send */}
           <button
             onClick={onSend}
             disabled={!value.trim() || disabled}
@@ -115,7 +112,6 @@ export default function TutorInput({
           </button>
         </div>
       </div>
-
     </div>
   );
 }
