@@ -46,7 +46,9 @@ import TutorPanel from '@/components/library/TutorPanel';
 import {
   Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
   List, ListOrdered, Quote, Code, Highlighter, Baseline, Wand2,
+  Layers, HelpCircle, Mic, Target, ScrollText,
 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics' | 'transcript';
 
@@ -62,6 +64,7 @@ interface Props {
   id: string;
   onBack?: () => void;
   embedded?: boolean;
+  availableTags?: { id: string; name: string; color: string | null }[];
 }
 
 function convertNoteToHTML(content: string): string {
@@ -90,28 +93,28 @@ function convertNoteToHTML(content: string): string {
   }
 }
 
-function GeneratePrompt({ icon, label, description, onGenerate }: {
-  icon: string; label: string; description: string; onGenerate: () => Promise<void>;
+function GeneratePrompt({ icon: Icon, color, bg, label, description, onGenerate }: {
+  icon: React.ElementType; color: string; bg: string; label: string; description: string; onGenerate: () => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--bg-input)' }}>
-        {icon}
+      <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: bg }}>
+        <Icon size={24} style={{ color }} />
       </div>
       <div>
-        <p className="text-[var(--text-1)] font-medium">{label}</p>
+        <p className="text-[var(--text-1)] font-semibold">{label}</p>
         <p className="text-[var(--text-2)] text-sm mt-1 max-w-xs">{description}</p>
       </div>
-      <button
+      <Button
+        variant="brand"
+        size="sm"
         onClick={async () => { setLoading(true); await onGenerate(); setLoading(false); }}
         disabled={loading}
-        className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
-        style={{ backgroundColor: '#9747FF' }}
       >
         {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
         {loading ? 'Generating…' : label}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -128,9 +131,11 @@ function QuizGeneratePrompt({ onGenerate }: { onGenerate: (types: string[]) => P
   ];
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--bg-input)' }}>❓</div>
+      <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+        <HelpCircle size={24} style={{ color: '#3B82F6' }} />
+      </div>
       <div>
-        <p className="text-[var(--text-1)] font-medium">Generate Quiz</p>
+        <p className="text-[var(--text-1)] font-semibold">Generate Quiz</p>
         <p className="text-[var(--text-2)] text-sm mt-1 max-w-xs">Select question types then generate a short quiz to test your understanding.</p>
       </div>
       <div className="flex gap-2">
@@ -138,27 +143,28 @@ function QuizGeneratePrompt({ onGenerate }: { onGenerate: (types: string[]) => P
           <button key={value} onClick={() => toggleType(value)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
             style={{
-              backgroundColor: types.includes(value) ? 'var(--brand-subtle)' : 'transparent',
-              borderColor: types.includes(value) ? '#9747FF' : 'var(--border-md)',
-              color: types.includes(value) ? '#9747FF' : 'var(--text-2)',
+              backgroundColor: types.includes(value) ? 'rgba(255,101,0,0.08)' : 'transparent',
+              borderColor: types.includes(value) ? 'var(--brand)' : 'var(--border-md)',
+              color: types.includes(value) ? 'var(--brand)' : 'var(--text-2)',
             }}>
             {label}
           </button>
         ))}
       </div>
-      <button
+      <Button
+        variant="brand"
+        size="sm"
         onClick={async () => { if (!types.length) return; setLoading(true); await onGenerate(types); setLoading(false); }}
         disabled={loading || !types.length}
-        className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
-        style={{ backgroundColor: '#9747FF' }}>
+      >
         {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
         {loading ? 'Generating…' : 'Generate Quiz'}
-      </button>
+      </Button>
     </div>
   );
 }
 
-export default function DocumentDetail({ id, onBack, embedded }: Props) {
+export default function DocumentDetail({ id, onBack, embedded, availableTags }: Props) {
   const [doc, setDoc] = useState<Document | null>(null);
   const [note, setNote] = useState<Note | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -169,7 +175,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const [shareUrl, setShareUrl] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [docTasks, setDocTasks] = useState<Task[]>([]);
-  const [allDocTags, setAllDocTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
+  const [allDocTags, setAllDocTags] = useState<{ id: string; name: string; color: string | null }[]>(availableTags ?? []);
   const [docWeakTopics, setDocWeakTopics] = useState<WeakTopic[]>([]);
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [showGeneratePodcast, setShowGeneratePodcast] = useState(false);
@@ -204,6 +210,10 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   const pendingContent = useRef<{ noteId: string; html: string } | null>(null);
   const noteRef = useRef(note);
   useEffect(() => { noteRef.current = note; }, [note]);
+  const hasParentTagsRef = useRef(availableTags !== undefined);
+  useEffect(() => {
+    if (availableTags) setAllDocTags(availableTags);
+  }, [availableTags]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number; bottom: number } | null>(null);
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
@@ -234,17 +244,19 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
   }, [id]);
 
   const loadSideData = useCallback(async () => {
-    const [tasksRes, allDocTagsRes, weakRes, podcastsRes] = await Promise.all([
+    const [tasksRes, weakRes, podcastsRes] = await Promise.all([
       tasksApi.getAll({ documentId: id }),
-      docTagsApi.getAll(),
       weakTopicsApi.getAll({ documentId: id }),
       podcastsApi.getByDocument(id),
     ]);
     if (tasksRes.data) setDocTasks(tasksRes.data);
-    if (allDocTagsRes.data) setAllDocTags(allDocTagsRes.data);
     if (weakRes.data) setDocWeakTopics(weakRes.data);
     if (podcastsRes.data) setPodcasts(podcastsRes.data);
-  }, [id, note]);
+    if (!hasParentTagsRef.current) {
+      const tagsRes = await docTagsApi.getAll();
+      if (tagsRes.data) setAllDocTags(tagsRes.data);
+    }
+  }, [id]);
 
   useEffect(() => {
     fetchAll().finally(() => { setLoading(false); forceTabUpdate(n => n + 1); });
@@ -907,7 +919,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
                 onClick={async () => {
                   if (!newTagName.trim()) return;
                   const { data } = await docTagsApi.create({ name: newTagName.trim(), color: newTagColor });
-                  if (data) { await documentsApi.addTag(id, data.id); fetchAll(); loadSideData(); }
+                  if (data) { await documentsApi.addTag(id, data.id); fetchAll(); loadSideData(); window.dispatchEvent(new CustomEvent('library:refetch')); }
                   setShowCreateTagModal(false); setNewTagName('');
                 }}
                 className="flex-1 py-2 rounded-lg text-xs text-white hover:opacity-90 transition-opacity"
@@ -960,7 +972,9 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
             <div className="flex flex-col items-center">
               {flashcards.length === 0 ? (
                 <GeneratePrompt
-                  icon="🗂"
+                  icon={Layers}
+                  color="#FF6500"
+                  bg="rgba(255,101,0,0.12)"
                   label="Generate Flashcards"
                   description="Create a set of flashcards from your notes to help you memorize key concepts."
                   onGenerate={async () => {
@@ -1000,17 +1014,17 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           {tab === 'podcast' && (
             <div>
               {podcasts.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="text-5xl mb-4">🎙️</div>
-                  <p className="text-[var(--text-2)] mb-2 font-medium">No podcasts yet</p>
-                  <p className="text-[var(--text-3)] text-sm mb-6">Turn your notes into an audio lecture you can listen to anywhere</p>
-                  <button
-                    onClick={() => setShowGeneratePodcast(true)}
-                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-                    style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-                  >
+                <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(236,72,153,0.12)' }}>
+                    <Mic size={24} style={{ color: '#EC4899' }} />
+                  </div>
+                  <div>
+                    <p className="text-[var(--text-1)] font-semibold">Generate Podcast</p>
+                    <p className="text-[var(--text-2)] text-sm mt-1 max-w-xs">Turn your notes into an audio lecture you can listen to anywhere</p>
+                  </div>
+                  <Button variant="brand" size="sm" onClick={() => setShowGeneratePodcast(true)}>
                     Generate Podcast
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1072,9 +1086,14 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
                   {doc.transcript}
                 </p>
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-                  <p className="text-2xl">📝</p>
-                  <p className="text-body-sm text-[var(--text-2)]">No transcript available</p>
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+                    <ScrollText size={24} style={{ color: '#22C55E' }} />
+                  </div>
+                  <div>
+                    <p className="text-[var(--text-1)] font-semibold">No transcript available</p>
+                    <p className="text-[var(--text-2)] text-sm mt-1">Transcripts are generated automatically from audio and video uploads</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -1084,10 +1103,14 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
           {tab === 'weak-topics' && (
             <div>
               {docWeakTopics.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-                  <p className="text-2xl">✅</p>
-                  <p className="text-body-sm text-[var(--text-2)]">No weak topics for this note</p>
-                  <p className="text-xs text-[var(--text-3)]">Take a quiz to identify areas that need review</p>
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(245,158,11,0.12)' }}>
+                    <Target size={24} style={{ color: '#F59E0B' }} />
+                  </div>
+                  <div>
+                    <p className="text-[var(--text-1)] font-semibold">No weak topics yet</p>
+                    <p className="text-[var(--text-2)] text-sm mt-1">Take a quiz to identify areas that need review</p>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

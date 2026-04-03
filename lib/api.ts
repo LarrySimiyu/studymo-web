@@ -92,6 +92,11 @@ async function requestForm<T>(
     }
 
     const data = (await response.json()) as T;
+
+    const segments = path.split('?')[0].split('/');
+    const basePath = '/' + segments[1];
+    invalidatePrefix(basePath);
+
     return { data, error: null };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'An unknown error occurred';
