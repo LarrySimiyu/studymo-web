@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { analyticsApi, QuizHistoryData } from '@/lib/api/analytics';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -151,13 +152,15 @@ export default function QuizStatsCard({ avgScore: avgProp, totalQuizzesTaken: to
   useEffect(() => { if (bestProp !== undefined) setBest(bestProp); }, [bestProp]);
   useEffect(() => { if (historyProp !== undefined) setHistory(historyProp); }, [historyProp]);
 
+  const [quizzesOpen, setQuizzesOpen] = useState(false);
+
   return (
     <div>
       <h2 className="text-xs font-medium text-[var(--text-2)] mb-2">Quiz Stats</h2>
 
       {/* Metrics row */}
       <div
-        className="grid grid-cols-3 gap-3 p-5 md:p-8 rounded-xl mb-3"
+        className="grid grid-cols-3 gap-3 p-5 md:p-8 rounded-xl"
         style={{ backgroundColor: 'var(--bg-card)' }}
       >
         <MetricRing value={avg} label="Avg Score" color={scoreColor(avg)} />
@@ -165,22 +168,52 @@ export default function QuizStatsCard({ avgScore: avgProp, totalQuizzesTaken: to
         <MetricCount value={total} label="Attempts" />
       </div>
 
-      {/* Quiz list */}
-      {history.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {history.map(q => (
-            <QuizRow
-              key={q.quizId}
-              documentTitle={q.documentTitle}
-              latestScore={q.latestScore}
-              attempts={q.attempts}
-              improvement={q.improvement}
-            />
-          ))}
+      {/* Quizzes toggle row */}
+      {history.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setQuizzesOpen(o => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors"
+            style={{ backgroundColor: 'var(--bg-card)' }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+          >
+            <span className="text-xs font-semibold text-[var(--text-1)]">
+              Quizzes <span className="font-normal text-[var(--text-3)]">· {history.length}</span>
+            </span>
+            <span style={{ color: 'var(--text-1)' }}>
+              {quizzesOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {quizzesOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
+                className="flex flex-col gap-2 mt-2"
+              >
+                {history.map(q => (
+                  <QuizRow
+                    key={q.quizId}
+                    documentTitle={q.documentTitle}
+                    latestScore={q.latestScore}
+                    attempts={q.attempts}
+                    improvement={q.improvement}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      ) : total === 0 ? (
-        <p className="text-body-sm text-[var(--text-2)] px-1">Take a quiz to see your stats here.</p>
-      ) : null}
+      )}
+
+      {total === 0 && (
+        <p className="text-body-sm text-[var(--text-2)] px-1 mt-3">Take a quiz to see your stats here.</p>
+      )}
     </div>
   );
 }
