@@ -1,118 +1,157 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { Layers, ArrowBigLeft, ArrowBigRight, ArrowLeft, Star } from 'lucide-react';
 import { documentsApi, flashcardsApi, Document, Flashcard } from '@/lib/api/documents';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import ProgressBar from '@/components/ui/ProgressBar';
+
+const PALETTE: [string, string][] = [
+  ['#FF6500', 'rgba(255,101,0,0.12)'],
+  ['#22C55E', 'rgba(34,197,94,0.12)'],
+  ['#3B82F6', 'rgba(59,130,246,0.12)'],
+  ['#F59E0B', 'rgba(245,158,11,0.12)'],
+  ['#EC4899', 'rgba(236,72,153,0.12)'],
+  ['#8B5CF6', 'rgba(139,92,246,0.12)'],
+  ['#14B8A6', 'rgba(20,184,166,0.12)'],
+];
+
+function getPalette(id: string): [string, string] {
+  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return PALETTE[hash % PALETTE.length];
+}
 
 interface DeckEntry {
   document: Document;
   count: number;
 }
 
-function FlipCard({ card, index, total, onPrev, onNext }: {
-  card: Flashcard;
+function FlipCard({ cards, index, onPrev, onNext, onRestart, onExit }: {
+  cards: Flashcard[];
   index: number;
   total: number;
   onPrev: () => void;
   onNext: () => void;
+  onRestart: () => void;
+  onExit: () => void;
 }) {
+  const total = cards.length;
   const [flipped, setFlipped] = useState(false);
+  const [slideClass, setSlideClass] = useState('');
+  const [displayIndex, setDisplayIndex] = useState(index);
+  const animating = useRef(false);
 
-  // Reset flip when card changes
-  useEffect(() => { setFlipped(false); }, [card.id]);
+  useEffect(() => {
+    if (index === displayIndex) return;
+    if (animating.current) return;
+    animating.current = true;
+    const goingNext = index > displayIndex;
+    setSlideClass(goingNext ? 'slide-out-left' : 'slide-out-right');
+    setTimeout(() => {
+      setDisplayIndex(index);
+      setFlipped(false);
+      setSlideClass(goingNext ? 'slide-in-right' : 'slide-in-left');
+      setTimeout(() => {
+        setSlideClass('');
+        animating.current = false;
+      }, 300);
+    }, 250);
+  }, [index]);
+
+  const card = cards[displayIndex];
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Card */}
-      <div
-        className="w-full max-w-xl cursor-pointer select-none"
-        style={{ perspective: '1000px' }}
-        onClick={() => setFlipped(f => !f)}
-      >
-        <div
-          className="relative w-full rounded-2xl transition-transform duration-500"
-          style={{
-            height: 280,
-            transformStyle: 'preserve-3d',
-            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          }}
-        >
-          {/* Front */}
-          <div
-            className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
-            style={{
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              backgroundColor: '#1A1A1A',
-              border: '1px solid #2A2A2A',
-            }}
-          >
-            <p className="text-xs text-gray-500 mb-4 uppercase tracking-wider">Question</p>
-            <p className="text-white text-base leading-relaxed">{card.front}</p>
-            <p className="text-xs text-gray-600 mt-6">Click to reveal answer</p>
-          </div>
+    <>
+      <style>{`
+        .slide-out-left  { animation: slideOutLeft  0.25s ease forwards; }
+        .slide-out-right { animation: slideOutRight 0.25s ease forwards; }
+        .slide-in-right  { animation: slideInRight  0.3s ease forwards; }
+        .slide-in-left   { animation: slideInLeft   0.3s ease forwards; }
+        @keyframes slideOutLeft  { to { opacity: 0; transform: translateX(-60px) rotateY(0deg); } }
+        @keyframes slideOutRight { to { opacity: 0; transform: translateX(60px)  rotateY(0deg); } }
+        @keyframes slideInRight  { from { opacity: 0; transform: translateX(60px);  } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInLeft   { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+      `}</style>
 
-          {/* Back */}
+      <div className="flex flex-col items-center gap-8 w-full max-w-xl">
+        <ProgressBar index={displayIndex} total={total} />
+
+        <div
+          className={`w-full cursor-pointer select-none ${slideClass}`}
+          style={{ perspective: '1000px' }}
+          onClick={() => !animating.current && setFlipped(f => !f)}
+        >
           <div
-            className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
+            className="relative w-full rounded-2xl transition-transform duration-500"
             style={{
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-              backgroundColor: '#1A0A2E',
-              border: '1px solid #9747FF40',
+              height: 300,
+              transformStyle: 'preserve-3d',
+              transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
             }}
           >
-            <p className="text-xs mb-4 uppercase tracking-wider" style={{ color: '#9747FF' }}>Answer</p>
-            <p className="text-white text-base leading-relaxed">{card.back}</p>
+            <div
+              className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', backgroundColor: 'var(--bg-card)' }}
+            >
+              <p className="text-2xl font-bold text-[var(--text-1)] mb-5">Question</p>
+              <p className="text-[var(--text-1)] text-base leading-relaxed">{card.front}</p>
+              <p className="text-[10px] text-[var(--text-3)] mt-6">tap to flip</p>
+            </div>
+
+            <div
+              className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', backgroundColor: 'var(--brand-subtle)' }}
+            >
+              <p className="text-2xl font-bold mb-5" style={{ color: 'var(--brand)' }}>Answer</p>
+              <p className="text-[var(--text-1)] text-base leading-relaxed">{card.back}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Progress */}
-      <div className="flex items-center gap-1">
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-full transition-all"
-            style={{
-              width: i === index ? 20 : 6,
-              height: 6,
-              backgroundColor: i === index ? '#9747FF' : '#2A2A2A',
-            }}
-          />
-        ))}
+        <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex items-center gap-3 w-full">
+            <button
+              onClick={onPrev}
+              disabled={index === 0}
+              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+            >
+              <ArrowBigLeft size={22} />
+            </button>
+            <button
+              onClick={() => {
+                if (index === total - 1) { onRestart(); return; }
+                if (!animating.current) setFlipped(f => !f);
+              }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
+              style={index === total - 1
+                ? { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
+                : flipped
+                  ? { backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }
+                  : { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
+              }
+            >
+              {index === total - 1
+                ? <><Star size={13} fill="white" stroke="none" />Start Over</>
+                : flipped ? 'Show Question' : <><Star size={13} fill="white" stroke="none" />Reveal Answer</>
+              }
+            </button>
+            <button
+              onClick={onNext}
+              disabled={index === total - 1}
+              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+            >
+              <ArrowBigRight size={22} />
+            </button>
+          </div>
+          <button onClick={onExit} className="text-xs transition-colors" style={{ color: 'var(--text-3)' }}>
+            Return to flashcards
+          </button>
+        </div>
       </div>
-
-      <p className="text-xs text-gray-500">{index + 1} / {total}</p>
-
-      {/* Nav */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onPrev}
-          disabled={index === 0}
-          className="px-5 py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-30"
-          style={{ backgroundColor: '#2A2A2A', color: '#D1D5DB' }}
-        >
-          ← Prev
-        </button>
-        <button
-          onClick={() => setFlipped(f => !f)}
-          className="px-5 py-2 rounded-xl text-sm font-medium"
-          style={{ backgroundColor: '#9747FF20', color: '#9747FF', border: '1px solid #9747FF40' }}
-        >
-          {flipped ? 'Show Question' : 'Reveal Answer'}
-        </button>
-        <button
-          onClick={onNext}
-          disabled={index === total - 1}
-          className="px-5 py-2 rounded-xl text-sm font-medium transition-opacity disabled:opacity-30"
-          style={{ backgroundColor: '#2A2A2A', color: '#D1D5DB' }}
-        >
-          Next →
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -120,7 +159,6 @@ export default function FlashcardsPage() {
   const [decks, setDecks] = useState<DeckEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Study mode state
   const [activeDeck, setActiveDeck] = useState<{ doc: Document; cards: Flashcard[] } | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
   const [deckLoading, setDeckLoading] = useState(false);
@@ -150,100 +188,83 @@ export default function FlashcardsPage() {
     setDeckLoading(false);
   }
 
-  // Study mode overlay
   if (activeDeck) {
     const { doc, cards } = activeDeck;
     return (
-      <div className="max-w-2xl mx-auto py-4">
-        <div className="flex items-center gap-3 mb-8">
+      <div className="max-w-2xl mx-auto py-4 px-4 sm:px-6">
+        <div className="mb-8">
           <button
             onClick={() => setActiveDeck(null)}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
           >
-            ← Back
+            <ArrowLeft size={20} />
           </button>
-          <div>
-            <h1 className="text-lg font-bold text-white">{doc.title}</h1>
-            <p className="text-xs text-gray-500">{cards.length} cards</p>
-          </div>
         </div>
 
         <FlipCard
-          card={cards[cardIndex]}
+          cards={cards}
           index={cardIndex}
           total={cards.length}
           onPrev={() => setCardIndex(i => Math.max(0, i - 1))}
           onNext={() => setCardIndex(i => Math.min(cards.length - 1, i + 1))}
+          onRestart={() => setCardIndex(0)}
+          onExit={() => setActiveDeck(null)}
         />
-
-        {cardIndex === cards.length - 1 && (
-          <div className="mt-8 text-center">
-            <p className="text-gray-400 text-sm mb-3">All cards reviewed!</p>
-            <button
-              onClick={() => setCardIndex(0)}
-              className="px-5 py-2 rounded-xl text-sm font-medium text-white"
-              style={{ backgroundColor: '#9747FF' }}
-            >
-              Start Over
-            </button>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Flashcards</h1>
-        <Link
-          href="/dashboard/library"
-          className="text-xs px-3 py-1.5 rounded-lg font-medium hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF', color: '#fff' }}
-        >
-          + Upload Document
-        </Link>
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <PageHeader title="Flashcards" action={{ label: 'New Flashcard', href: '/dashboard/library' }} />
 
       {loading || deckLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#9747FF' }} />
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--brand)' }} />
         </div>
       ) : decks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="text-4xl mb-4">🗂</div>
-          <p className="text-gray-400 text-sm">No flashcard decks yet. Upload a document to generate flashcards.</p>
+          <p className="text-[var(--text-2)] text-sm">No flashcard decks yet. Upload a note to generate flashcards.</p>
           <Link
             href="/dashboard/library"
             className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
           >
             Go to Library
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {decks.map(({ document: doc, count }) => (
-            <button
-              key={doc.id}
-              onClick={() => openDeck(doc)}
-              className="block p-5 rounded-xl transition-colors hover:border-purple-500/50 text-left"
-              style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                  style={{ backgroundColor: '#9747FF20' }}
-                >
-                  🗂
+          {decks.map(({ document: doc, count }) => {
+            const [iconColor, iconBg] = getPalette(doc.id);
+            return (
+              <button
+                key={doc.id}
+                onClick={() => openDeck(doc)}
+                className="p-5 rounded-xl transition-colors text-left"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: iconBg }}
+                  >
+                    <Layers size={26} style={{ color: iconColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">{count}</p>
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">Cards</p>
+                    </div>
+                    <p className="text-xs text-[var(--text-3)] truncate mt-1">{doc.title}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm truncate">{doc.title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{count} cards</p>
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

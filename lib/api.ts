@@ -1,4 +1,5 @@
 import { auth } from './firebase';
+import { cacheGet, cacheSet, invalidatePrefix } from './apiCache';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -16,12 +17,22 @@ async function getIdToken(): Promise<string> {
 async function request<T>(
   method: string,
   path: string,
-  body?: unknown
+  body?: unknown,
+  signal?: AbortSignal
 ): Promise<ApiResponse<T>> {
+  const isGet = method === 'GET';
+
+  // Return cached data immediately for GET requests
+  if (isGet) {
+    const cached = cacheGet<T>(path);
+    if (cached !== null) return { data: cached, error: null };
+  }
+
   try {
     const token = await getIdToken();
     const response = await fetch(`${API_URL}${path}`, {
       method,
+      signal,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -35,8 +46,23 @@ async function request<T>(
     }
 
     const data = (await response.json()) as T;
+
+    if (isGet && !signal?.aborted) {
+      cacheSet(path, data);
+    }
+
+    // Invalidate related GET cache on mutations
+    if (!isGet) {
+      // Strip query string to get the base resource path
+      const basePath = path.split('?')[0];
+      invalidatePrefix(basePath);
+    }
+
     return { data, error: null };
   } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return { data: null, error: null };
+    }
     const message = err instanceof Error ? err.message : 'An unknown error occurred';
     return { data: null, error: message };
   }
@@ -71,11 +97,13 @@ async function requestForm<T>(
   }
 }
 
+export { invalidatePrefix, invalidateAll } from './apiCache';
+
 export const api = {
-  get: <T>(path: string) => request<T>('GET', path),
-  post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
-  put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
-  patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
-  delete: <T>(path: string) => request<T>('DELETE', path),
+  get: <T>(path: string, signal?: AbortSignal) => request<T>('GET', path, undefined, signal),
+  post: <T>(path: string, body: unknown, signal?: AbortSignal) => request<T>('POST', path, body, signal),
+  put: <T>(path: string, body: unknown, signal?: AbortSignal) => request<T>('PUT', path, body, signal),
+  patch: <T>(path: string, body: unknown, signal?: AbortSignal) => request<T>('PATCH', path, body, signal),
+  delete: <T>(path: string, signal?: AbortSignal) => request<T>('DELETE', path, undefined, signal),
   postForm: <T>(path: string, body: FormData) => requestForm<T>('POST', path, body),
 };

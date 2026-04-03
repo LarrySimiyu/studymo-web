@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 
-export interface SubjectTag {
+export interface Tag {
   id: string;
   userId: string;
   name: string;
@@ -13,8 +13,7 @@ export interface Task {
   userId: string;
   documentId: string | null;
   document: { id: string; title: string; type: string } | null;
-  subjectTagId: string | null;
-  subjectTag: SubjectTag | null;
+  tags: { tagId: string; tag: Tag }[];
   title: string;
   description: string | null;
   completed: boolean;
@@ -50,16 +49,8 @@ export interface StudySession {
   taskEntries: SessionTaskEntry[];
 }
 
-export const subjectTagsApi = {
-  getAll: () => api.get<SubjectTag[]>('/subject-tags'),
-  create: (data: { name: string; color: string }) => api.post<SubjectTag>('/subject-tags', data),
-  update: (id: string, data: { name?: string; color?: string }) =>
-    api.patch<SubjectTag>(`/subject-tags/${id}`, data),
-  delete: (id: string) => api.delete<void>(`/subject-tags/${id}`),
-};
-
 export const tasksApi = {
-  getAll: (params?: { completed?: boolean; subjectTagId?: string; documentId?: string }) => {
+  getAll: (params?: { completed?: boolean; tagId?: string; documentId?: string }) => {
     const qs = params
       ? new URLSearchParams(
           Object.entries(params)
@@ -75,10 +66,12 @@ export const tasksApi = {
     estimatedMins?: number;
     dueDate?: string;
     documentId?: string;
-    subjectTagId?: string;
+    tagId?: string;
   }) => api.post<Task>('/tasks', data),
-  update: (id: string, data: Partial<Task & { subjectTagId?: string | null; documentId?: string | null }>) =>
+  update: (id: string, data: Partial<Task & { tagId?: string | null; documentId?: string | null }>) =>
     api.patch<Task>(`/tasks/${id}`, data),
+  addTag: (taskId: string, tagId: string) => api.post<Task>(`/tasks/${taskId}/tags`, { tagId }),
+  removeTag: (taskId: string, tagId: string) => api.delete<Task>(`/tasks/${taskId}/tags/${tagId}`),
   delete: (id: string) => api.delete<void>(`/tasks/${id}`),
 };
 

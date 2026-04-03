@@ -1,27 +1,43 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { studyPlansApi, StudyPlan } from '@/lib/api/studyPlan';
+import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
 import { api } from '@/lib/api';
+import { CalendarDays, CalendarIcon, Check } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import * as Popover from '@radix-ui/react-popover';
+import { Button } from '@/components/ui/button';
+import PlanCalendar from '@/components/dashboard/PlanCalendar';
+import PlanCard from '@/components/dashboard/PlanCard';
 
 interface Document { id: string; title: string }
 
+// ── Main page ─────────────────────────────────────────────────────────────────
 export default function StudyPlanPage() {
   const [plans, setPlans] = useState<StudyPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
-
+  const [calendarEntries, setCalendarEntries] = useState<StudyPlanDay[]>([]);
   const [form, setForm] = useState({ title: '', testDate: '', documentIds: [] as string[] });
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   useEffect(() => {
     Promise.all([
       studyPlansApi.getAll(),
       api.get<Document[]>('/documents'),
-    ]).then(([p, d]) => {
-      if (p.data) setPlans(p.data);
+    ]).then(async ([p, d]) => {
       if (d.data) setDocuments(d.data);
+      if (p.data) {
+        setPlans(p.data);
+        // Fetch entries for all plans so calendar dots show immediately
+        const allEntries = await Promise.all(
+          p.data.map(plan => studyPlansApi.getById(plan.id).then(r => r.data?.dayEntries ?? []))
+        );
+        setCalendarEntries(allEntries.flat());
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -34,11 +50,8 @@ export default function StudyPlanPage() {
       setPlans(prev => [plan, ...prev]);
       setShowCreate(false);
       setForm({ title: '', testDate: '', documentIds: [] });
-    } catch {
-      // ignore
-    } finally {
-      setCreating(false);
-    }
+    } catch {}
+    finally { setCreating(false); }
   }
 
   async function handleDelete(id: string) {
@@ -53,176 +66,186 @@ export default function StudyPlanPage() {
     }));
   }
 
-  function daysColor(days: number) {
-    if (days <= 3) return '#EF4444';
-    if (days <= 7) return '#F59E0B';
-    return '#22C55E';
-  }
-
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 1);
-  const minDateStr = minDate.toISOString().split('T')[0];
 
   return (
-    <div className="max-w-4xl mx-auto py-2">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Study Plans</h1>
-          <p className="text-gray-400 text-sm mt-0.5">AI-generated day-by-day schedules for your upcoming tests</p>
-        </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
-        >
-          + New Plan
-        </button>
-      </div>
+    <div className="max-w-4xl mx-auto px-6 py-6">
+      <PageHeader
+        title="Study Plans"
+        action={{ label: 'New Plan', onClick: () => setShowCreate(true) }}
+      />
 
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-28 rounded-xl animate-pulse" style={{ backgroundColor: '#1A1A1A' }} />
-          ))}
+        <div className="space-y-3">
+          {[1, 2].map(i => <div key={i} className="h-24 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-card)' }} />)}
         </div>
       ) : plans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: '#9747FF20' }}>📅</div>
-          <h2 className="text-lg font-semibold text-white mb-1">No study plans yet</h2>
-          <p className="text-gray-400 text-sm mb-6 max-w-xs">Create a plan by selecting your study materials and test date. AI will generate a day-by-day schedule.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'var(--bg-input)' }}>
+            <CalendarDays size={28} style={{ color: 'var(--text-3)' }} />
+          </div>
+          <h2 className="text-base font-semibold text-[var(--text-1)] mb-1">No study plans yet</h2>
+          <p className="text-[var(--text-2)] text-sm mb-6 max-w-xs">Create a plan by selecting your study materials and test date. AI will build a day-by-day schedule.</p>
           <button
             onClick={() => setShowCreate(true)}
-            className="px-5 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#9747FF' }}
+            className="px-5 py-2.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
             Create Study Plan
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {plans.map(plan => {
-            const days = plan.daysUntilTest ?? 0;
-            const entries = plan.dayEntries ?? [];
-            const done = entries.filter(d => d.completed).length;
-            const pct = entries.length > 0 ? Math.round((done / entries.length) * 100) : 0;
-            return (
-              <div key={plan.id} className="rounded-xl p-5" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-base font-semibold text-white truncate">{plan.title}</h3>
-                      {days >= 0 && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
-                          {days === 0 ? 'Today!' : `${days}d left`}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mb-3">
-                      Test date: {new Date(plan.testDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                      &nbsp;&middot;&nbsp;{entries.length} days &middot; {done} completed
-                    </p>
-                    <div className="h-1.5 rounded-full" style={{ backgroundColor: '#2A2A2A' }}>
-                      <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#9747FF' }} />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{pct}% complete</p>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <a
-                      href={`/dashboard/study-plan/${plan.id}`}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-opacity"
-                      style={{ backgroundColor: '#9747FF' }}
-                    >
-                      View Plan
-                    </a>
-                    <button
-                      onClick={() => handleDelete(plan.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-white/5 transition-colors"
-                      style={{ color: '#EF4444', border: '1px solid #EF444440' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex flex-col gap-4">
+          {/* Calendar — full width at all breakpoints */}
+          <div className="w-full">
+            <PlanCalendar entries={calendarEntries} />
+          </div>
+
+          {/* Plan accordions */}
+          <div className="space-y-3">
+            {plans.map(plan => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                onCalendarEntries={setCalendarEntries}
+              />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Create Modal */}
+      {/* Create modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-          <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-            <h2 className="text-lg font-semibold text-white mb-5">Create Study Plan</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
+          <div className="w-full max-w-md rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
+<h2 className="text-lg font-bold text-[var(--text-1)] mb-1">New Study Plan</h2>
+            <p className="text-xs text-[var(--text-3)] mb-5">AI will generate a day-by-day schedule for you.</p>
 
             {creating ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mb-4" />
-                <p className="text-white font-medium">Generating your plan...</p>
-                <p className="text-gray-400 text-sm mt-1">AI is creating a day-by-day schedule</p>
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin mb-4" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
+                <p className="text-[var(--text-1)] font-medium text-sm">Generating your plan…</p>
+                <p className="text-[var(--text-2)] text-xs mt-1">This may take a few seconds</p>
               </div>
             ) : (
               <div className="space-y-4">
+                {/* Title */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Plan Title</label>
-                  <input
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-1)]">Plan Title</label>
+                  <Input
                     value={form.title}
                     onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                     placeholder="e.g., Biology Midterm Prep"
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-gray-600 outline-none focus:ring-1"
-                    style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', '--tw-ring-color': '#9747FF' } as any}
+                    autoFocus
                   />
                 </div>
 
+                {/* Test date — popover calendar */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Test Date</label>
-                  <input
-                    type="date"
-                    value={form.testDate}
-                    min={minDateStr}
-                    onChange={e => setForm(f => ({ ...f, testDate: e.target.value }))}
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white outline-none focus:ring-1"
-                    style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A', colorScheme: 'dark' } as any}
-                  />
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-1)]">Test Date</label>
+                  <Popover.Root open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                    <Popover.Trigger asChild>
+                      <button
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-colors"
+                        style={{
+                          backgroundColor: 'var(--bg-card)',
+                          border: '1px solid var(--border-md)',
+                          color: form.testDate ? 'var(--text-1)' : 'var(--text-3)',
+                        }}
+                      >
+                        <CalendarIcon size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+                        {form.testDate
+                          ? new Date(form.testDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
+                          : 'Pick a date'}
+                      </button>
+                    </Popover.Trigger>
+                    <Popover.Portal>
+                      <Popover.Content
+                        align="start"
+                        sideOffset={6}
+                        className="z-[60] rounded-2xl p-4 shadow-2xl"
+                        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', width: 300 }}
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={form.testDate ? new Date(form.testDate + 'T00:00:00') : undefined}
+                          onSelect={date => {
+                            if (date) {
+                              const iso = date.toLocaleDateString('en-CA');
+                              setForm(f => ({ ...f, testDate: iso }));
+                            }
+                            setDatePickerOpen(false);
+                          }}
+                          disabled={{ before: minDate }}
+                        />
+                      </Popover.Content>
+                    </Popover.Portal>
+                  </Popover.Root>
                 </div>
 
+                {/* Study materials */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Study Materials ({form.documentIds.length} selected)</label>
+                  <label className="block text-xs font-medium mb-2 text-[var(--text-1)]">
+                    Study Materials
+                    {form.documentIds.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
+                        {form.documentIds.length} selected
+                      </span>
+                    )}
+                  </label>
                   {documents.length === 0 ? (
-                    <p className="text-xs text-gray-500 py-2">No documents available. Upload documents in your Library first.</p>
+                    <p className="text-xs text-[var(--text-2)] py-2">No notes found. Upload notes in your Library first.</p>
                   ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg p-2" style={{ backgroundColor: '#111111', border: '1px solid #2A2A2A' }}>
-                      {documents.map(doc => (
-                        <button
-                          key={doc.id}
-                          onClick={() => toggleDoc(doc.id)}
-                          className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left hover:bg-white/5 transition-colors"
-                        >
-                          <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: form.documentIds.includes(doc.id) ? '#9747FF' : '#2A2A2A', border: form.documentIds.includes(doc.id) ? 'none' : '1px solid #3A3A3A' }}>
-                            {form.documentIds.includes(doc.id) && <span className="text-white text-xs leading-none">✓</span>}
-                          </div>
-                          <span className="text-sm text-white truncate">{doc.title}</span>
-                        </button>
-                      ))}
+                    <div className="flex flex-col gap-1 max-h-44 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--border-md) transparent' }}>
+                      {documents.map(doc => {
+                        const sel = form.documentIds.includes(doc.id);
+                        return (
+                          <button
+                            key={doc.id}
+                            onClick={() => toggleDoc(doc.id)}
+                            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-left transition-colors w-full"
+                            style={sel ? {
+                              backgroundColor: '#ffffff',
+                              color: '#000000',
+                            } : {
+                              backgroundColor: 'var(--bg-input)',
+                              color: 'var(--text-2)',
+                            }}
+                            onMouseEnter={e => { if (!sel) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+                            onMouseLeave={e => { if (!sel) e.currentTarget.style.backgroundColor = 'var(--bg-input)'; }}
+                          >
+                            <div
+                              className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: sel ? 'rgba(0,0,0,0.12)' : 'var(--bg-card)' }}
+                            >
+                              {sel && <Check size={9} color="#000000" />}
+                            </div>
+                            <span className="truncate">{doc.title}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => { setShowCreate(false); setForm({ title: '', testDate: '', documentIds: [] }); }}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-                    style={{ border: '1px solid #2A2A2A' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
+                {/* CTA */}
+                <div className="flex flex-col items-center gap-2 pt-1">
+                  <Button
+                    variant="brand"
+                    size="lg"
                     onClick={handleCreate}
                     disabled={!form.title.trim() || !form.testDate || form.documentIds.length === 0}
-                    className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: '#9747FF' }}
+                    className="w-full"
                   >
                     Generate Plan
+                  </Button>
+                  <button
+                    onClick={() => { setShowCreate(false); setForm({ title: '', testDate: '', documentIds: [] }); }}
+                    className="text-xs transition-opacity hover:opacity-60"
+                    style={{ color: 'var(--text-3)' }}
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>

@@ -28,6 +28,7 @@ export interface TutorMessage {
 export interface TutorSession extends TutorSessionSummary {
   messages: TutorMessage[];
   notes: TutorNoteMeta[];
+  weakTopicCount: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -44,14 +45,23 @@ export const tutorApi = {
   updateTitle: (id: string, title: string) =>
     api.patch<TutorSession>(`/tutor/${id}/title`, { title }),
   deleteSession: (id: string) => api.delete<{ success: boolean }>(`/tutor/${id}`),
+  getSuggestions: (id: string) => api.get<{ suggestions: string[] }>(`/tutor/${id}/suggestions`),
 };
+
+export interface NoteOffer {
+  noteId: string;
+  noteTitle: string;
+  heading: string;
+  content: string;
+}
 
 export async function streamTutorChat(
   sessionId: string,
   message: string,
   onDelta: (text: string) => void,
   onDone: () => void,
-  token: string
+  token: string,
+  onOffer?: (offer: NoteOffer) => void
 ): Promise<void> {
   const response = await fetch(`${API_URL}/tutor/${sessionId}/chat`, {
     method: 'POST',
@@ -79,6 +89,7 @@ export async function streamTutorChat(
       try {
         const data = JSON.parse(line.slice(6));
         if (data.delta) onDelta(data.delta);
+        if (data.offer && onOffer) onOffer(data.offer);
         if (data.done) onDone();
       } catch {
         // ignore
