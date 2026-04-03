@@ -47,18 +47,18 @@ function SectionHeader({
   if (collapsed) {
     return Icon ? (
       <button onClick={onToggle} className="group w-full flex justify-center py-1.5">
-        <Icon size={16} className="text-[var(--text-2)] group-hover:text-white transition-colors" />
+        <Icon size={16} className="text-white transition-colors" />
       </button>
     ) : null;
   }
   return (
     <button onClick={onToggle} className="group w-full flex items-center gap-1.5 px-2.5 pt-2 pb-1">
-      {Icon && <Icon size={14} className="text-[var(--text-2)] group-hover:text-white transition-colors" />}
-      <span className="flex-1 text-left text-sm font-semibold text-[var(--text-2)] group-hover:text-white transition-colors">
+      {Icon && <Icon size={14} className="text-white transition-colors" />}
+      <span className="flex-1 text-left text-sm font-semibold text-white transition-colors">
         {label}
       </span>
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-        className="text-[var(--text-2)] group-hover:text-white transition-colors"
+        className="text-white transition-colors"
         style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
         <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -78,8 +78,8 @@ function NavLink({ href, icon, label, count, isActive, collapsed, small }: {
         small ? 'text-xs' : 'text-sm',
         collapsed ? 'justify-center' : '',
         isActive
-          ? 'active text-[var(--text-1)] bg-[var(--bg-hover)]'
-          : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+          ? 'active text-white bg-[var(--bg-hover)]'
+          : 'text-white hover:bg-[var(--bg-hover)]'
       )}
     >
       <span className="leading-none shrink-0 flex items-center">{icon}</span>
@@ -333,7 +333,7 @@ export default function Sidebar() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [counts, setCounts] = useState<Partial<Counts>>({});
   const [unfiledCount, setUnfiledCount] = useState(0);
-  const [sectionOpen, setSectionOpen] = useState({ notes: true, study: true, tools: true });
+  const [sectionOpen, setSectionOpen] = useState({ notes: true, study: false, tools: false });
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('sidebar-collapsed') === 'true';
     return false;

@@ -46,7 +46,7 @@ function TopicProgressBadge({ done, total }: { done: number; total: number }) {
   if (allDone) {
     return (
       <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}>
-        <Check size={16} color="#22C55E" />
+        <Check size={20} strokeWidth={3} color="white" />
       </div>
     );
   }
@@ -68,7 +68,7 @@ function TopicProgressBadge({ done, total }: { done: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'var(--text-2)' }}>
+        <span className="text-[10px] font-semibold tabular-nums text-white">
           {done}/{total}
         </span>
       </div>
@@ -129,16 +129,12 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
       >
         <TopicProgressBadge done={doneCount} total={totalCount} />
         <div className="flex-1 min-w-0">
-          <p className={`${compact ? 'text-xs' : 'text-sm'} font-medium text-[var(--text-1)]`}>{day.title}</p>
-          <p className={`${compact ? 'text-[10px]' : 'text-xs'} text-[var(--text-3)] mt-0.5`}>
-            {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-1)]`}>{day.title}</p>
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5 text-white`}>
+            {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </p>
         </div>
-        {day.completed ? (
-          <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.15)' }}>
-            <Check size={14} strokeWidth={3} color="white" />
-          </div>
-        ) : (
+        {!day.completed && (
           <span
             className={`shrink-0 ${compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'} rounded-lg font-medium`}
             style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
@@ -146,7 +142,7 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
             {toggling ? '…' : 'Mark done'}
           </span>
         )}
-        <div className="text-[var(--text-3)] shrink-0">
+        <div className="text-white shrink-0">
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </button>
@@ -162,8 +158,8 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
             style={{ overflow: 'hidden', borderTop: '1px solid var(--border)' }}
             className="px-3 pb-3 pt-2 space-y-1.5"
           >
-            <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--text-3)] mb-2">
-              Topics · {doneCount}/{totalCount} done
+            <p className="text-[10px] font-medium tracking-wide text-[var(--text-3)] mb-2">
+              Topics
             </p>
             {topics.map((topic, i) => {
               const isDone = doneTopics.has(i);
@@ -182,15 +178,16 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
                   >
                     {isDone && <Check size={9} color="#22C55E" />}
                   </div>
-                  <span className={`relative ${compact ? 'text-[10px]' : 'text-xs'}`} style={{ color: isDone ? 'var(--text-3)' : 'var(--text-1)' }}>
+                  <span
+                    className={`${compact ? 'text-[10px]' : 'text-xs'} transition-all duration-300`}
+                    style={{
+                      color: isDone ? 'var(--text-3)' : 'var(--text-1)',
+                      textDecoration: isDone ? 'line-through' : 'none',
+                      textDecorationColor: 'white',
+                      textDecorationThickness: '0.3px',
+                    }}
+                  >
                     {topic}
-                    <motion.span
-                      className="absolute left-0 top-1/2 -translate-y-1/2 h-px block"
-                      style={{ backgroundColor: 'var(--text-3)' }}
-                      initial={{ width: '0%' }}
-                      animate={{ width: isDone ? '100%' : '0%' }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    />
                   </span>
                 </button>
               );
@@ -244,50 +241,48 @@ export default function PlanCard({
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
       <div
-        className={`flex ${compact ? 'items-start' : 'items-center'} gap-3 ${compact ? 'p-3' : 'p-4'} cursor-pointer transition-colors`}
+        className={`flex flex-col ${compact ? 'gap-2 p-3' : 'gap-3 p-4'} cursor-pointer transition-colors`}
         onClick={handleExpand}
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
-        <div className={`${compact ? 'w-8 h-8' : 'w-11 h-11'} rounded-full flex items-center justify-center shrink-0`} style={{ backgroundColor: iconBg }}>
-          <CalendarDays size={compact ? 14 : 20} style={{ color: iconColor }} />
-        </div>
+        {/* Top row: icon, title/date, pill+chevron */}
+        <div className="flex items-start gap-3">
+          <div className={`${compact ? 'w-8 h-8' : 'w-11 h-11'} rounded-full flex items-center justify-center shrink-0`} style={{ backgroundColor: iconBg }}>
+            <CalendarDays size={compact ? 14 : 20} style={{ color: iconColor }} />
+          </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 min-w-0">
             <p className={`text-[var(--text-1)] font-bold truncate ${compact ? 'text-xs' : ''}`}>{plan.title}</p>
+            <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-white`}>{formatDate(plan.testDate)}</span>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-1.5">
             {days >= 0 && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
                 {days === 0 ? 'Today!' : `${days}d Left`}
               </span>
             )}
-          </div>
-
-          <div className={`flex items-center gap-1.5 ${compact ? 'mb-2' : 'mb-2.5'}`}>
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
-              Test Day
-            </span>
-            <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-2)]`}>{formatDate(plan.testDate)}</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className={`flex-1 ${compact ? 'h-1.5' : 'h-2'} rounded-full overflow-hidden`} style={{ backgroundColor: 'var(--bg-input)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ backgroundColor: iconColor }}
-                initial={{ width: '0%' }}
-                animate={{ width: `${pct}%` }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              />
-            </div>
-            <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold tabular-nums shrink-0`} style={{ color: 'var(--text-1)' }}>
-              {done}/{entries.length}
+            <span className="text-[var(--text-1)]">
+              {expanded ? <ChevronUp size={compact ? 14 : 18} /> : <ChevronDown size={compact ? 14 : 18} />}
             </span>
           </div>
         </div>
 
-        <div className="shrink-0 text-[var(--text-1)] self-start mt-0.5">
-          {expanded ? <ChevronUp size={compact ? 14 : 18} /> : <ChevronDown size={compact ? 14 : 18} />}
+        {/* Full-width progress bar */}
+        <div className="flex items-center gap-2">
+          <div className={`flex-1 ${compact ? 'h-1.5' : 'h-2'} rounded-full overflow-hidden`} style={{ backgroundColor: 'var(--bg-input)' }}>
+            <motion.div
+              className="h-full rounded-full"
+              style={{ backgroundColor: iconColor }}
+              initial={{ width: '0%' }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+          </div>
+          <span className={`${compact ? 'text-xs' : 'text-sm'} font-bold tabular-nums shrink-0`} style={{ color: 'var(--text-1)' }}>
+            {done}/{entries.length}
+          </span>
         </div>
       </div>
 
