@@ -371,7 +371,7 @@ export default function DocumentDetail({ id, onBack, embedded }: Props) {
     content: note ? convertNoteToHTML(note.content) : '',
     editorProps: {
       attributes: {
-        class: 'prose prose-headings:text-[var(--text-1)] prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-[var(--text-1)] prose-p:leading-relaxed prose-strong:text-[var(--text-1)] prose-li:text-[var(--text-1)] prose-ul:my-2 max-w-none focus:outline-none min-h-[400px]',
+        class: 'prose prose-headings:text-[var(--text-1)] prose-h2:text-lg prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2 prose-p:text-[var(--text-1)] prose-p:leading-relaxed prose-p:my-1 prose-strong:text-[var(--text-1)] prose-li:text-[var(--text-1)] prose-ul:my-2 max-w-none focus:outline-none min-h-[400px]',
       },
     },
     onUpdate: ({ editor }) => {
