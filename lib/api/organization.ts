@@ -22,6 +22,25 @@ export interface PracticeExam {
   documents?: { id: string; title: string }[];
 }
 
+export interface PracticeExamAttempt {
+  id: string;
+  userId: string;
+  practiceExamId: string;
+  score: number;
+  earnedPoints: number;
+  totalPoints: number;
+  answers: string;
+  results: string;
+  createdAt: string;
+}
+
+export interface PracticeExamProgress {
+  id: string;
+  practiceExamId: string;
+  answers: Record<number, string>;
+  updatedAt: string;
+}
+
 export interface ExamQuestion {
   number: number;
   type: 'multiple_choice' | 'short_answer' | 'true_false';
@@ -63,4 +82,17 @@ export const practiceExamsApi = {
   delete: (id: string) => api.delete<void>(`/practice-exams/${id}`),
   gradeAnswer: (data: { question: string; correctAnswer: string; userAnswer: string }) =>
     api.post<{ correct: boolean; partialCredit: number; feedback: string }>('/practice-exams/grade-answer', data),
+  submitAttempt: (id: string, data: {
+    score: number;
+    earnedPoints: number;
+    totalPoints: number;
+    answers: Record<number, string>;
+    results: Record<number, { correct: boolean; partialCredit: number; feedback: string }>;
+  }) => api.post<PracticeExamAttempt>(`/practice-exams/${id}/attempt`, data),
+  saveProgress: (id: string, answers: Record<number, string>) =>
+    api.put<PracticeExamProgress>(`/practice-exams/${id}/progress`, { answers }),
+  getProgress: (id: string) =>
+    api.get<PracticeExamProgress | null>(`/practice-exams/${id}/progress`),
+  getAttempts: (id: string) =>
+    api.get<PracticeExamAttempt[]>(`/practice-exams/${id}/attempts`),
 };

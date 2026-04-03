@@ -9,6 +9,7 @@ import TopNav from '@/components/dashboard/TopNav';
 // import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
 import UploadModal from '@/components/upload/UploadModal';
+import { LibraryProvider } from '@/context/LibraryContext';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -148,7 +149,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         <TopNav />
         <PastDueBanner />
-        <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>{children}</main>
+        <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+          <LibraryProvider>{children}</LibraryProvider>
+        </main>
       </div>
 
       {showGlobalUpload && (

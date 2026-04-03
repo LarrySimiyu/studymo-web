@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { documentsApi, notesApi } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
 
 type Tab = 'file' | 'video' | 'record' | 'blank';
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
@@ -26,6 +27,7 @@ async function pollDocumentStatus(
 
   const poll = async () => {
     if (stopped) return;
+    invalidatePrefix(`/documents/${docId}`);
     const { data, error } = await documentsApi.getById(docId);
 
     if (stopped) return;
