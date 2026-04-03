@@ -433,7 +433,7 @@ export default function LibraryPage() {
       refetch();
     }}>
       {/* Full-height split panel */}
-      <div className="flex h-full">
+      <div className="flex h-full overflow-hidden">
 
         {/* LEFT: Note list — full width on mobile when no doc selected, hidden when doc selected */}
         <div
@@ -524,7 +524,7 @@ export default function LibraryPage() {
           </div>
 
           {/* Note list */}
-          <div className="flex-1 overflow-y-auto py-1">
+          <div className="flex-1 overflow-y-auto py-1 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {loading ? (
               <div className="flex justify-center py-10">
                 <div className="w-5 h-5 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
