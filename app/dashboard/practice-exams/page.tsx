@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { practiceExamsApi, PracticeExam, ExamContent } from '@/lib/api/organization';
 import { documentsApi } from '@/lib/api/documents';
 import { ClipboardList } from 'lucide-react';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 
 const PALETTE: [string, string][] = [
   ['#FF6500', 'rgba(255,101,0,0.12)'],
@@ -139,17 +140,11 @@ export default function PracticeExamsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-1)]">Practice Exams</h1>
-        <button
-          onClick={openModal}
-          className="px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-        >
-          New Exam
-        </button>
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <PageHeader
+        title="Practice Exams"
+        action={{ label: 'New Exam', onClick: openModal }}
+      />
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -305,7 +300,7 @@ export default function PracticeExamsPage() {
 
               <div>
                 <label className="text-xs text-[var(--text-2)] mb-2 block">Exam Duration *</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {DURATIONS.map(({ value, label, sub }) => {
                     const active = durationMinutes === value;
                     return (

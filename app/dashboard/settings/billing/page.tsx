@@ -70,7 +70,7 @@ export default function BillingSettingsPage() {
   const noSub = !status || status.status === 'none' || status.status === 'canceled';
 
   return (
-    <div className="max-w-2xl mx-auto py-2">
+    <div className="max-w-2xl mx-auto px-6 py-6">
       <div className="mb-6">
         <a href="/dashboard/settings" className="text-xs text-[var(--text-3)] hover:text-[var(--text-2)] mb-3 block">
           ← Back to Settings

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Layers, ArrowBigLeft, ArrowBigRight, ArrowLeft, Star } from 'lucide-react';
 import { documentsApi, flashcardsApi, Document, Flashcard } from '@/lib/api/documents';
-import NewNoteButton from '@/components/ui/NewNoteButton';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 import ProgressBar from '@/components/ui/ProgressBar';
 
 const PALETTE: [string, string][] = [
@@ -75,10 +75,8 @@ function FlipCard({ cards, index, onPrev, onNext, onRestart, onExit }: {
       `}</style>
 
       <div className="flex flex-col items-center gap-8 w-full max-w-xl">
-        {/* Progress bar */}
         <ProgressBar index={displayIndex} total={total} />
 
-        {/* Card */}
         <div
           className={`w-full cursor-pointer select-none ${slideClass}`}
           style={{ perspective: '1000px' }}
@@ -92,7 +90,6 @@ function FlipCard({ cards, index, onPrev, onNext, onRestart, onExit }: {
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
             }}
           >
-            {/* Front */}
             <div
               className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', backgroundColor: 'var(--bg-card)' }}
@@ -102,7 +99,6 @@ function FlipCard({ cards, index, onPrev, onNext, onRestart, onExit }: {
               <p className="text-[10px] text-[var(--text-3)] mt-6">tap to flip</p>
             </div>
 
-            {/* Back */}
             <div
               className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', backgroundColor: 'var(--brand-subtle)' }}
@@ -113,43 +109,42 @@ function FlipCard({ cards, index, onPrev, onNext, onRestart, onExit }: {
           </div>
         </div>
 
-        {/* Nav */}
         <div className="flex flex-col items-center gap-3 w-full">
           <div className="flex items-center gap-3 w-full">
-          <button
-            onClick={onPrev}
-            disabled={index === 0}
-            className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
-            style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
-          >
-            <ArrowBigLeft size={22} />
-          </button>
-          <button
-            onClick={() => {
-              if (index === total - 1) { onRestart(); return; }
-              if (!animating.current) setFlipped(f => !f);
-            }}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
-            style={index === total - 1
-              ? { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
-              : flipped
-                ? { backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }
-                : { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
-            }
-          >
-            {index === total - 1
-              ? <><Star size={13} fill="white" stroke="none" />Start Over</>
-              : flipped ? 'Show Question' : <><Star size={13} fill="white" stroke="none" />Reveal Answer</>
-            }
-          </button>
-          <button
-            onClick={onNext}
-            disabled={index === total - 1}
-            className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
-            style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
-          >
-            <ArrowBigRight size={22} />
-          </button>
+            <button
+              onClick={onPrev}
+              disabled={index === 0}
+              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+            >
+              <ArrowBigLeft size={22} />
+            </button>
+            <button
+              onClick={() => {
+                if (index === total - 1) { onRestart(); return; }
+                if (!animating.current) setFlipped(f => !f);
+              }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5"
+              style={index === total - 1
+                ? { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
+                : flipped
+                  ? { backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }
+                  : { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
+              }
+            >
+              {index === total - 1
+                ? <><Star size={13} fill="white" stroke="none" />Start Over</>
+                : flipped ? 'Show Question' : <><Star size={13} fill="white" stroke="none" />Reveal Answer</>
+              }
+            </button>
+            <button
+              onClick={onNext}
+              disabled={index === total - 1}
+              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+            >
+              <ArrowBigRight size={22} />
+            </button>
           </div>
           <button onClick={onExit} className="text-xs transition-colors" style={{ color: 'var(--text-3)' }}>
             Return to flashcards
@@ -164,7 +159,6 @@ export default function FlashcardsPage() {
   const [decks, setDecks] = useState<DeckEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Study mode state
   const [activeDeck, setActiveDeck] = useState<{ doc: Document; cards: Flashcard[] } | null>(null);
   const [cardIndex, setCardIndex] = useState(0);
   const [deckLoading, setDeckLoading] = useState(false);
@@ -194,11 +188,10 @@ export default function FlashcardsPage() {
     setDeckLoading(false);
   }
 
-  // Study mode overlay
   if (activeDeck) {
     const { doc, cards } = activeDeck;
     return (
-      <div className="max-w-2xl mx-auto py-4">
+      <div className="max-w-2xl mx-auto py-4 px-4 sm:px-6">
         <div className="mb-8">
           <button
             onClick={() => setActiveDeck(null)}
@@ -222,11 +215,8 @@ export default function FlashcardsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-1)]">Flashcards</h1>
-        <NewNoteButton />
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <PageHeader title="Flashcards" action={{ label: 'New Flashcard', href: '/dashboard/library' }} />
 
       {loading || deckLoading ? (
         <div className="flex items-center justify-center py-20">

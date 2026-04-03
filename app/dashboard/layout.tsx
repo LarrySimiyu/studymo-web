@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Sidebar from '@/components/dashboard/Sidebar';
+import TopNav from '@/components/dashboard/TopNav';
 // import { StudyTimerProvider } from '@/context/StudyTimerContext';
 // import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
@@ -30,11 +31,45 @@ import UploadModal from '@/components/upload/UploadModal';
 //   );
 // }
 
+function PastDueBanner() {
+  const { subscriptionStatus } = useAuth();
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  if (subscriptionStatus?.status !== 'past_due') return null;
+
+  async function handleUpdatePayment() {
+    setPortalLoading(true);
+    try {
+      const { data } = await billingApi.createPortal();
+      if (data?.url) window.location.href = data.url;
+    } catch {
+      // ignore
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between px-6 py-2.5 text-body shrink-0" style={{ backgroundColor: 'var(--danger-subtle)', borderBottom: '1px solid var(--danger-border)' }}>
+      <span style={{ color: 'var(--danger)' }}>
+        Your payment failed. Please update your payment method to keep access.
+      </span>
+      <button
+        onClick={handleUpdatePayment}
+        disabled={portalLoading}
+        className="btn btn-sm ml-4 shrink-0"
+        style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
+      >
+        {portalLoading ? 'Loading…' : 'Update Payment'}
+      </button>
+    </div>
+  );
+}
+
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const { currentUser, loading, subscriptionStatus, refreshSubscription } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [portalLoading, setPortalLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showGlobalUpload, setShowGlobalUpload] = useState(false);
 
@@ -107,42 +142,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (!currentUser) return null;
   if (subscriptionStatus && !subscriptionStatus.hasAccess) return null;
 
-  async function handleUpdatePayment() {
-    setPortalLoading(true);
-    try {
-      const { data } = await billingApi.createPortal();
-      if (data?.url) window.location.href = data.url;
-    } catch {
-      // ignore
-    } finally {
-      setPortalLoading(false);
-    }
-  }
-
-  const isPastDue = subscriptionStatus?.status === 'past_due';
-
   return (
-    <div className="flex h-screen justify-center" style={{ backgroundColor: 'var(--bg-page)' }}>
-      <div className="flex w-full max-w-[1600px]">
+    <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {isPastDue && (
-          <div className="flex items-center justify-between px-6 py-2.5 text-body" style={{ backgroundColor: 'var(--danger-subtle)', borderBottom: '1px solid var(--danger-border)' }}>
-            <span style={{ color: 'var(--danger)' }}>
-              Your payment failed. Please update your payment method to keep access.
-            </span>
-            <button
-              onClick={handleUpdatePayment}
-              disabled={portalLoading}
-              className="btn btn-sm ml-4 shrink-0"
-              style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
-            >
-              {portalLoading ? 'Loading…' : 'Update Payment'}
-            </button>
-          </div>
-        )}
-        <main className="flex-1 overflow-auto p-6 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>{children}</main>
-      </div>
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <TopNav />
+        <PastDueBanner />
+        <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>{children}</main>
       </div>
 
       {showGlobalUpload && (
@@ -161,11 +167,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <Suspense>
       {/* <StudyTimerProvider> */}
       <DashboardInner>{children}</DashboardInner>
       {/* <StudyTimerPanel /> */}
       {/* </StudyTimerProvider> */}
-    </>
+    </Suspense>
   );
 }

@@ -5,6 +5,7 @@ import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import Link from 'next/link';
 import { Mic, Clock, Star, Play } from 'lucide-react';
+import { PageHeader } from '@/components/dashboard/PageHeader';
 
 const PALETTE: [string, string][] = [
   ['#FF6500', 'rgba(255,101,0,0.12)'],
@@ -141,17 +142,11 @@ export default function PodcastsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-2">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-heading-sm text-[var(--text-1)]">Podcasts</h1>
-        <Link
-          href="/dashboard/library"
-          className="px-4 py-2 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
-          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-        >
-          Generate Podcast
-        </Link>
-      </div>
+    <div className="max-w-3xl mx-auto px-6 py-6">
+      <PageHeader
+        title="Podcasts"
+        action={{ label: 'New Podcast', href: '/dashboard/library' }}
+      />
 
       {podcasts.length === 0 ? (
         <div className="text-center py-20">

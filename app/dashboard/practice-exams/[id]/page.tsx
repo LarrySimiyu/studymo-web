@@ -316,7 +316,7 @@ export default function PracticeExamPage() {
 
   // ── Results Mode ───────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto py-2">
+    <div className="max-w-3xl mx-auto px-6 py-6">
       <div className="flex items-center gap-4 mb-6">
         <button onClick={() => setMode('select')} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">← Back</button>
         <h1 className="flex-1 text-lg font-bold text-[var(--text-1)] truncate">{exam.title} — Results</h1>

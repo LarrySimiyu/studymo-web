@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { marked } from 'marked';
 import { useAuth } from '@/hooks/useAuth';
@@ -100,6 +101,7 @@ export default function TutorPage() {
   const [noteOffer, setNoteOffer] = useState<NoteOffer | null>(null);
   const [offerSaving, setOfferSaving] = useState(false);
   const [offerSaved, setOfferSaved] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -155,7 +157,7 @@ export default function TutorPage() {
     const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
     setMessages([welcome, ...data.messages]);
     setSuggestions([]);
-    // Only show suggestions if the session has no real messages yet
+    setShowChat(true);
     if (data.messages.length === 0) {
       tutorApi.getSuggestions(id).then(({ data: s }) => {
         if (s?.suggestions) setSuggestions(s.suggestions);
@@ -175,6 +177,7 @@ export default function TutorPage() {
       const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
       setMessages([welcome]);
       setSuggestions([]);
+      setShowChat(true);
       tutorApi.getSuggestions(data.id).then(({ data: s }) => {
         if (s?.suggestions) setSuggestions(s.suggestions);
       }).catch(() => {});
@@ -292,10 +295,13 @@ export default function TutorPage() {
   // ── render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full gap-0 -m-6 overflow-hidden" style={{ height: 'calc(100vh - 48px)' }}>
+    <div className="flex h-full gap-0 overflow-hidden">
 
-      {/* ── Left sidebar ── */}
-      <div className="w-72 flex flex-col shrink-0 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)', borderRight: '1px solid var(--border)' }}>
+      {/* ── Left sidebar — full width on mobile when !showChat, fixed w-72 on md+ ── */}
+      <div
+        className={`${showChat ? 'hidden' : 'flex'} md:flex flex-col shrink-0 overflow-hidden w-full md:w-72`}
+        style={{ backgroundColor: 'var(--bg-page)', borderRight: '1px solid var(--border)' }}
+      >
         <div className="flex items-center justify-between px-4 shrink-0" style={{ height: 60 }}>
           <h2 className="text-sm font-semibold text-[var(--text-1)]">AI Tutor</h2>
           <AddButton onClick={createSession} loading={creatingSession} title="New session" />
@@ -343,16 +349,16 @@ export default function TutorPage() {
         </div>
       </div>
 
-      {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* ── Main area — hidden on mobile until session selected ── */}
+      <div className={`${showChat ? 'flex' : 'hidden'} md:flex flex-1 flex-col overflow-hidden`}>
         {!activeSession ? (
           // ── Welcome / mode selection ──
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="flex flex-col items-center gap-8 max-w-xl w-full text-center">
               <div>
                 <div className="text-6xl mb-4">🎓</div>
-                <h1 className="text-2xl font-bold text-[var(--text-1)]">Welcome to AI Tutor</h1>
-                <p className="text-[var(--text-2)] text-sm mt-2">Choose a mode to get started</p>
+                <h1 className="text-heading-sm md:text-heading font-bold text-[var(--text-1)]">Welcome to AI Tutor</h1>
+                <p className="text-[var(--text-2)] text-body-sm mt-2">Choose a mode to get started</p>
               </div>
 
               <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -360,7 +366,7 @@ export default function TutorPage() {
                 <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
                   <div>
                     <div className="text-3xl mb-2">🎓</div>
-                    <h3 className="font-semibold text-[var(--text-1)] text-base mb-1">Tutor Mode</h3>
+                    <h3 className="font-semibold text-[var(--text-1)] text-body-lg mb-1">Tutor Mode</h3>
                     <p className="text-xs text-[var(--text-2)] leading-relaxed">I'll guide you with questions instead of giving direct answers. Proven to improve retention and understanding.</p>
                   </div>
                   <button
@@ -383,6 +389,12 @@ export default function TutorPage() {
             {/* Top bar */}
             <div className="flex items-center justify-between px-5 shrink-0" style={{ height: 60 }}>
               <div className="flex items-center gap-3 flex-1 min-w-0">
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="md:hidden text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors shrink-0"
+                >
+                  <ArrowLeft size={18} />
+                </button>
                 {editingTitle ? (
                   <input
                     ref={titleInputRef}

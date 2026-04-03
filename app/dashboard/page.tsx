@@ -1,17 +1,85 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FileText } from 'lucide-react';
+import RecommendedSection from '@/components/dashboard/RecommendedSection';
+import PlanningPanel from '@/components/dashboard/PlanningPanel';
+import TasksPanel from '@/components/tasks/TasksPanel';
+import PlanningTasksSection from '@/components/dashboard/PlanningTasksSection';
 import { useAuth } from '@/hooks/useAuth';
+import { AnimatePresence, motion } from 'framer-motion';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
+
+const PALETTE: [string, string][] = [
+  ['#FF6500', 'rgba(255,101,0,0.12)'],
+  ['#22C55E', 'rgba(34,197,94,0.12)'],
+  ['#3B82F6', 'rgba(59,130,246,0.12)'],
+  ['#F59E0B', 'rgba(245,158,11,0.12)'],
+  ['#EC4899', 'rgba(236,72,153,0.12)'],
+  ['#8B5CF6', 'rgba(139,92,246,0.12)'],
+  ['#14B8A6', 'rgba(20,184,166,0.12)'],
+];
+
+function getPalette(id: string): [string, string] {
+  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return PALETTE[hash % PALETTE.length];
+}
 import { notesApi } from '@/lib/api/documents';
-import UnifiedCalendar from '@/components/dashboard/UnifiedCalendar';
-import QuizScoreCard from '@/components/dashboard/QuizScoreCard';
+import QuizStatsCard from '@/components/dashboard/QuizStatsCard';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 import TaskModal from '@/components/tasks/TaskModal';
 
-export default function DashboardPage() {
+type RightTab = 'planning' | 'tasks';
+
+function RightPanelTabs() {
+  const [active, setActive] = useState<RightTab>('planning');
+  const [planCount, setPlanCount] = useState(0);
+  const [taskCount, setTaskCount] = useState(0);
+
+  return (
+    <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-xl shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
+        {(['planning', 'tasks'] as RightTab[]).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActive(tab)}
+            className="flex-1 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors"
+            style={{
+              backgroundColor: active === tab ? 'var(--bg-input)' : 'transparent',
+              color: active === tab ? 'var(--text-1)' : 'var(--text-3)',
+            }}
+          >
+            {tab === 'planning'
+              ? `Planning${planCount > 0 ? ` · ${planCount}` : ''}`
+              : `Tasks${taskCount > 0 ? ` · ${taskCount}` : ''}`}
+          </button>
+        ))}
+      </div>
+
+      {/* Panel content with slide animation */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={active}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+          >
+            {active === 'planning'
+              ? <PlanningPanel onCountChange={setPlanCount} />
+              : <TasksPanel onCountChange={setTaskCount} />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function DashboardContent() {
   const { currentUser, dbUser, refreshSubscription } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -21,7 +89,6 @@ export default function DashboardPage() {
   const [topWeakTopics, setTopWeakTopics] = useState<WeakTopic[]>([]);
   const [recentNotes, setRecentNotes] = useState<{ id: string; summary: string | null; document: { id: string; title: string } }[]>([]);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [taskModalDueDate, setTaskModalDueDate] = useState('');
 
   useEffect(() => {
     if (searchParams.get('subscribed') === 'true') {
@@ -36,7 +103,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     weakTopicsApi.getAll().then(({ data }) => {
-      if (data) setTopWeakTopics(data.filter(t => !t.resolved).slice(0, 6));
+      if (data) setTopWeakTopics(data.filter(t => !t.resolved).slice(0, 4));
     }).catch(() => {});
     notesApi.getAll().then(({ data }) => {
       if (data) setRecentNotes(data.slice(0, 10));
@@ -45,7 +112,10 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="flex flex-col lg:flex-row gap-6 items-start py-2">
+    <div className="flex gap-0 xl:gap-6 min-h-full">
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0 p-6">
       {welcomeToast && (
         <div
           className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium text-white"
@@ -57,8 +127,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Left column: scrollable content */}
-      <div className="flex-1 min-w-0 space-y-6">
+      <div className="space-y-6">
 
         {/* Welcome */}
         <div>
@@ -70,68 +139,53 @@ export default function DashboardPage() {
         {recentNotes.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-semibold text-[var(--text-1)]">Recent Notes</h2>
-              <Link href="/dashboard/notes" className="text-xs" style={{ color: 'var(--text-1)' }}>View All</Link>
+              <h2 className="text-xs font-medium text-[var(--text-2)]">Recent Notes</h2>
+              <Link href="/dashboard/notes" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
-              {recentNotes.map(note => (
-                <Link
-                  key={note.id}
-                  href={`/dashboard/library?note=${note.document.id}`}
-                  className="shrink-0 flex flex-col gap-1 px-3 py-2.5 rounded-xl hover:border-purple-500/50 transition-colors"
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    width: 160,
-                  }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs">📄</span>
-                    <p className="text-xs font-medium text-[var(--text-1)] truncate">{note.document.title}</p>
-                  </div>
-                  {note.summary && (
-                    <p className="text-[10px] text-[var(--text-3)] leading-tight line-clamp-2">{note.summary}</p>
-                  )}
-                </Link>
-              ))}
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
+              {recentNotes.map(note => {
+                const [iconColor, iconBg] = getPalette(note.document.id);
+                return (
+                  <Link
+                    key={note.id}
+                    href={`/dashboard/library?note=${note.document.id}`}
+                    className="shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                    style={{ backgroundColor: 'var(--bg-card)', width: 220 }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+                  >
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: iconBg }}
+                    >
+                      <FileText size={16} style={{ color: iconColor }} />
+                    </div>
+                    <p className="text-body-sm font-medium text-[var(--text-1)] truncate">{note.document.title}</p>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Recommended */}
-        <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <h2 className="text-sm font-semibold text-[var(--text-1)] mb-4">Recommended For You</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { icon: '📅', title: 'Create a Study Plan', desc: 'Set a test date and get a day-by-day schedule', href: '/dashboard/study-plan' },
-              { icon: '❓', title: 'Take a Quiz', desc: 'Test your knowledge and track weak topics', href: '/dashboard/quizzes' },
-              { icon: '📋', title: 'Practice Exam', desc: 'Simulate the real exam experience', href: '/dashboard/practice-exams' },
-            ].map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="p-4 rounded-lg hover:bg-black/5 transition-colors group"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition-transform" style={{ backgroundColor: 'var(--bg-input)' }}>
-                  {item.icon}
-                </div>
-                <p className="text-sm font-medium text-[var(--text-1)]">{item.title}</p>
-                <p className="text-xs text-[var(--text-2)] mt-0.5">{item.desc}</p>
-              </Link>
-            ))}
-          </div>
+        <RecommendedSection />
+
+        {/* Planning & Tasks — inline section on non-xl screens */}
+        <div className="xl:hidden">
+          <h2 className="text-xs font-medium text-[var(--text-2)] mb-3">Planning & Tasks</h2>
+          <PlanningTasksSection />
         </div>
 
-        {/* Quiz Score */}
-        <QuizScoreCard />
+        {/* Quiz Stats */}
+        <QuizStatsCard />
 
         {/* Weak Topics */}
         {topWeakTopics.length > 0 && (
-          <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-[var(--text-1)]">Weak Topics</h2>
-              <Link href="/dashboard/weak-topics" className="text-xs" style={{ color: 'var(--text-1)' }}>View All</Link>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xs font-medium text-[var(--text-2)]">Weak Topics</h2>
+              <Link href="/dashboard/weak-topics" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {topWeakTopics.map(wt => (
@@ -147,20 +201,30 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Right column: sticky calendar */}
-      <div className="w-full lg:w-[360px] shrink-0 lg:sticky lg:top-0">
-        <UnifiedCalendar onAddTask={date => { setTaskModalDueDate(date); setShowTaskModal(true); }} />
+      </div>{/* end main content */}
+
+      {/* Right side panel — xl+ only */}
+      <div className="hidden xl:flex xl:flex-col w-80 shrink-0 py-6 pr-6 gap-4">
+        {/* Tab switcher */}
+        <RightPanelTabs />
       </div>
 
     </div>
 
     {showTaskModal && (
       <TaskModal
-        defaultDueDate={taskModalDueDate}
         onClose={() => setShowTaskModal(false)}
         onSave={() => setShowTaskModal(false)}
       />
     )}
     </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
   );
 }

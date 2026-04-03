@@ -8,6 +8,7 @@ import UploadModal from '@/components/upload/UploadModal';
 import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
+import { Input } from '@/components/ui/Input';
 import AddButton from '@/components/ui/AddButton';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
@@ -461,13 +462,13 @@ export default function LibraryPage() {
       await documentsApi.setFolder(e.active.id as string, overId.replace('folder-', ''));
       fetchAll();
     }}>
-      {/* Full-height split panel: negate the parent's p-6 padding */}
-      <div className="flex h-full -mx-6 -mt-6 -mb-6">
+      {/* Full-height split panel */}
+      <div className="flex h-full">
 
-        {/* LEFT: Note list */}
+        {/* LEFT: Note list — full width on mobile when no doc selected, hidden when doc selected */}
         <div
-          className="flex flex-col shrink-0 overflow-hidden"
-          style={{ width: 280, borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
+          className={`flex-col shrink-0 overflow-hidden ${selectedDocId ? 'hidden lg:flex' : 'flex w-full'} lg:w-[280px]`}
+          style={{ borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
         >
           {/* Left header: title + upload */}
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -477,12 +478,12 @@ export default function LibraryPage() {
             </div>
             {/* Search + filter */}
             <div className="flex items-center gap-1.5">
-              <input
+              <Input
+                variant="search"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search notes…"
-                className="flex-1 px-3 py-1.5 rounded-lg text-body-sm outline-none text-[var(--text-1)] placeholder-[var(--text-3)]"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
+                className="flex-1"
               />
               <TagDropdown
                 tags={availableTags}
@@ -539,8 +540,8 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* RIGHT: Document detail */}
-        <div className="flex-1 overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+        {/* RIGHT: Document detail — hidden on mobile when no doc selected */}
+        <div className={`flex-1 overflow-hidden ${selectedDocId ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`} style={{ backgroundColor: 'var(--bg-page)' }}>
           {debouncedDocId ? (
             <DocumentDetail
               key={debouncedDocId}

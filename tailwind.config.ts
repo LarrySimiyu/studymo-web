@@ -51,6 +51,9 @@ const config: Config = {
         'title':      ['1.75rem',   { lineHeight: '2.25rem',  fontWeight: '700' }],
         'display':    ['2.25rem',   { lineHeight: '2.75rem',  fontWeight: '700' }],
       },
+      backgroundImage: {
+        'brand-gradient': 'linear-gradient(135deg, #FF6500, #FF9A3C)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
