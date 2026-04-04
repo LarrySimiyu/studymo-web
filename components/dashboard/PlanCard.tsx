@@ -134,14 +134,6 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
             {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </p>
         </div>
-        {!day.completed && (
-          <span
-            className={`shrink-0 ${compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'} rounded-lg font-medium`}
-            style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
-          >
-            {toggling ? '…' : 'Mark done'}
-          </span>
-        )}
         <div className="text-white shrink-0">
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>

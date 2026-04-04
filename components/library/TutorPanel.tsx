@@ -145,7 +145,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
         {loading && (
           <div className="flex justify-center py-8">
-            <div className="w-5 h-5 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
           </div>
         )}
         {messages.map(msg => (
@@ -162,15 +162,24 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           )
         ))}
         {messages.length === 0 && !loading && (
-          <p className="text-xs text-[var(--text-3)] text-center py-6">Ask anything about this note…</p>
+          <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-20">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(255,101,0,0.15), rgba(255,154,60,0.15))' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.75"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-1)]">Ask me anything about this note</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>I have this note loaded as context</p>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
       <div className="shrink-0 px-3 pb-3 relative">
-        {showContextPanel && session && (
+        {session && (
           <ContextPicker
+            open={showContextPanel}
             loadedNotes={session.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
             availableNotes={availableNotes.map(n => ({ id: n.id, title: n.document.title }))}
             noteSearch={noteSearch}

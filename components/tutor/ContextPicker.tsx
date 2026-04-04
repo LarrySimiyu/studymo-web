@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { X, Search } from 'lucide-react';
 
 export interface PickerNote {
   id: string;
@@ -8,6 +9,7 @@ export interface PickerNote {
 }
 
 interface Props {
+  open: boolean;
   loadedNotes: PickerNote[];
   availableNotes: PickerNote[];
   noteSearch: string;
@@ -19,63 +21,107 @@ interface Props {
 }
 
 export default function ContextPicker({
+  open,
   loadedNotes,
   availableNotes,
+  noteSearch,
+  onNoteSearchChange,
+  onRemove,
   onAdd,
   maxNotes = 15,
   onClose,
 }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+  const loadedIds = new Set(loadedNotes.map(n => n.id));
+  const allNotes = [
+    ...loadedNotes,
+    ...availableNotes.filter(n => !loadedIds.has(n.id)),
+  ];
 
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, [onClose]);
+  function toggle(id: string) {
+    if (loadedIds.has(id)) onRemove(id);
+    else onAdd(id);
+  }
 
   return (
-    <div
-      ref={ref}
-      className="absolute bottom-full mb-2 left-0 z-50 w-72 rounded-xl overflow-hidden shadow-xl"
-      style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--text-1)]">Add Notes</span>
-          <span className="text-[10px] text-[var(--text-2)]">{loadedNotes.length} / {maxNotes}</span>
-        </div>
-        <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="overflow-y-auto" style={{ maxHeight: 240 }}>
-        {availableNotes.length === 0 ? (
-          <p className="text-xs text-[var(--text-3)] px-3 py-3">No more notes to add.</p>
-        ) : (
-          availableNotes.map(n => (
-            <div key={n.id} className="flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover)]">
-              <p className="text-xs text-[var(--text-1)] truncate flex-1">{n.title}</p>
-              <button
-                onClick={() => onAdd(n.id)}
-                disabled={loadedNotes.length >= maxNotes}
-                title={loadedNotes.length >= maxNotes ? 'Max notes reached' : 'Add note'}
-                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-80"
-                style={{ backgroundColor: 'var(--brand)' }}
-              >
-                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M6 1v10M1 6h10" />
-                </svg>
-              </button>
+    <Dialog.Root open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} />
+        <Dialog.Content
+          className="fixed z-50 w-full max-w-sm rounded-2xl shadow-2xl outline-none p-4"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            height: '70vh',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between shrink-0">
+            <div>
+              <Dialog.Title className="text-sm font-semibold text-[var(--text-1)]">Add Context</Dialog.Title>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                {loadedNotes.length} / {maxNotes} selected
+              </p>
             </div>
-          ))
-        )}
-      </div>
-    </div>
+            <Dialog.Close asChild>
+              <button
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                style={{ color: 'var(--text-3)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
+              >
+                <X size={14} />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          {/* Search */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl shrink-0" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
+            <Search size={13} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
+            <input
+              value={noteSearch}
+              onChange={e => onNoteSearchChange(e.target.value)}
+              placeholder="Search notes…"
+              className="flex-1 bg-transparent text-xs outline-none text-[var(--text-1)] placeholder-[var(--text-3)]"
+              autoFocus
+            />
+          </div>
+
+          {/* Notes list */}
+          <div className="flex-1 overflow-y-auto">
+            {allNotes.length === 0 ? (
+              <p className="text-xs text-center py-6" style={{ color: 'var(--text-3)' }}>No notes found</p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                {allNotes.map(n => {
+                  const selected = loadedIds.has(n.id);
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => toggle(n.id)}
+                      disabled={!selected && loadedNotes.length >= maxNotes}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl w-full text-left transition-colors disabled:opacity-40"
+                      style={{
+                        backgroundColor: selected ? 'var(--brand)' : 'var(--bg-input)',
+                        color: selected ? '#fff' : 'var(--text-1)',
+                      }}
+                      onMouseEnter={e => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
+                      onMouseLeave={e => { if (!selected) e.currentTarget.style.backgroundColor = 'var(--bg-input)'; }}
+                    >
+                      <span className="text-xs truncate flex-1">{n.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

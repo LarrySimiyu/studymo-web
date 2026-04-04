@@ -45,8 +45,8 @@ function StartScreen({ documentId, title, count, onStart }: { documentId: string
         <Heart size={52} style={{ color: iconColor }} fill={iconColor} />
       </div>
       <div>
-        <p className="text-3xl font-bold text-[var(--text-1)]">{count} Questions</p>
-        <p className="text-sm text-[var(--text-3)] mt-1">{title}</p>
+        <p className="text-3xl font-bold text-[var(--text-1)]">{title}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>{count} Questions</p>
       </div>
       <button
         onClick={onStart}
@@ -278,11 +278,11 @@ export default function QuizzesPage() {
                     <Heart size={26} style={{ color: iconColor }} fill={iconColor} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[var(--text-1)] truncate">{entry.document.title}</p>
-                    <div className="flex items-baseline gap-1.5 mt-1">
-                      <p className="text-2xl font-bold text-[var(--text-1)] leading-none">{count}</p>
-                      <p className="text-xs text-[var(--text-3)] leading-none">Questions</p>
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">{count}</p>
+                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">Questions</p>
                     </div>
+                    <p className="text-xs text-[var(--text-3)] truncate mt-1">{entry.document.title}</p>
                   </div>
                 </div>
               </button>

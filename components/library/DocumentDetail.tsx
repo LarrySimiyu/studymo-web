@@ -1000,9 +1000,11 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
         <>
           <div
             onMouseDown={handleResizeMouseDown}
-            className="w-px shrink-0 cursor-col-resize hover:bg-[var(--border-md)] transition-colors"
-            style={{ backgroundColor: 'var(--border)' }}
-          />
+            className="w-2 shrink-0 cursor-col-resize flex items-center justify-center group"
+            style={{ backgroundColor: 'transparent' }}
+          >
+            <div className="w-px h-full transition-colors" style={{ backgroundColor: 'var(--border)' }} />
+          </div>
           <div style={{ width: tutorPanelWidth, minWidth: 280, maxWidth: 700, flexShrink: 0 }}>
             <TutorPanel
               noteId={note.id}
