@@ -38,29 +38,19 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
 
   return (
     <div
-      className="flex gap-3 px-4 py-4 rounded-xl transition-colors"
+      className="px-4 py-3 rounded-xl transition-colors"
       style={{ backgroundColor: 'var(--bg-card)' }}
       onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
     >
-      {/* Severity accent bar */}
-      <div
-        className="w-1 rounded-full shrink-0 self-stretch"
-        style={{ backgroundColor: current.resolved ? 'var(--success)' : colors.bar }}
-      />
-
       {/* Content */}
-      <div className="flex-1 min-w-0 flex flex-col gap-2">
-        {/* Top row: topic + missed badge */}
+      <div className="flex-1 min-w-0 flex flex-col gap-4">
+        {/* Topic name */}
         <div className="flex items-start justify-between gap-2">
-          <p className="text-body-sm font-semibold text-[var(--text-1)] leading-snug">{current.topic}</p>
-          {current.resolved ? (
+          <p className="text-body-sm text-[var(--text-1)] leading-snug">{current.topic}</p>
+          {current.resolved && (
             <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--success-subtle)', color: 'var(--success)' }}>
               Resolved
-            </span>
-          ) : (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: colors.badge, color: colors.text }}>
-              {current.missedCount}× missed
             </span>
           )}
         </div>
@@ -76,9 +66,12 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
         )}
 
 
-        {/* Actions */}
+        {/* Actions + missed count */}
         {!current.resolved && (
           <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: colors.badge, color: colors.text }}>
+              {current.missedCount}× missed
+            </span>
             {linkToDocument && current.document?.id && (
               <button
                 onClick={e => { e.stopPropagation(); router.push(`/dashboard/library?note=${current.document!.id}`); }}

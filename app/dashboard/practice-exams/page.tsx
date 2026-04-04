@@ -6,6 +6,8 @@ import { practiceExamsApi, PracticeExam, ExamContent } from '@/lib/api/organizat
 import { documentsApi } from '@/lib/api/documents';
 import { ClipboardList } from 'lucide-react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import GeneratePracticeExamModal from '@/components/practice-exams/GeneratePracticeExamModal';
 
 const PALETTE: [string, string][] = [
   ['#FF6500', 'rgba(255,101,0,0.12)'],
@@ -70,29 +72,11 @@ function ExamMenu({ onDelete }: { onDelete: () => void }) {
   );
 }
 
-const QUESTION_TYPES = [
-  { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'short_answer', label: 'Short Answer' },
-  { value: 'true_false', label: 'True / False' },
-];
-
-const DURATIONS = [
-  { value: 10, label: '10 min', sub: 'Quick review' },
-  { value: 25, label: '25 min', sub: 'Standard' },
-  { value: 45, label: '45 min', sub: 'In-depth' },
-  { value: 60, label: '1 hour', sub: 'Full exam' },
-];
-
 export default function PracticeExamsPage() {
   const router = useRouter();
   const [exams, setExams] = useState<PracticeExam[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [examTitle, setExamTitle] = useState('');
-  const [examDocIds, setExamDocIds] = useState<string[]>([]);
-  const [questionTypes, setQuestionTypes] = useState<string[]>(['multiple_choice', 'short_answer']);
-  const [durationMinutes, setDurationMinutes] = useState<number>(25);
-  const [generating, setGenerating] = useState(false);
   const [allDocs, setAllDocs] = useState<{ id: string; title: string; status: string }[]>([]);
 
   const load = useCallback(async () => {
@@ -107,22 +91,11 @@ export default function PracticeExamsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const toggleType = (t: string) =>
-    setQuestionTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-
-  const handleGenerate = async () => {
-    if (!examTitle.trim() || !examDocIds.length || !questionTypes.length || generating) return;
-    setGenerating(true);
-    const { data, error } = await practiceExamsApi.create({
-      title: examTitle.trim(),
-      documentIds: examDocIds,
-      questionTypes,
-      durationMinutes,
-    });
-    setGenerating(false);
-    if (error || !data) { alert(error || 'Failed to generate exam'); return; }
+  const handleGenerate = async (form: { title: string; documentIds: string[]; questionTypes: string[]; durationMinutes: number }) => {
+    const { data, error } = await practiceExamsApi.create(form);
+    if (error || !data) { alert(error || 'Failed to generate exam'); throw new Error(error ?? 'Failed'); }
     setShowModal(false);
-    router.push(`/dashboard/practice-exams/${data.id}`);
+    load();
   };
 
   const handleDelete = async (id: string) => {
@@ -131,13 +104,7 @@ export default function PracticeExamsPage() {
     load();
   };
 
-  const openModal = () => {
-    setExamTitle('');
-    setExamDocIds([]);
-    setQuestionTypes(['multiple_choice', 'short_answer']);
-    setDurationMinutes(25);
-    setShowModal(true);
-  };
+  const openModal = () => setShowModal(true);
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -147,21 +114,23 @@ export default function PracticeExamsPage() {
       />
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
-        </div>
+        <LoadingSpinner size="lg" />
       ) : exams.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">📝</div>
-          <p className="text-[var(--text-2)] mb-2">No practice exams yet</p>
-          <p className="text-[var(--text-3)] text-sm mb-6">Generate an exam from your notes</p>
-          <button
-            onClick={openModal}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-          >
-            Generate Your First Exam
-          </button>
+        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
+            <ClipboardList size={40} style={{ color: '#8B5CF6' }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[var(--text-1)]">No Practice Exams</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Simulate real exam conditions and boost your confidence before test day.</p>
+            <button
+              onClick={openModal}
+              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              Generate Exam
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -257,122 +226,12 @@ export default function PracticeExamsPage() {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
-          <div className="rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <div className="flex justify-between mb-5">
-              <h3 className="font-semibold text-[var(--text-1)]">Generate Practice Exam</h3>
-              <button onClick={() => setShowModal(false)} className="text-[var(--text-2)] hover:text-[var(--text-1)] text-xl leading-none">×</button>
-            </div>
-            <div className="space-y-5">
-              <div>
-                <label className="text-xs text-[var(--text-2)] mb-1 block">Exam Title *</label>
-                <input
-                  value={examTitle}
-                  onChange={e => setExamTitle(e.target.value)}
-                  placeholder="e.g. Midterm Practice Exam"
-                  className="w-full rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none"
-                  style={{ backgroundColor: 'var(--bg-input)' }}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs text-[var(--text-2)] mb-2 block">Question Types *</label>
-                <div className="flex flex-wrap gap-2">
-                  {QUESTION_TYPES.map(({ value, label }) => {
-                    const active = questionTypes.includes(value);
-                    return (
-                      <button
-                        key={value}
-                        onClick={() => toggleType(value)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                        style={{
-                          backgroundColor: active ? 'var(--brand)' : 'var(--bg-input)',
-                          color: active ? '#fff' : 'var(--text-3)',
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-[var(--text-2)] mb-2 block">Exam Duration *</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {DURATIONS.map(({ value, label, sub }) => {
-                    const active = durationMinutes === value;
-                    return (
-                      <button
-                        key={value}
-                        onClick={() => setDurationMinutes(value)}
-                        className="p-2 rounded-lg text-center transition-all"
-                        style={{ backgroundColor: active ? 'rgba(255,101,0,0.15)' : 'var(--bg-input)' }}
-                      >
-                        <p className="text-xs font-medium" style={{ color: active ? 'var(--brand)' : 'var(--text-2)' }}>{label}</p>
-                        <p className="text-xs mt-0.5" style={{ color: active ? 'var(--brand)' : 'var(--text-3)' }}>{sub}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-[var(--text-2)] mb-1 block">Select Notes *</label>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                  {allDocs.filter(d => d.status === 'complete').map(d => (
-                    <label
-                      key={d.id}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
-                      style={{ backgroundColor: 'var(--bg-input)' }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={examDocIds.includes(d.id)}
-                        onChange={e => setExamDocIds(prev => e.target.checked ? [...prev, d.id] : prev.filter(x => x !== d.id))}
-                        className="accent-[#FF6500]"
-                      />
-                      <span className="text-sm text-[var(--text-2)] truncate">{d.title}</span>
-                    </label>
-                  ))}
-                  {allDocs.filter(d => d.status === 'complete').length === 0 && (
-                    <p className="text-[var(--text-3)] text-sm px-3">No completed notes found.</p>
-                  )}
-                </div>
-              </div>
-
-              {generating && (
-                <div className="flex items-center gap-3 text-[var(--text-2)] text-sm py-1">
-                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--brand)', borderTopColor: 'transparent' }} />
-                  Generating… this may take a minute
-                </div>
-              )}
-            </div>
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 py-2 rounded-lg text-[var(--text-2)] text-sm transition-colors"
-                style={{ backgroundColor: 'var(--bg-input)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGenerate}
-                disabled={generating || !examTitle.trim() || !examDocIds.length || !questionTypes.length}
-                className="flex-1 py-2 rounded-lg text-white text-sm disabled:opacity-40 hover:opacity-90 transition-opacity"
-                style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-              >
-                {generating ? 'Generating…' : 'Generate Exam'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GeneratePracticeExamModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onGenerate={handleGenerate}
+        documents={allDocs}
+      />
     </div>
   );
 }

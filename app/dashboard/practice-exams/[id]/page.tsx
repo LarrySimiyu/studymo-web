@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { practiceExamsApi, PracticeExam, ExamContent, ExamQuestion, ExamSection } from '@/lib/api/organization';
+import { practiceExamsApi, PracticeExam, PracticeExamAttempt, ExamContent, ExamQuestion, ExamSection } from '@/lib/api/organization';
 import ProgressBar from '@/components/ui/ProgressBar';
 import MultipleChoiceOptions from '@/components/ui/MultipleChoiceOptions';
 import QuestionCard from '@/components/ui/QuestionCard';
@@ -71,33 +71,42 @@ export default function PracticeExamPage() {
   const [grading, setGrading] = useState(false);
   const [gradingResults, setGradingResults] = useState<Record<number, { correct: boolean; partialCredit: number; feedback: string }>>({});
   const [finalScore, setFinalScore] = useState<{ earned: number; total: number } | null>(null);
+  const [latestAttempt, setLatestAttempt] = useState<PracticeExamAttempt | null>(null);
+  const progressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    practiceExamsApi.getById(id).then(({ data }) => {
-      if (data) setExam(data);
+    Promise.all([
+      practiceExamsApi.getById(id),
+      practiceExamsApi.getProgress(id),
+      practiceExamsApi.getAttempts(id),
+    ]).then(([examRes, progressRes, attemptsRes]) => {
+      if (examRes.data) setExam(examRes.data);
+      if (attemptsRes.data?.length) setLatestAttempt(attemptsRes.data[0]);
+      // Prefer API progress, fall back to localStorage
+      const apiAnswers = progressRes.data?.answers;
+      if (apiAnswers && Object.keys(apiAnswers).length > 0) {
+        setAnswers(apiAnswers);
+      } else {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const { answers: savedAnswers } = JSON.parse(saved);
+            if (savedAnswers && Object.keys(savedAnswers).length > 0) setAnswers(savedAnswers);
+          }
+        } catch {}
+      }
       setLoading(false);
     });
-  }, [id]);
-
-  useEffect(() => {
-    if (!id) return;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const { answers: savedAnswers } = JSON.parse(saved);
-        if (savedAnswers && Object.keys(savedAnswers).length > 0) {
-          setAnswers(savedAnswers);
-        }
-      }
-    } catch {}
   }, [id, STORAGE_KEY]);
 
   useEffect(() => {
     if (Object.keys(answers).length === 0) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers }));
-    } catch {}
-  }, [answers, STORAGE_KEY]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers })); } catch {}
+    if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
+    progressDebounceRef.current = setTimeout(() => {
+      practiceExamsApi.saveProgress(id, answers).catch(() => {});
+    }, 2000);
+  }, [answers, STORAGE_KEY, id]);
 
   const setAnswer = useCallback((num: number, val: string) => {
     setAnswers(prev => ({ ...prev, [num]: val }));
@@ -135,34 +144,56 @@ export default function PracticeExamPage() {
     let earned = 0;
     let total = 0;
 
+    // Grade objective questions immediately
     for (const q of allQuestions) {
       total += q.points;
       const userAnswer = answers[q.number] ?? '';
-
       if (q.type === 'multiple_choice' || q.type === 'true_false') {
         const correct = userAnswer === q.correctAnswer;
         results[q.number] = { correct, partialCredit: correct ? 1 : 0, feedback: q.explanation ?? '' };
         if (correct) earned += q.points;
-      } else if (q.type === 'short_answer' && userAnswer.trim()) {
-        const { data } = await practiceExamsApi.gradeAnswer({
-          question: q.question,
-          correctAnswer: q.correctAnswer ?? '',
-          userAnswer,
-        });
-        const res = data ?? { correct: false, partialCredit: 0, feedback: 'Unable to grade' };
-        results[q.number] = res;
-        earned += Math.round(q.points * res.partialCredit);
-      } else {
+      } else if (!userAnswer.trim()) {
         results[q.number] = { correct: false, partialCredit: 0, feedback: 'No answer provided' };
       }
+    }
+
+    // Grade all short answer questions in parallel
+    const shortAnswerQuestions = allQuestions.filter(
+      q => q.type === 'short_answer' && (answers[q.number] ?? '').trim()
+    );
+    const shortAnswerResults = await Promise.all(
+      shortAnswerQuestions.map(q =>
+        practiceExamsApi.gradeAnswer({
+          question: q.question,
+          correctAnswer: q.correctAnswer ?? '',
+          userAnswer: answers[q.number],
+        }).then(({ data }) => ({
+          number: q.number,
+          points: q.points,
+          result: data ?? { correct: false, partialCredit: 0, feedback: 'Unable to grade' },
+        }))
+      )
+    );
+    for (const { number, points, result } of shortAnswerResults) {
+      results[number] = result;
+      earned += Math.round(points * result.partialCredit);
     }
 
     setGradingResults(results);
     setFinalScore({ earned, total });
     setSubmitted(true);
     setGrading(false);
+    if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setMode('results');
+    // Save attempt to backend — fire-and-forget
+    practiceExamsApi.submitAttempt(id, {
+      score: total > 0 ? Math.round((earned / total) * 100) : 0,
+      earnedPoints: earned,
+      totalPoints: total,
+      answers,
+      results,
+    }).then(({ data }) => { if (data) setLatestAttempt(data); }).catch(() => {});
   }
 
   // ── Select Mode ──────────────────────────────────────────────────────────────
@@ -204,12 +235,22 @@ export default function PracticeExamPage() {
           ))}
         </div>
 
-        {submitted && finalScore && (
+        {(submitted && finalScore ? true : !!latestAttempt) && (
           <div className="mb-6 p-4 rounded-xl text-center" style={{ backgroundColor: 'var(--bg-hover)' }}>
-            <p className="text-[var(--text-1)] font-bold text-2xl">{finalScore.earned} / {finalScore.total}</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--brand)' }}>
-              {Math.round((finalScore.earned / finalScore.total) * 100)}%
-            </p>
+            {submitted && finalScore ? (
+              <>
+                <p className="text-[var(--text-1)] font-bold text-2xl">{finalScore.earned} / {finalScore.total}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--brand)' }}>
+                  {Math.round((finalScore.earned / finalScore.total) * 100)}%
+                </p>
+              </>
+            ) : latestAttempt ? (
+              <>
+                <p className="text-xs text-[var(--text-3)] mb-1">Last attempt · {new Date(latestAttempt.createdAt).toLocaleDateString()}</p>
+                <p className="text-[var(--text-1)] font-bold text-2xl">{latestAttempt.earnedPoints} / {latestAttempt.totalPoints}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--brand)' }}>{Math.round(latestAttempt.score)}%</p>
+              </>
+            ) : null}
           </div>
         )}
 
@@ -219,7 +260,7 @@ export default function PracticeExamPage() {
             className="flex-1 py-3 rounded-xl font-medium text-white hover:opacity-90 transition-opacity"
             style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
-            {submitted ? 'Retake Exam' : 'Take Exam'}
+            {submitted || latestAttempt ? 'Retake Exam' : 'Take Exam'}
           </button>
           {submitted && (
             <button
@@ -292,7 +333,13 @@ export default function PracticeExamPage() {
 
         <div className="mt-8 flex gap-3">
           <button
-            onClick={() => setMode('select')}
+            onClick={() => {
+              if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
+              if (Object.keys(answers).length > 0) {
+                practiceExamsApi.saveProgress(id, answers).catch(() => {});
+              }
+              setMode('select');
+            }}
             className="px-6 py-3 rounded-xl transition-colors"
             style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}

@@ -5,6 +5,7 @@ import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import Link from 'next/link';
 import { Mic, Clock, Star, Play } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 
 const PALETTE: [string, string][] = [
@@ -149,19 +150,21 @@ export default function PodcastsPage() {
       />
 
       {podcasts.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">🎙️</div>
-          <h2 className="text-body-lg font-semibold text-[var(--text-1)] mb-2">No podcasts yet</h2>
-          <p className="text-body-sm mb-6" style={{ color: 'var(--text-2)' }}>
-            Open any note in your library and click the Podcast tab to generate an audio lecture.
-          </p>
-          <Link
-            href="/dashboard/library"
-            className="inline-block px-5 py-2.5 rounded-xl text-xs font-semibold text-white hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-          >
-            Go to Library
-          </Link>
+        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
+            <Mic size={40} style={{ color: '#FF6500' }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[var(--text-1)]">No Podcasts</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Turn your notes into audio lectures you can listen to anywhere.</p>
+            <Link
+              href="/dashboard/library"
+              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              Go to Notes
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="space-y-2">

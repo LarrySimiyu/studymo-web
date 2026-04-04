@@ -122,5 +122,14 @@ input[type="date"] { color-scheme: dark; }
 .tutor-message ol { list-style: decimal; padding-left: 1.25em; margin: 0.25em 0; }
 .tutor-message li { margin: 0.1em 0; }
 .tutor-message code { font-family: monospace; font-size: 0.85em; background: var(--bg-input); padding: 0.1em 0.3em; border-radius: 3px; }
-.tutor-cursor { display: inline-block; width: 4px; height: 14px; margin-left: 2px; border-radius: 2px; background: #9747FF; animation: tutor-blink 1s step-end infinite; vertical-align: text-bottom; }
-@keyframes tutor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.tutor-cursor {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: text-bottom;
+  background-color: #FF6500;
+  animation: tutor-spin 1.2s linear infinite;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+@keyframes tutor-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

@@ -142,7 +142,7 @@ function DashboardContent() {
               <h2 className="text-xs font-medium text-[var(--text-2)]">Recent Notes</h2>
               <Link href="/dashboard/notes" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
+            <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] sm:[&::-webkit-scrollbar]:block sm:[scrollbar-width:thin]">
               {recentNotes.map(note => {
                 const [iconColor, iconBg] = getPalette(note.document.id);
                 return (
