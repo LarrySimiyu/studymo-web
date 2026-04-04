@@ -178,8 +178,8 @@ export default function TutorPage() {
     }
   }
 
-  async function sendMessage() {
-    const text = input.trim();
+  async function sendMessage(override?: string) {
+    const text = (override ?? input).trim();
     if (!text || isStreaming || !activeSession || !currentUser) return;
     setInput('');
     setSuggestions([]);
@@ -461,7 +461,7 @@ export default function TutorPage() {
                   {suggestions.map((s, i) => (
                     <button
                       key={i}
-                      onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
+                      onClick={() => { setSuggestions([]); sendMessage(s); }}
                       className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
                       style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: 'var(--brand)' }}
                     >
@@ -506,17 +506,16 @@ export default function TutorPage() {
                 </div>
               )}
 
-              {showContextPanel && (
-                <ContextPicker
-                  loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
-                  availableNotes={availableNotes}
-                  noteSearch={noteSearch}
-                  onNoteSearchChange={setNoteSearch}
-                  onRemove={removeNote}
-                  onAdd={addNote}
-                  onClose={() => setShowContextPanel(false)}
-                />
-              )}
+              <ContextPicker
+                open={showContextPanel}
+                loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
+                availableNotes={availableNotes.map(n => ({ id: n.id, title: n.document.title }))}
+                noteSearch={noteSearch}
+                onNoteSearchChange={setNoteSearch}
+                onRemove={removeNote}
+                onAdd={addNote}
+                onClose={() => setShowContextPanel(false)}
+              />
               <TutorInput
                 value={input}
                 onChange={setInput}

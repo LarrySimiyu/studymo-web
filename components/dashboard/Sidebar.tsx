@@ -172,7 +172,7 @@ function SidebarContent({
           )}
           style={{ background: isActive('/dashboard/tutor')
             ? 'linear-gradient(135deg, #FF6500, #FF9A3C)'
-            : 'linear-gradient(135deg, rgba(255,101,0,0.35), rgba(255,154,60,0.35))' }}
+            : 'linear-gradient(135deg, rgba(255,101,0,0.7), rgba(255,154,60,0.7))' }}
         >
           <Star size={16} className="shrink-0" fill="white" />
           {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
