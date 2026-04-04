@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Layers, ArrowBigLeft, ArrowBigRight, ArrowLeft, Star } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { documentsApi, flashcardsApi, Document, Flashcard } from '@/lib/api/documents';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -219,20 +220,23 @@ export default function FlashcardsPage() {
       <PageHeader title="Flashcards" action={{ label: 'New Flashcard', href: '/dashboard/library' }} />
 
       {loading || deckLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--brand)' }} />
-        </div>
+        <LoadingSpinner size="lg" />
       ) : decks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-4xl mb-4">🗂</div>
-          <p className="text-[var(--text-2)] text-sm">No flashcard decks yet. Upload a note to generate flashcards.</p>
-          <Link
-            href="/dashboard/library"
-            className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            Go to Library
-          </Link>
+        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
+            <Layers size={40} style={{ color: '#3B82F6' }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[var(--text-1)]">No Flashcards</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Memorize key concepts faster with spaced repetition.</p>
+            <Link
+              href="/dashboard/library"
+              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              Go to Notes
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -45,15 +45,16 @@ export default function TasksPanel({ onCountChange, hideCompleted }: { onCountCh
           <span className="text-xs font-medium text-[var(--text-2)]">
             {activeTasks.length} active{completedTasks.length > 0 ? ` · ${completedTasks.length} done` : ''}
           </span>
-          <button
+          <motion.button
             onClick={() => { setEditingTask(null); setShowModal(true); }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors"
+            className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
             style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--brand)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--bg-card)'; e.currentTarget.style.color = 'var(--text-2)'; }}
+            whileTap={{ scale: 0.82 }}
           >
-            <Plus size={12} /> New Task
-          </button>
+            <Plus size={14} />
+          </motion.button>
         </div>
 
         {loading ? (

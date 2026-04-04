@@ -144,7 +144,7 @@ function SidebarContent({
       {/* Logo + collapse */}
       <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
         {!collapsed && (
-          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>Studymo</span>
+          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>StudyMo</span>
         )}
         {showCollapseBtn && isLibraryActive && (
           <button
@@ -167,10 +167,12 @@ function SidebarContent({
           href="/dashboard/tutor"
           title={collapsed ? 'AI Tutor' : undefined}
           className={cn(
-            'flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-opacity text-sm text-white hover:opacity-90',
+            'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-bold text-sm text-white transition-all duration-200 hover:scale-[1.03] hover:brightness-125 active:scale-100',
             collapsed ? 'justify-center' : '',
           )}
-          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+          style={{ background: isActive('/dashboard/tutor')
+            ? 'linear-gradient(135deg, #FF6500, #FF9A3C)'
+            : 'linear-gradient(135deg, rgba(255,101,0,0.7), rgba(255,154,60,0.7))' }}
         >
           <Star size={16} className="shrink-0" fill="white" />
           {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
@@ -281,9 +283,9 @@ function SidebarContent({
               transition={{ duration: 0.2, ease: 'easeInOut' }}
               className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
             >
-              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} small />
               <NavLink href="/dashboard/study-plan" icon={<CalendarDays size={14} />} label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} small />
+              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} small />
             </motion.div>
           )}
         </AnimatePresence>

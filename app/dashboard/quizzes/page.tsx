@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart, ArrowLeft } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { documentsApi, quizzesApi, Document, Quiz } from '@/lib/api/documents';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -44,8 +45,8 @@ function StartScreen({ documentId, title, count, onStart }: { documentId: string
         <Heart size={52} style={{ color: iconColor }} fill={iconColor} />
       </div>
       <div>
-        <p className="text-3xl font-bold text-[var(--text-1)]">{count} Questions</p>
-        <p className="text-sm text-[var(--text-3)] mt-1">{title}</p>
+        <p className="text-3xl font-bold text-[var(--text-1)]">{title}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>{count} Questions</p>
       </div>
       <button
         onClick={onStart}
@@ -237,21 +238,23 @@ export default function QuizzesPage() {
       <PageHeader title="Quizzes" action={{ label: 'New Quiz', href: '/dashboard/library' }} />
 
       {loading || deckLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--brand)' }} />
-        </div>
+        <LoadingSpinner size="lg" />
       ) : decks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="text-4xl mb-4">❓</div>
-          <p className="text-[var(--text-2)] text-sm">No quizzes yet.</p>
-          <p className="text-[var(--text-3)] text-sm mt-1">Open a note and generate a quiz from the Quiz tab.</p>
-          <Link
-            href="/dashboard/library"
-            className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            Go to Notes
-          </Link>
+        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(236,72,153,0.12)' }}>
+            <Heart size={40} fill="#EC4899" style={{ color: '#EC4899' }} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[var(--text-1)]">No Quizzes</h3>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Test your knowledge and pinpoint weak spots before exam day.</p>
+            <Link
+              href="/dashboard/library"
+              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              Go to Notes
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

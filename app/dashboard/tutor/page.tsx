@@ -113,16 +113,9 @@ export default function TutorPage() {
 
   useEffect(() => {
     tutorApi.getSessions().then(({ data }) => {
-      if (data) {
-        setSessions(data);
-        // Auto-select most recent session unless URL specifies one
-        if (!initialSession && data.length > 0) {
-          loadSession(data[0].id);
-        }
-      }
+      if (data) setSessions(data);
       setSessionsLoading(false);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── load all notes for context panel ──────────────────────────────────────
@@ -154,8 +147,7 @@ export default function TutorPage() {
     const { data } = await tutorApi.getSession(id);
     if (!data) return;
     setActiveSession(data);
-    const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
-    setMessages([welcome, ...data.messages]);
+    setMessages(data.messages);
     setSuggestions([]);
     setShowChat(true);
     if (data.messages.length === 0) {
@@ -174,8 +166,7 @@ export default function TutorPage() {
       if (!data) return;
       setSessions(prev => [{ id: data.id, title: data.title, mode: 'tutor', noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
       setActiveSession(data);
-      const welcome: UIMessage = { id: nextId(), role: 'assistant', content: buildWelcome(userName, data) };
-      setMessages([welcome]);
+      setMessages([]);
       setSuggestions([]);
       setShowChat(true);
       tutorApi.getSuggestions(data.id).then(({ data: s }) => {
@@ -187,8 +178,8 @@ export default function TutorPage() {
     }
   }
 
-  async function sendMessage() {
-    const text = input.trim();
+  async function sendMessage(override?: string) {
+    const text = (override ?? input).trim();
     if (!text || isStreaming || !activeSession || !currentUser) return;
     setInput('');
     setSuggestions([]);
@@ -320,28 +311,15 @@ export default function TutorPage() {
                 <div
                   key={s.id}
                   onClick={() => loadSession(s.id)}
-                  className="block p-3 rounded-xl transition-colors cursor-pointer group"
+                  className="block p-3 rounded-xl transition-colors cursor-pointer"
                   style={{
                     backgroundColor: activeSession?.id === s.id ? 'var(--bg-hover)' : 'var(--bg-card)',
                   }}
                   onMouseEnter={e => { if (activeSession?.id !== s.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
                   onMouseLeave={e => { if (activeSession?.id !== s.id) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--text-1)] truncate">{s.title}</p>
-<p className="text-xs text-[var(--text-3)] mt-0.5">{timeAgo(s.updatedAt)}</p>
-                    </div>
-                    <button
-                      onClick={e => deleteSession(s.id, e)}
-                      className="opacity-0 group-hover:opacity-100 text-[var(--text-3)] hover:text-red-400 transition-all shrink-0 mt-0.5"
-                      title="Delete session"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                      </svg>
-                    </button>
-                  </div>
+                  <p className="text-sm font-medium text-[var(--text-1)] truncate">{s.title}</p>
+                  <p className="text-xs text-[var(--text-3)] mt-0.5">{timeAgo(s.updatedAt)}</p>
                 </div>
               ))}
             </div>
@@ -433,6 +411,17 @@ export default function TutorPage() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-20">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(255,101,0,0.15), rgba(255,154,60,0.15))' }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.75"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--text-1)]">Add your notes and I&apos;ll help you study</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Ask me anything or use the context button to load a note</p>
+                  </div>
+                </div>
+              )}
               {messages.map(msg => {
                 if (msg.role === 'system') {
                   return (
@@ -472,7 +461,7 @@ export default function TutorPage() {
                   {suggestions.map((s, i) => (
                     <button
                       key={i}
-                      onClick={() => { setInput(s); setSuggestions([]); inputRef.current?.focus(); }}
+                      onClick={() => { setSuggestions([]); sendMessage(s); }}
                       className="text-xs px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
                       style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: 'var(--brand)' }}
                     >
@@ -517,17 +506,16 @@ export default function TutorPage() {
                 </div>
               )}
 
-              {showContextPanel && (
-                <ContextPicker
-                  loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
-                  availableNotes={availableNotes}
-                  noteSearch={noteSearch}
-                  onNoteSearchChange={setNoteSearch}
-                  onRemove={removeNote}
-                  onAdd={addNote}
-                  onClose={() => setShowContextPanel(false)}
-                />
-              )}
+              <ContextPicker
+                open={showContextPanel}
+                loadedNotes={activeSession.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title }))}
+                availableNotes={availableNotes.map(n => ({ id: n.id, title: n.document.title }))}
+                noteSearch={noteSearch}
+                onNoteSearchChange={setNoteSearch}
+                onRemove={removeNote}
+                onAdd={addNote}
+                onClose={() => setShowContextPanel(false)}
+              />
               <TutorInput
                 value={input}
                 onChange={setInput}

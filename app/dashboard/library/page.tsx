@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { documentsApi, Document, docTagsApi, notesApi } from '@/lib/api/documents';
+import { documentsApi, Document, docTagsApi } from '@/lib/api/documents';
 import { foldersApi, Folder } from '@/lib/api/organization';
-import UploadModal from '@/components/upload/UploadModal';
+import { useLibrary } from '@/context/LibraryContext';
 import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
+import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
 import { Input } from '@/components/ui/Input';
-import AddButton from '@/components/ui/AddButton';
+import { PenLine, Upload, Mic, Youtube, Plus } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
 
@@ -171,26 +173,15 @@ function FolderModal({ folder, onClose, onSave }: {
   );
 }
 
-function twoSentences(text: string | null | undefined): string {
-  if (!text) return '';
-  // Strip HTML tags first
-  const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const matches = plain.match(/[^.!?]+[.!?]+/g);
-  if (!matches) return plain.slice(0, 120);
-  return matches.slice(0, 2).join(' ').trim();
-}
 
-function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders, availableTags, onAddTag, onManageTags }: {
+function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders }: {
   doc: Document;
   preview?: string;
   isSelected: boolean;
   onClick: () => void;
   onDelete: (id: string) => void;
   onMoveToFolder: (docId: string, folderId: string | null) => void;
-  onAddTag: (docId: string, tagId: string) => void;
-  onManageTags: () => void;
   folders: Folder[];
-  availableTags: Tag[];
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [openSub, setOpenSub] = useState<'folder' | null>(null);
@@ -236,44 +227,14 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
                 <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl min-w-[170px]"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
 
-                  {/* Move to folder */}
-                  <button
-                    className="w-full text-left px-3 py-2 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex justify-between items-center"
-                    onClick={e => { e.stopPropagation(); setOpenSub(s => s === 'folder' ? null : 'folder'); }}
-                  >
-                    Move to collection
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--text-3)', transform: openSub === 'folder' ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
-                      <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {openSub === 'folder' && (
-                    <div className="border-t mx-2" style={{ borderColor: 'var(--border)' }}>
-                      {doc.folderId && (
-                        <button className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-3)] hover:bg-black/5"
-                          onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, null); setShowMenu(false); }}>
-                          Remove from folder
-                        </button>
-                      )}
-                      {flat.map(f => (
-                        <button key={f.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                          onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}>
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
-                          {f.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add tag */}
-                  <div className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                    <TagDropdown
-                      tags={availableTags}
-                      placeholder="Add tag"
-                      align="right"
-                      onChange={id => { onAddTag(doc.id, id); setShowMenu(false); }}
-                      onManageTags={() => { setShowMenu(false); onManageTags(); }}
-                    />
-                  </div>
+                  {/* Collections list */}
+                  {flat.map(f => (
+                    <button key={f.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
+                      onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}>
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
+                      {f.name}
+                    </button>
+                  ))}
 
                   <div className="border-t mx-2 my-1" style={{ borderColor: 'var(--border)' }} />
                   <button className="w-full text-left px-3 py-2 text-body-sm text-red-400 hover:bg-black/5"
@@ -338,18 +299,28 @@ export default function LibraryPage() {
     if (debounceDocRef.current) clearTimeout(debounceDocRef.current);
     debounceDocRef.current = setTimeout(() => setDebouncedDocId(id), 300);
   };
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [availableTags, setAvailableTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
-  const [notePreviews, setNotePreviews] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [showUpload, setShowUpload] = useState(false);
+  const { documents, folders, availableTags, notePreviews, initialized, refetch, removeDocument } = useLibrary();
+  const [loading, setLoading] = useState(!initialized);
+  const [uploadType, setUploadType] = useState<UploadType | null>(null);
+  const [showUploadDropdown, setShowUploadDropdown] = useState(false);
+  const [uploadDropdownPos, setUploadDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const uploadDropdownRef = useRef<HTMLDivElement>(null);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showManageTags, setShowManageTags] = useState(false);
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [sort, setSort] = useState('newest');
+
+  const filteredDocuments = useMemo(() => {
+    let docs = documents;
+    if (selectedFolder === 'none') docs = docs.filter(d => !d.folderId);
+    else if (selectedFolder !== 'all') docs = docs.filter(d => d.folderId === selectedFolder);
+    if (tagFilter) docs = docs.filter(d => d.tags?.some(dt => dt.tagId === tagFilter));
+    if (search) { const q = search.toLowerCase(); docs = docs.filter(d => d.title.toLowerCase().includes(q)); }
+    if (typeFilter) docs = docs.filter(d => d.type === typeFilter);
+    return docs;
+  }, [documents, selectedFolder, tagFilter, search, typeFilter]);
   const [deleteTarget, setDeleteTarget] = useState<Set<string> | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [, setTick] = useState(0);
@@ -360,6 +331,18 @@ export default function LibraryPage() {
     return () => clearInterval(id);
   }, []);
 
+  // Close upload dropdown on outside click
+  useEffect(() => {
+    if (!showUploadDropdown) return;
+    function handler(e: MouseEvent) {
+      if (uploadDropdownRef.current && !uploadDropdownRef.current.contains(e.target as Node)) {
+        setShowUploadDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showUploadDropdown]);
+
   // Clear selection when folder changes so auto-select picks the new first doc
   useEffect(() => { selectDoc(null); }, [selectedFolder, search, tagFilter, typeFilter]);
 
@@ -369,78 +352,33 @@ export default function LibraryPage() {
     return () => window.removeEventListener('library:new-folder', handler);
   }, []);
 
-  const fetchAll = useCallback(async () => {
-    const params: Record<string, string> = {};
-    if (selectedFolder === 'none') params.folderId = 'none';
-    else if (selectedFolder !== 'all') params.folderId = selectedFolder;
-    if (tagFilter) params.tagId = tagFilter;
-    if (search) params.search = search;
-    if (typeFilter) params.type = typeFilter;
-    if (sort !== 'newest') params.sort = sort;
-    const [docsRes, foldersRes, tagsRes, notesRes] = await Promise.all([
-      documentsApi.getAll(params),
-      foldersApi.getAll(),
-      docTagsApi.getAll(),
-      notesApi.getAll(),
-    ]);
-    if (docsRes.data) setDocuments(docsRes.data);
-    if (foldersRes.data) setFolders(foldersRes.data);
-    if (tagsRes.data) setAvailableTags(tagsRes.data);
-    if (notesRes.data) {
-      const map: Record<string, string> = {};
-      for (const n of notesRes.data) {
-        if (n.summary) map[n.document.id] = twoSentences(n.summary);
-      }
-      setNotePreviews(map);
+  useEffect(() => {
+    if (!initialized) {
+      refetch().finally(() => setLoading(false));
     }
-  }, [selectedFolder, tagFilter, search, typeFilter, sort]);
-
-  useEffect(() => { fetchAll().finally(() => setLoading(false)); }, [fetchAll]);
-
-  // Listen for global upload/save success → refetch (using ref so listener always calls latest fetchAll)
-  const fetchAllRef = useRef(fetchAll);
-  useEffect(() => { fetchAllRef.current = fetchAll; }, [fetchAll]);
-  useEffect(() => {
-    const handler = () => fetchAllRef.current();
-    window.addEventListener('library:refetch', handler);
-    return () => window.removeEventListener('library:refetch', handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { documentId } = (e as CustomEvent<{ documentId: string }>).detail;
-      setDocuments(prev => {
-        const idx = prev.findIndex(d => d.id === documentId);
-        if (idx <= 0) return prev;
-        const next = [...prev];
-        const [doc] = next.splice(idx, 1);
-        return [{ ...doc, updatedAt: new Date().toISOString() }, ...next];
-      });
-    };
-    window.addEventListener('library:doc-touched', handler);
-    return () => window.removeEventListener('library:doc-touched', handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-select: prefer ?note= param on first load, otherwise keep current or pick first
   useEffect(() => {
-    if (documents.length === 0) { selectDoc(null); return; }
+    if (filteredDocuments.length === 0) { selectDoc(null); return; }
     setSelectedDocId(prev => {
-      if (!prev && noteParamRef.current && documents.some(d => d.id === noteParamRef.current)) {
+      if (!prev && noteParamRef.current && filteredDocuments.some(d => d.id === noteParamRef.current)) {
         const id = noteParamRef.current!;
         selectDoc(id);
         return id;
       }
-      const next = prev && documents.some(d => d.id === prev) ? prev : documents[0].id;
+      const next = prev && filteredDocuments.some(d => d.id === prev) ? prev : filteredDocuments[0].id;
       if (next !== prev) selectDoc(next);
       return next;
     });
-  }, [documents]);
+  }, [filteredDocuments]);
 
   useEffect(() => {
     if (!documents.some(d => d.status === 'processing')) return;
-    const iv = setInterval(fetchAll, 3000);
+    const iv = setInterval(refetch, 3000);
     return () => clearInterval(iv);
-  }, [documents, fetchAll]);
+  }, [documents, refetch]);
 
   async function confirmDelete(ids: Set<string>) {
     setDeleting(true);
@@ -448,7 +386,7 @@ export default function LibraryPage() {
     setDeleting(false);
     setDeleteTarget(null);
     if (selectedDocId && ids.has(selectedDocId)) selectDoc(null);
-    fetchAll();
+    ids.forEach(id => removeDocument(id));
   }
 
   const folderName = selectedFolder === 'all' ? 'Notes'
@@ -460,10 +398,10 @@ export default function LibraryPage() {
       const overId = e.over?.id as string | undefined;
       if (!overId?.startsWith('folder-')) return;
       await documentsApi.setFolder(e.active.id as string, overId.replace('folder-', ''));
-      fetchAll();
+      refetch();
     }}>
       {/* Full-height split panel */}
-      <div className="flex h-full">
+      <div className="flex h-full overflow-hidden">
 
         {/* LEFT: Note list — full width on mobile when no doc selected, hidden when doc selected */}
         <div
@@ -474,10 +412,54 @@ export default function LibraryPage() {
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-body-sm font-semibold text-[var(--text-1)]">{folderName}</h1>
-              <AddButton onClick={() => setShowUpload(true)} title="New note" />
+              <div ref={uploadDropdownRef} className="relative">
+                <button
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const isDesktop = window.innerWidth >= 1024;
+                    setUploadDropdownPos(
+                      isDesktop
+                        ? { top: rect.top, left: rect.right + 6 }
+                        : { top: rect.bottom + 6, left: Math.max(rect.right - 176, 8) }
+                    );
+                    setShowUploadDropdown(v => !v);
+                  }}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: 'var(--brand)' }}
+                >
+                  <Plus size={14} />
+                </button>
+                {showUploadDropdown && uploadDropdownPos && (
+                  <div
+                    className="fixed z-50 rounded-xl shadow-xl py-1 min-w-[176px]"
+                    style={{ top: uploadDropdownPos.top, left: uploadDropdownPos.left, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                  >
+                    {([
+                      { type: 'blank' as UploadType, label: 'New Note', icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+                      { type: 'file' as UploadType, label: 'Upload File', icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)' },
+                      { type: 'record' as UploadType, label: 'Record Audio', icon: Mic, color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+                      { type: 'video' as UploadType, label: 'Upload Video URL', icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+                    ] as const).map(({ type, label, icon: Icon, color, bg }) => (
+                      <button
+                        key={type}
+                        onClick={() => { setShowUploadDropdown(false); setUploadType(type); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                        style={{ color: 'var(--text-2)' }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+                      >
+                        <span className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: bg }}>
+                          <Icon size={11} style={{ color }} />
+                        </span>
+                        <span className="text-xs text-[var(--text-1)]">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {/* Search + filter */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-3">
               <Input
                 variant="search"
                 value={search}
@@ -510,18 +492,26 @@ export default function LibraryPage() {
           </div>
 
           {/* Note list */}
-          <div className="flex-1 overflow-y-auto py-1">
+          <div className="flex-1 overflow-y-auto py-1 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {loading ? (
-              <div className="flex justify-center py-10">
-                <div className="w-5 h-5 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
-              </div>
+              <LoadingSpinner size="md" />
             ) : documents.length === 0 ? (
-              <div className="text-center py-12 px-4">
-                <div className="text-3xl mb-2">📝</div>
-                <p className="text-body-sm text-[var(--text-2)]">{search || tagFilter || typeFilter ? 'No matches' : 'No notes yet'}</p>
+              <div className="flex flex-col items-center text-center py-12 px-4 gap-2">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center mb-1"
+                  style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
+                >
+                  <PenLine size={20} style={{ color: 'var(--brand)' }} />
+                </div>
+                <p className="text-body-sm font-medium text-[var(--text-1)]">
+                  {search || tagFilter || typeFilter ? 'No matches' : 'No notes yet'}
+                </p>
+                {!search && !tagFilter && !typeFilter && (
+                  <p className="text-xs text-[var(--text-3)]">Upload a file or create a blank note to get started</p>
+                )}
               </div>
             ) : (
-              documents.map(doc => (
+              filteredDocuments.map(doc => (
                 <NoteListItem
                   key={doc.id}
                   doc={doc}
@@ -529,11 +519,8 @@ export default function LibraryPage() {
                   isSelected={selectedDocId === doc.id}
                   onClick={() => selectDoc(doc.id)}
                   onDelete={(id) => setDeleteTarget(new Set([id]))}
-                  onMoveToFolder={async (docId, folderId) => { await documentsApi.setFolder(docId, folderId); fetchAll(); }}
-                  onAddTag={async (docId, tagId) => { await documentsApi.addTag(docId, tagId); fetchAll(); }}
-                  onManageTags={() => setShowManageTags(true)}
+                  onMoveToFolder={async (docId, folderId) => { await documentsApi.setFolder(docId, folderId); refetch(); }}
                   folders={folders}
-                  availableTags={availableTags}
                 />
               ))
             )}
@@ -548,16 +535,24 @@ export default function LibraryPage() {
               id={debouncedDocId}
               embedded
               onBack={() => selectDoc(null)}
+              availableTags={availableTags}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center gap-3">
-              <div className="text-5xl">📝</div>
-              <p className="text-body text-[var(--text-2)]">Select a note to view it</p>
-              <p className="text-body-sm text-[var(--text-3)]">Or create a new note to get started</p>
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
+              >
+                <PenLine size={28} style={{ color: 'var(--brand)' }} />
+              </div>
+              <div>
+                <p className="text-body font-semibold text-[var(--text-1)]">Select a note to view it</p>
+                <p className="text-body-sm text-[var(--text-3)] mt-1">Or create a new note to get started</p>
+              </div>
               <button
                 onClick={() => setShowUpload(true)}
-                className="mt-2 px-4 py-2 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#9747FF' }}
+                className="mt-1 px-5 py-2.5 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
               >
                 + New Note
               </button>
@@ -567,19 +562,25 @@ export default function LibraryPage() {
       </div>
 
       {/* Modals */}
-      {showUpload && <UploadModal onClose={() => setShowUpload(false)} onSuccess={(docId) => { setShowUpload(false); fetchAll(); if (docId) selectDoc(docId); }} />}
+      {uploadType && (
+        <UploadDialog
+          type={uploadType}
+          onClose={() => setUploadType(null)}
+          onSuccess={(docId) => { setUploadType(null); refetch(); if (docId) selectDoc(docId); }}
+        />
+      )}
       {showFolderModal && (
         <FolderModal
           onClose={() => setShowFolderModal(false)}
           onSave={async (name, color) => {
             await foldersApi.create({ name, color });
             setShowFolderModal(false);
-            fetchAll();
+            refetch();
             notifyFoldersChanged();
           }}
         />
       )}
-      {showManageTags && <ManageTagsModal onClose={() => setShowManageTags(false)} onChange={fetchAll} />}
+      {showManageTags && <ManageTagsModal onClose={() => setShowManageTags(false)} onChange={() => refetch()} />}
       {deleteTarget && (
         <DeleteConfirmModal
           count={deleteTarget.size}

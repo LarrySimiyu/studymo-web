@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { documentsApi, notesApi } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
 
 type Tab = 'file' | 'video' | 'record' | 'blank';
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
@@ -9,6 +10,7 @@ type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 interface Props {
   onClose: () => void;
   onSuccess: (documentId?: string) => void;
+  initialTab?: Tab;
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
@@ -26,6 +28,7 @@ async function pollDocumentStatus(
 
   const poll = async () => {
     if (stopped) return;
+    invalidatePrefix(`/documents/${docId}`);
     const { data, error } = await documentsApi.getById(docId);
 
     if (stopped) return;
@@ -115,8 +118,8 @@ function ProcessingOverlay({
 }
 
 // ─── Root modal ───────────────────────────────────────────────────────────────
-export default function UploadModal({ onClose, onSuccess }: Props) {
-  const [tab, setTab] = useState<Tab>('file');
+export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'file');
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
   const stopPollRef = useRef<(() => void) | null>(null);
