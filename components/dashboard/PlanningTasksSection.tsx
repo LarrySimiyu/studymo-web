@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
 import { tasksApi } from '@/lib/api/tasks';
 import PlanCalendar from '@/components/dashboard/PlanCalendar';
 import PlanCard from '@/components/dashboard/PlanCard';
 import TasksPanel from '@/components/tasks/TasksPanel';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 
 type Tab = 'planning' | 'tasks';
 
 export default function PlanningTasksSection() {
+  const router = useRouter();
   const [plans, setPlans] = useState<StudyPlan[]>([]);
   const [calendarEntries, setCalendarEntries] = useState<StudyPlanDay[]>([]);
   const [taskCount, setTaskCount] = useState(0);
@@ -90,6 +93,21 @@ export default function PlanningTasksSection() {
             >
               {activeTab === 'planning' ? (
                 <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[var(--text-2)]">
+                      {planCount} plan{planCount !== 1 ? 's' : ''}
+                    </span>
+                    <motion.button
+                      onClick={() => router.push('/dashboard/study-plan')}
+                      className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors"
+                      style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--brand)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--bg-card)'; e.currentTarget.style.color = 'var(--text-2)'; }}
+                      whileTap={{ scale: 0.82 }}
+                    >
+                      <Plus size={14} />
+                    </motion.button>
+                  </div>
                   {plans.map(plan => (
                     <PlanCard key={plan.id} plan={plan} onCalendarEntries={setCalendarEntries} />
                   ))}

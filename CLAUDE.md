@@ -226,6 +226,24 @@ hooks/
   useAuth.ts            — Firebase auth state
 ```
 
+## Component Architecture
+- **Always extract reusable UI into its own component file** before a page file gets long. If a section of a page could reasonably appear elsewhere, it belongs in `components/`.
+- Page files (`app/**/page.tsx`) should be thin — they wire data and compose components, not render large blocks of JSX directly.
+- If a component is specific to one feature, colocate it in the relevant `components/<feature>/` folder. If it could be used across features, put it in `components/ui/`.
+- Before building something new, check the component list in this file. Duplicate implementations cause visual inconsistency.
+
+## Responsive Design — Required on Everything
+Every UI must work across three breakpoints: mobile (`< sm`), laptop (`sm`–`lg`), and large screen (`lg+`). This is not optional.
+
+Rules:
+- **Layouts**: multi-column grids collapse to a single column on mobile. Side-by-side rows stack vertically. Horizontal lists become vertical lists.
+- **Typography**: headings and body text scale with breakpoints. Use `text-base sm:text-lg lg:text-xl` style patterns — never hardcode a single font size for headings.
+- **Spacing & padding**: use `px-4 sm:px-6 lg:px-8` and `py-4 sm:py-6` patterns so screens don't feel cramped or over-spaced.
+- **Buttons and inputs**: full width (`w-full`) on mobile, constrained width (`sm:max-w-xs` or similar) on larger screens.
+- **Cards**: full width on mobile, fixed or percentage widths on `sm+`.
+- **Touch targets**: interactive elements must be at least 44px tall on mobile.
+- Always test mental model for all three breakpoints before finalizing any layout.
+
 ## General Conventions
 - All API calls go through `lib/api/` — never call `fetch` directly
 - GET responses are cached 5 min — call `invalidatePrefix('/resource')` after mutations if needed

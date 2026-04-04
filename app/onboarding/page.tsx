@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { saveOnboardingData, getOnboardingData } from '@/lib/onboarding';
+import { saveOnboardingData, getOnboardingData, defaultOnboardingData } from '@/lib/onboarding';
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -60,10 +60,23 @@ const GOALS = [
 ];
 
 const STATS = [
-  { number: '40%', desc: 'less time studying for the same results',         Icon: Clock,     color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
-  { number: '3x',  desc: 'more practice exams completed before test day',   Icon: Target,    color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
+  { number: '40%', desc: 'less time studying for the same results',         Icon: Clock,        color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
+  { number: '3x',  desc: 'more practice exams completed before test day',   Icon: Target,       color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
   { number: '2x',  desc: 'more consistent studying with time blocking',     Icon: CalendarDays, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
 ];
+
+// ─── step numbering ──────────────────────────────────────────────────────────
+// 1  Grade level
+// 2  Current GPA       (high_school / undergrad only)
+// 3  Goal GPA          (high_school / undergrad only)
+// 4  Subjects
+// 5  Learning style
+// 6  Struggles
+// 7  Time blocking     (conditional on focus struggles)
+// 8  Main goal
+// 9  Upcoming test     (skippable)
+// 10 Demo video        (skippable)
+// 11 Social proof
 
 // ─── animation variants ─────────────────────────────────────────────────────
 
@@ -101,7 +114,7 @@ function OptionCard({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center gap-3 p-4 sm:p-5 rounded-2xl transition-all text-center w-full"
+      className="flex items-center gap-3 sm:flex-col sm:items-center sm:gap-3 p-4 sm:p-5 rounded-2xl transition-all text-left sm:text-center w-full"
       style={{
         backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
         border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
@@ -149,7 +162,14 @@ function Pill({
   );
 }
 
-function GpaSelector({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function GpaSelector({
+  label, value, onChange, valueColor = '#ffffff',
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  valueColor?: string;
+}) {
   return (
     <div className="flex flex-col gap-2 items-center">
       <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</span>
@@ -158,14 +178,30 @@ function GpaSelector({ label, value, onChange }: { label: string; value: number;
           onClick={() => onChange(clamp(+(value - 0.1).toFixed(1), 0, 4))}
           disabled={value <= 0}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#FF6500' }}
+          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#ffffff' }}
         >−</button>
-        <span className="text-4xl font-bold text-white w-16 text-center tabular-nums">{fmt1dp(value)}</span>
+
+        <div className="w-16 text-center overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={fmt1dp(value)}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.15 }}
+              className="block text-4xl font-bold tabular-nums"
+              style={{ color: valueColor }}
+            >
+              {fmt1dp(value)}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
         <button
           onClick={() => onChange(clamp(+(value + 0.1).toFixed(1), 0, 4))}
           disabled={value >= 4}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#FF6500' }}
+          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#ffffff' }}
         >+</button>
       </div>
     </div>
@@ -178,7 +214,12 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
-  const [data, setData] = useState(() => getOnboardingData());
+  const [data, setData] = useState(defaultOnboardingData);
+
+  useEffect(() => {
+    setData(getOnboardingData());
+  }, []);
+
   const [customSubject, setCustomSubject] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [testChoice, setTestChoice] = useState<'yes' | 'skip' | null>(null);
@@ -186,18 +227,19 @@ export default function OnboardingPage() {
   const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (step !== 10) return;
+    if (step !== 11) return;
     const t = setInterval(() => setStatIndex(i => (i + 1) % STATS.length), 3000);
     return () => clearInterval(t);
   }, [step]);
 
+  const showGpaSteps = data.gradeLevel === 'high_school' || data.gradeLevel === 'undergrad';
   const hasFocusStruggles = data.struggles.some(s => FOCUS_STRUGGLES.has(s));
-  const TOTAL_STEPS = 10;
+  const TOTAL_STEPS = showGpaSteps ? 11 : 9;
   const progress = (step / TOTAL_STEPS) * 100;
 
-  function go(next: number, direction = 1) {
+  function go(nextStep: number, direction = 1) {
     setDir(direction);
-    setStep(next);
+    setStep(nextStep);
   }
 
   function next(nextStep?: number) {
@@ -207,7 +249,10 @@ export default function OnboardingPage() {
   function back() {
     if (step <= 1) { router.push('/'); return; }
     let prev = step - 1;
-    if (prev === 6 && !hasFocusStruggles) prev = 5;
+    // skip GPA steps if not applicable
+    if ((prev === 3 || prev === 2) && !showGpaSteps) prev = 1;
+    // skip time blocking if no focus struggles
+    if (prev === 7 && !hasFocusStruggles) prev = 6;
     go(prev, -1);
   }
 
@@ -248,7 +293,7 @@ export default function OnboardingPage() {
     saveOnboardingData({ struggles });
   }
 
-  const skippable = [7, 9];
+  const skippable = [10]; // demo video
 
   function renderStep() {
     switch (step) {
@@ -256,43 +301,81 @@ export default function OnboardingPage() {
       case 1:
         return (
           <StepWrapper heading="What level are you studying at?" sub="We'll personalize your experience based on this">
-            <div className="grid grid-cols-2 gap-3 w-full max-w-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-sm sm:max-w-md">
               {GRADE_OPTIONS.slice(0, 4).map(o => (
                 <OptionCard
                   key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.gradeLevel === o.id}
-                  onClick={() => saveAndNext({ gradeLevel: o.id }, 2)}
+                  onClick={() => { setData(d => ({ ...d, gradeLevel: o.id })); saveOnboardingData({ gradeLevel: o.id }); }}
                 />
               ))}
-              <div className="col-span-2 flex justify-center">
-                <div className="w-1/2">
+              <div className="sm:col-span-2 sm:flex sm:justify-center">
+                <div className="sm:w-1/2">
                   <OptionCard
                     Icon={GRADE_OPTIONS[4].Icon} color={GRADE_OPTIONS[4].color} bg={GRADE_OPTIONS[4].bg}
                     label={GRADE_OPTIONS[4].label}
                     selected={data.gradeLevel === GRADE_OPTIONS[4].id}
-                    onClick={() => saveAndNext({ gradeLevel: GRADE_OPTIONS[4].id }, 2)}
+                    onClick={() => { setData(d => ({ ...d, gradeLevel: GRADE_OPTIONS[4].id })); saveOnboardingData({ gradeLevel: GRADE_OPTIONS[4].id }); }}
                   />
                 </div>
               </div>
             </div>
+            <AnimatePresence>
+              {data.gradeLevel && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full sm:max-w-xs"
+                >
+                  <ContinueBtn onClick={() => next(showGpaSteps ? 2 : 4)} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </StepWrapper>
         );
 
-      // ── Step 2: GPA ──────────────────────────────────────────────────────
+      // ── Step 2: Current GPA (high school / undergrad only) ───────────────
       case 2:
         return (
-          <StepWrapper heading="What's your current GPA?" sub="And what are you aiming for?">
+          <StepWrapper heading="What's your current GPA?" sub="This helps us set realistic goals with you">
             <div className="flex flex-col gap-8 items-center w-full max-w-xs">
-              <GpaSelector label="Current GPA" value={data.gpa} onChange={gpa => setData(d => ({ ...d, gpa }))} />
-              <div className="h-px w-full" style={{ backgroundColor: '#2A2A2A' }} />
-              <GpaSelector label="Goal GPA" value={data.goalGpa} onChange={goalGpa => setData(d => ({ ...d, goalGpa }))} />
+              <GpaSelector
+                label="Current GPA"
+                value={data.gpa}
+                onChange={gpa => setData(d => ({ ...d, gpa }))}
+              />
             </div>
-            <ContinueBtn onClick={() => saveAndNext({ gpa: data.gpa, goalGpa: data.goalGpa }, 3)} />
+            <ContinueBtn onClick={() => { saveOnboardingData({ gpa: data.gpa }); next(3); }} />
           </StepWrapper>
         );
 
-      // ── Step 3: Subjects ─────────────────────────────────────────────────
-      case 3:
+      // ── Step 3: Goal GPA (high school / undergrad only) ──────────────────
+      case 3: {
+        const goalColor = data.goalGpa > data.gpa ? '#22C55E' : '#ffffff';
+        return (
+          <StepWrapper heading="What GPA are you aiming for?" sub="We'll track your progress toward this goal">
+            <div className="flex flex-col gap-8 items-center w-full max-w-xs">
+              <GpaSelector
+                label="Goal GPA"
+                value={data.goalGpa}
+                onChange={goalGpa => setData(d => ({ ...d, goalGpa }))}
+                valueColor={goalColor}
+              />
+              {data.goalGpa > data.gpa && (
+                <p className="text-xs font-medium" style={{ color: '#22C55E' }}>
+                  +{fmt1dp(data.goalGpa - data.gpa)} GPA points — we'll get you there
+                </p>
+              )}
+            </div>
+            <ContinueBtn onClick={() => { saveOnboardingData({ goalGpa: data.goalGpa }); next(4); }} />
+          </StepWrapper>
+        );
+      }
+
+      // ── Step 4: Subjects ─────────────────────────────────────────────────
+      case 4:
         return (
           <StepWrapper heading="What are you currently studying?" sub="Select all that apply — you can always add more later">
             <div className="flex flex-wrap gap-2 justify-center w-full max-w-lg">
@@ -335,28 +418,41 @@ export default function OnboardingPage() {
                 </button>
               )}
             </div>
-            <ContinueBtn disabled={data.subjects.length === 0} onClick={() => saveAndNext({ subjects: data.subjects }, 4)} />
+            <ContinueBtn disabled={data.subjects.length === 0} onClick={() => saveAndNext({ subjects: data.subjects }, 5)} />
           </StepWrapper>
         );
 
-      // ── Step 4: Learning style ────────────────────────────────────────────
-      case 4:
+      // ── Step 5: Learning style ────────────────────────────────────────────
+      case 5:
         return (
           <StepWrapper heading="How do you learn best?" sub="We'll use this to tailor how we teach you">
-            <div className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="flex flex-col gap-3 w-full max-w-sm sm:max-w-md">
               {LEARNING_STYLES.map(o => (
                 <RowCard
                   key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.learningStyle === o.id}
-                  onClick={() => saveAndNext({ learningStyle: o.id }, 5)}
+                  onClick={() => { setData(d => ({ ...d, learningStyle: o.id })); saveOnboardingData({ learningStyle: o.id }); }}
                 />
               ))}
             </div>
+            <AnimatePresence>
+              {data.learningStyle && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full sm:max-w-xs"
+                >
+                  <ContinueBtn onClick={() => next(6)} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </StepWrapper>
         );
 
-      // ── Step 5: Struggles ─────────────────────────────────────────────────
-      case 5:
+      // ── Step 6: Struggles ─────────────────────────────────────────────────
+      case 6:
         return (
           <StepWrapper heading="What gets in the way of your studying?" sub="Select everything that applies — no judgment here">
             <div className="flex flex-wrap gap-2 justify-center w-full max-w-md">
@@ -369,16 +465,16 @@ export default function OnboardingPage() {
               onClick={() => {
                 saveOnboardingData({ struggles: data.struggles });
                 const hasFocus = data.struggles.some(s => FOCUS_STRUGGLES.has(s));
-                next(hasFocus ? 6 : 7);
+                next(hasFocus ? 7 : 8);
               }}
             />
           </StepWrapper>
         );
 
-      // ── Step 6: Time blocking callout (conditional) ───────────────────────
-      case 6:
+      // ── Step 7: Time blocking callout (conditional) ───────────────────────
+      case 7:
         return (
-          <StepWrapper heading="We've got something for that" sub="Studymo has a built-in time blocking system designed for exactly this">
+          <StepWrapper heading="We've got something for that">
             <div className="w-full max-w-sm rounded-2xl p-5 sm:p-6 flex flex-col gap-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
@@ -386,39 +482,50 @@ export default function OnboardingPage() {
                 </div>
                 <p className="font-semibold text-white">Time Block Mode</p>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">
-                Break your study sessions into focused time blocks. Each task gets its own countdown timer. When the session is done your progress is saved automatically.
+              <p className="text-sm text-white leading-relaxed">
+                Break study sessions into focused blocks with a built-in countdown timer. Progress saves automatically when you're done.
               </p>
               <div className="flex items-center gap-2 px-3 py-2 rounded-full self-start" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-xs font-mono" style={{ color: '#A78BFA' }}>25:00</span>
-                <span className="text-xs text-gray-500">· Studying Biology</span>
+                <span className="text-xs text-white">· Studying Biology</span>
               </div>
             </div>
-            <Button variant="brand" size="lg" className="mt-2 w-full max-w-sm" onClick={() => next(7)}>
-              That sounds helpful →
-            </Button>
+            <ContinueBtn onClick={() => next(8)} />
           </StepWrapper>
         );
 
-      // ── Step 7: Main goal ─────────────────────────────────────────────────
-      case 7:
+      // ── Step 8: Main goal ─────────────────────────────────────────────────
+      case 8:
         return (
           <StepWrapper heading="What's your main goal with Studymo?">
-            <div className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="flex flex-col gap-3 w-full max-w-sm sm:max-w-md">
               {GOALS.map(o => (
                 <RowCard
                   key={o.id} Icon={o.Icon} color={o.color} bg={o.bg} label={o.label}
                   selected={data.mainGoal === o.id}
-                  onClick={() => saveAndNext({ mainGoal: o.id }, 8)}
+                  onClick={() => { setData(d => ({ ...d, mainGoal: o.id })); saveOnboardingData({ mainGoal: o.id }); }}
                 />
               ))}
             </div>
+            <AnimatePresence>
+              {data.mainGoal && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full sm:max-w-xs"
+                >
+                  <ContinueBtn onClick={() => next(9)} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </StepWrapper>
         );
 
-      // ── Step 8: Upcoming test (skippable) ─────────────────────────────────
-      case 8:
+      // ── Step 9: Upcoming test ─────────────────────────────────────────────
+      case 9:
         return (
           <StepWrapper heading="Do you have an upcoming test?" sub="We'll build you a personalized study plan around it">
             <div className="flex flex-col gap-3 w-full max-w-sm">
@@ -468,19 +575,19 @@ export default function OnboardingPage() {
                       onClick={() => {
                         if (data.upcomingTest?.subject && data.upcomingTest?.date) {
                           saveOnboardingData({ upcomingTest: data.upcomingTest });
-                          next(9);
+                          next(10);
                         }
                       }}
                       disabled={!data.upcomingTest?.subject || !data.upcomingTest?.date}
                     >
-                      Got it →
+                      Got it
                     </Button>
                   </div>
                 )}
               </button>
 
               <button
-                onClick={() => { saveOnboardingData({ upcomingTest: null }); next(9); }}
+                onClick={() => { saveOnboardingData({ upcomingTest: null }); next(10); }}
                 className="p-4 sm:p-5 rounded-2xl text-left transition-all"
                 style={{ backgroundColor: '#1A1A1A', border: '1.5px solid #2A2A2A' }}
               >
@@ -495,8 +602,8 @@ export default function OnboardingPage() {
           </StepWrapper>
         );
 
-      // ── Step 9: Demo video (skippable) ────────────────────────────────────
-      case 9:
+      // ── Step 10: Demo video (skippable) ───────────────────────────────────
+      case 10:
         return (
           <StepWrapper heading="See Studymo in action" sub="Watch how students are transforming their study sessions">
             <div className="w-full max-w-sm flex flex-col gap-4">
@@ -509,13 +616,13 @@ export default function OnboardingPage() {
                 </div>
                 <p className="text-xs text-gray-600 text-center">[ Demo video — add final video here ]</p>
               </div>
-              <ContinueBtn onClick={() => next(10)} />
+              <ContinueBtn onClick={() => next(11)} />
             </div>
           </StepWrapper>
         );
 
-      // ── Step 10: Social proof ─────────────────────────────────────────────
-      case 10:
+      // ── Step 11: Social proof ─────────────────────────────────────────────
+      case 11:
         return (
           <StepWrapper heading="You're in good company" sub="Here's what students are saying about Studymo">
             <div className="w-full max-w-sm flex flex-col gap-6 items-center">
@@ -548,7 +655,7 @@ export default function OnboardingPage() {
                   <button
                     key={i}
                     onClick={() => setStatIndex(i)}
-                    className="w-2 h-2 rounded-full transition-all"
+                    className="h-2 rounded-full transition-all"
                     style={{ backgroundColor: i === statIndex ? '#FF6500' : '#2A2A2A', width: i === statIndex ? 20 : 8 }}
                   />
                 ))}
@@ -556,8 +663,8 @@ export default function OnboardingPage() {
 
               <p className="text-sm text-gray-500 text-center">Join thousands of students studying smarter</p>
 
-              <Button variant="brand" size="lg" className="w-full" onClick={() => router.push('/sign-up')}>
-                Create your account →
+              <Button variant="brand" size="lg" className="w-full" onClick={() => router.push('/dashboard')}>
+                Start studying
               </Button>
             </div>
           </StepWrapper>
@@ -580,7 +687,6 @@ export default function OnboardingPage() {
         <button
           onClick={back}
           className="text-gray-500 hover:text-white transition-colors p-1 -ml-1"
-          style={{ visibility: step > 1 ? 'visible' : 'hidden' }}
         >
           <ArrowLeft size={20} />
         </button>
@@ -597,7 +703,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-10 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-16 pb-10 overflow-hidden">
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={step}
@@ -621,10 +727,10 @@ export default function OnboardingPage() {
 
 function StepWrapper({ heading, sub, children }: { heading: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-lg text-center">
+    <div className="flex flex-col items-center gap-6 w-full max-w-xl text-center">
       <div className="flex flex-col gap-2 px-2">
-        <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">{heading}</h1>
-        {sub && <p className="text-sm text-gray-500">{sub}</p>}
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{heading}</h1>
+        {sub && <p className="text-sm sm:text-base text-gray-500">{sub}</p>}
       </div>
       {children}
     </div>
@@ -633,7 +739,7 @@ function StepWrapper({ heading, sub, children }: { heading: string; sub?: string
 
 function ContinueBtn({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <Button variant="brand" size="lg" className="mt-2 w-full max-w-xs" onClick={onClick} disabled={disabled}>
+    <Button variant="brand" size="lg" className="mt-2 w-full sm:max-w-xs" onClick={onClick} disabled={disabled}>
       Continue
     </Button>
   );

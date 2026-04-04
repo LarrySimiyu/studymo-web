@@ -3,7 +3,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
+import SchoolsMarquee from '@/components/landing/SchoolsMarquee';
+import LearningStyleSection from '@/components/landing/LearningStyleSection';
 import Features from '@/components/landing/Features';
 import Pricing from '@/components/landing/Pricing';
 
@@ -18,8 +21,11 @@ export default function LandingPage() {
   }, [currentUser, loading, router]);
 
   return (
-    <main className="min-h-screen bg-background">
+    <main style={{ backgroundColor: '#0A0A0A' }}>
+      <Navbar />
       <Hero />
+      <SchoolsMarquee />
+      <LearningStyleSection />
       <Features />
       <Pricing />
     </main>

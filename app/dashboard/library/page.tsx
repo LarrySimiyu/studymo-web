@@ -11,6 +11,7 @@ import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
 import { Input } from '@/components/ui/Input';
 import { PenLine, Upload, Mic, Youtube, Plus } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
 
@@ -173,17 +174,14 @@ function FolderModal({ folder, onClose, onSave }: {
 }
 
 
-function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders, availableTags, onAddTag, onManageTags }: {
+function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders }: {
   doc: Document;
   preview?: string;
   isSelected: boolean;
   onClick: () => void;
   onDelete: (id: string) => void;
   onMoveToFolder: (docId: string, folderId: string | null) => void;
-  onAddTag: (docId: string, tagId: string) => void;
-  onManageTags: () => void;
   folders: Folder[];
-  availableTags: Tag[];
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [openSub, setOpenSub] = useState<'folder' | null>(null);
@@ -229,44 +227,14 @@ function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFol
                 <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl min-w-[170px]"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
 
-                  {/* Move to folder */}
-                  <button
-                    className="w-full text-left px-3 py-2 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex justify-between items-center"
-                    onClick={e => { e.stopPropagation(); setOpenSub(s => s === 'folder' ? null : 'folder'); }}
-                  >
-                    Move to collection
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ color: 'var(--text-3)', transform: openSub === 'folder' ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
-                      <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {openSub === 'folder' && (
-                    <div className="border-t mx-2" style={{ borderColor: 'var(--border)' }}>
-                      {doc.folderId && (
-                        <button className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-3)] hover:bg-black/5"
-                          onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, null); setShowMenu(false); }}>
-                          Remove from folder
-                        </button>
-                      )}
-                      {flat.map(f => (
-                        <button key={f.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                          onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}>
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
-                          {f.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add tag */}
-                  <div className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                    <TagDropdown
-                      tags={availableTags}
-                      placeholder="Add tag"
-                      align="right"
-                      onChange={id => { onAddTag(doc.id, id); setShowMenu(false); }}
-                      onManageTags={() => { setShowMenu(false); onManageTags(); }}
-                    />
-                  </div>
+                  {/* Collections list */}
+                  {flat.map(f => (
+                    <button key={f.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
+                      onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}>
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
+                      {f.name}
+                    </button>
+                  ))}
 
                   <div className="border-t mx-2 my-1" style={{ borderColor: 'var(--border)' }} />
                   <button className="w-full text-left px-3 py-2 text-body-sm text-red-400 hover:bg-black/5"
@@ -491,7 +459,7 @@ export default function LibraryPage() {
               </div>
             </div>
             {/* Search + filter */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-3">
               <Input
                 variant="search"
                 value={search}
@@ -526,13 +494,21 @@ export default function LibraryPage() {
           {/* Note list */}
           <div className="flex-1 overflow-y-auto py-1 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {loading ? (
-              <div className="flex justify-center py-10">
-                <div className="w-5 h-5 border-2 border-[#9747FF] border-t-transparent rounded-full animate-spin" />
-              </div>
+              <LoadingSpinner size="md" />
             ) : documents.length === 0 ? (
-              <div className="text-center py-12 px-4">
-                <div className="text-3xl mb-2">📝</div>
-                <p className="text-body-sm text-[var(--text-2)]">{search || tagFilter || typeFilter ? 'No matches' : 'No notes yet'}</p>
+              <div className="flex flex-col items-center text-center py-12 px-4 gap-2">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center mb-1"
+                  style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
+                >
+                  <PenLine size={20} style={{ color: 'var(--brand)' }} />
+                </div>
+                <p className="text-body-sm font-medium text-[var(--text-1)]">
+                  {search || tagFilter || typeFilter ? 'No matches' : 'No notes yet'}
+                </p>
+                {!search && !tagFilter && !typeFilter && (
+                  <p className="text-xs text-[var(--text-3)]">Upload a file or create a blank note to get started</p>
+                )}
               </div>
             ) : (
               filteredDocuments.map(doc => (
@@ -544,10 +520,7 @@ export default function LibraryPage() {
                   onClick={() => selectDoc(doc.id)}
                   onDelete={(id) => setDeleteTarget(new Set([id]))}
                   onMoveToFolder={async (docId, folderId) => { await documentsApi.setFolder(docId, folderId); refetch(); }}
-                  onAddTag={async (docId, tagId) => { await documentsApi.addTag(docId, tagId); refetch(); }}
-                  onManageTags={() => setShowManageTags(true)}
                   folders={folders}
-                  availableTags={availableTags}
                 />
               ))
             )}
@@ -565,14 +538,21 @@ export default function LibraryPage() {
               availableTags={availableTags}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center gap-3">
-              <div className="text-5xl">📝</div>
-              <p className="text-body text-[var(--text-2)]">Select a note to view it</p>
-              <p className="text-body-sm text-[var(--text-3)]">Or create a new note to get started</p>
+            <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
+              >
+                <PenLine size={28} style={{ color: 'var(--brand)' }} />
+              </div>
+              <div>
+                <p className="text-body font-semibold text-[var(--text-1)]">Select a note to view it</p>
+                <p className="text-body-sm text-[var(--text-3)] mt-1">Or create a new note to get started</p>
+              </div>
               <button
                 onClick={() => setShowUpload(true)}
-                className="mt-2 px-4 py-2 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#9747FF' }}
+                className="mt-1 px-5 py-2.5 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
               >
                 + New Note
               </button>

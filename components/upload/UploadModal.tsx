@@ -10,6 +10,7 @@ type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 interface Props {
   onClose: () => void;
   onSuccess: (documentId?: string) => void;
+  initialTab?: Tab;
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
@@ -117,8 +118,8 @@ function ProcessingOverlay({
 }
 
 // ─── Root modal ───────────────────────────────────────────────────────────────
-export default function UploadModal({ onClose, onSuccess }: Props) {
-  const [tab, setTab] = useState<Tab>('file');
+export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'file');
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
   const stopPollRef = useRef<(() => void) | null>(null);

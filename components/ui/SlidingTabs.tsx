@@ -23,13 +23,13 @@ export default function SlidingTabs<T extends string>({ tabs, active, onChange }
   useEffect(() => { forceUpdate(n => n + 1); }, []);
 
   return (
-    <div className="relative flex" style={{ borderBottom: '1px solid var(--border)' }}>
+    <div className="relative flex overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ borderBottom: '1px solid var(--border)', scrollbarWidth: 'none' }}>
       {tabs.map((tab, i) => (
         <button
           key={tab.value}
           ref={el => { tabRefs.current[i] = el; }}
           onClick={() => onChange(tab.value)}
-          className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors shrink-0"
           style={{ color: active === tab.value ? 'var(--text-1)' : 'var(--text-3)' }}
         >
           {tab.label}
