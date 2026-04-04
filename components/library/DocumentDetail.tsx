@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import EditorBubbleToolbar from '@/components/library/EditorBubbleToolbar';
 
 // Module-level: survives component unmount so the library page can trigger a save
 // before switching notes (before DocumentDetail even starts unmounting).
@@ -43,11 +45,7 @@ import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import TagDropdown from '@/components/ui/TagDropdown';
 import TutorPanel from '@/components/library/TutorPanel';
-import {
-  Bold, Italic, Strikethrough, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Code, Highlighter, Baseline, Wand2,
-  Layers, HelpCircle, Mic, Target, ScrollText,
-} from 'lucide-react';
+import { Layers, HelpCircle, Mic, Target, ScrollText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics' | 'transcript';
@@ -216,8 +214,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   }, [availableTags]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number; bottom: number } | null>(null);
-  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
-  const [showHighlightPicker, setShowHighlightPicker] = useState(false);
   const [simplifyLoading, setSimplifyLoading] = useState(false);
   const [simplifyOptions, setSimplifyOptions] = useState<string[] | null>(null);
   const simplifyRangeRef = useRef<{ from: number; to: number } | null>(null);
@@ -420,8 +416,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
       const { from, to } = editor.state.selection;
       if (from === to) {
         setBubblePos(null);
-        setShowTextColorPicker(false);
-        setShowHighlightPicker(false);
         setSimplifyOptions(null);
         simplifyRangeRef.current = null;
         return;
@@ -498,11 +492,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   }
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
-      </div>
-    );
+    return <LoadingSpinner size="lg" />;
   }
 
   if (!doc) return <div className="text-[var(--text-2)] py-10 text-center">Note not found.</div>;
@@ -533,8 +523,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
     simplifyRangeRef.current = { from, to };
     setSimplifyOptions(null);
     setSimplifyLoading(true);
-    setShowTextColorPicker(false);
-    setShowHighlightPicker(false);
     try {
       const { data } = await notesApi.simplify(selectedText);
       if (data?.options) setSimplifyOptions(data.options);
@@ -551,209 +539,23 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
     setBubblePos(null);
   }
 
-  const TEXT_COLORS = ['#000000', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899', '#6B7280'];
-  const HIGHLIGHT_COLORS = ['#FEF08A', '#BBF7D0', '#BAE6FD', '#DDD6FE', '#FCA5A5', '#FED7AA', '#F9A8D4'];
-
-  const sep = <div className="w-px h-4 mx-0.5 shrink-0" style={{ backgroundColor: 'var(--border)' }} />;
-
-  const mkBtn = (icon: React.ReactNode, action: () => void, active: boolean, title: string) => (
-    <button
-      key={title}
-      onClick={action}
-      title={title}
-      className="p-1.5 rounded transition-colors shrink-0"
-      style={{ color: active ? '#9747FF' : 'var(--text-2)', backgroundColor: active ? 'rgba(151,71,255,0.1)' : 'transparent' }}
-    >
-      {icon}
-    </button>
-  );
-
   return (
     <>
-    {bubblePos && editor && (
-      <div
-        style={{
-          position: 'fixed',
-          top: bubblePos.top,
-          left: bubblePos.left,
-          transform: 'translateY(-100%)',
-          marginTop: '-6px',
-          zIndex: 50,
-        }}
-        onMouseDown={e => e.preventDefault()}
-      >
-        {/* Main toolbar row */}
-        <div
-          className="flex items-center gap-0.5 px-2 py-1.5 rounded-lg shadow-xl"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-        >
-          {mkBtn(<Bold size={13} />, () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'), 'Bold')}
-          {mkBtn(<Italic size={13} />, () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'), 'Italic')}
-          {mkBtn(<Strikethrough size={13} />, () => editor.chain().focus().toggleStrike().run(), editor.isActive('strike'), 'Strikethrough')}
-          {mkBtn(<Code size={13} />, () => editor.chain().focus().toggleCode().run(), editor.isActive('code'), 'Code')}
-
-          {sep}
-
-          {/* Text color button */}
-          <button
-            title="Text Color"
-            onClick={() => { setShowHighlightPicker(false); setShowTextColorPicker(v => !v); }}
-            className="p-1.5 rounded transition-colors shrink-0 flex flex-col items-center gap-0.5"
-            style={{ color: showTextColorPicker ? '#9747FF' : 'var(--text-2)', backgroundColor: showTextColorPicker ? 'rgba(151,71,255,0.1)' : 'transparent' }}
-          >
-            <Baseline size={13} />
-            <div className="h-0.5 w-3 rounded-full" style={{ backgroundColor: (editor.getAttributes('textStyle').color as string | undefined) ?? 'var(--text-1)' }} />
-          </button>
-
-          {/* Highlight button */}
-          <button
-            title="Highlight"
-            onClick={() => { setShowTextColorPicker(false); setShowHighlightPicker(v => !v); }}
-            className="p-1.5 rounded transition-colors shrink-0 flex flex-col items-center gap-0.5"
-            style={{ color: showHighlightPicker ? '#9747FF' : 'var(--text-2)', backgroundColor: showHighlightPicker ? 'rgba(151,71,255,0.1)' : 'transparent' }}
-          >
-            <Highlighter size={13} />
-            <div className="h-0.5 w-3 rounded-full" style={{ backgroundColor: (editor.getAttributes('highlight').color as string | undefined) ?? '#FEF08A' }} />
-          </button>
-
-          {sep}
-
-          {mkBtn(<Heading1 size={13} />, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive('heading', { level: 1 }), 'H1')}
-          {mkBtn(<Heading2 size={13} />, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }), 'H2')}
-          {mkBtn(<Heading3 size={13} />, () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }), 'H3')}
-
-          {sep}
-
-          {mkBtn(<List size={13} />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'), 'Bullet List')}
-          {mkBtn(<ListOrdered size={13} />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'), 'Numbered List')}
-          {mkBtn(<Quote size={13} />, () => editor.chain().focus().toggleBlockquote().run(), editor.isActive('blockquote'), 'Blockquote')}
-
-          {sep}
-
-          {/* Simplify button */}
-          <button
-            title="Simplify selected text"
-            onClick={handleSimplify}
-            disabled={simplifyLoading}
-            className="p-1.5 rounded transition-colors shrink-0 flex items-center gap-1 disabled:opacity-50"
-            style={{
-              color: (simplifyLoading || simplifyOptions) ? '#9747FF' : 'var(--text-2)',
-              backgroundColor: (simplifyLoading || simplifyOptions) ? 'rgba(151,71,255,0.1)' : 'transparent',
-            }}
-          >
-            {simplifyLoading
-              ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
-              : <Wand2 size={13} />
-            }
-            <span className="text-xs font-medium">Simplify</span>
-          </button>
-        </div>
-
-        {/* Text color swatches */}
-        {showTextColorPicker && (
-          <div
-            className="flex items-center gap-1 px-2 py-2 mt-1 rounded-lg shadow-xl"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-          >
-            {TEXT_COLORS.map(color => (
-              <button
-                key={color}
-                title={color}
-                onClick={() => { editor.chain().focus().setColor(color).run(); setShowTextColorPicker(false); }}
-                className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
-                style={{ backgroundColor: color, borderColor: editor.getAttributes('textStyle').color === color ? '#9747FF' : 'transparent' }}
-              />
-            ))}
-            <button
-              title="Remove color"
-              onClick={() => { editor.chain().focus().unsetColor().run(); setShowTextColorPicker(false); }}
-              className="text-xs px-1.5 py-0.5 rounded transition-colors"
-              style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Highlight color swatches */}
-        {showHighlightPicker && (
-          <div
-            className="flex items-center gap-1 px-2 py-2 mt-1 rounded-lg shadow-xl"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-          >
-            {HIGHLIGHT_COLORS.map(color => (
-              <button
-                key={color}
-                title={color}
-                onClick={() => { editor.chain().focus().setHighlight({ color }).run(); setShowHighlightPicker(false); }}
-                className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
-                style={{ backgroundColor: color, borderColor: editor.getAttributes('highlight').color === color ? '#9747FF' : 'transparent' }}
-              />
-            ))}
-            <button
-              title="Remove highlight"
-              onClick={() => { editor.chain().focus().unsetHighlight().run(); setShowHighlightPicker(false); }}
-              className="text-xs px-1.5 py-0.5 rounded transition-colors"
-              style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
-      </div>
-    )}
-
-    {/* Simplify options panel — separate fixed container anchored below the selection */}
-    {simplifyOptions && bubblePos && (
-      <div
-        style={{
-          position: 'fixed',
-          top: bubblePos.bottom + 8,
-          left: bubblePos.left,
-          zIndex: 50,
-          width: '320px',
-        }}
-        onMouseDown={e => e.preventDefault()}
-      >
-        <div
-          className="rounded-lg shadow-xl overflow-hidden"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-        >
-          <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
-            <span className="text-xs font-medium" style={{ color: '#9747FF' }}>3 simpler versions — click to replace</span>
-            <button
-              onClick={() => { setSimplifyOptions(null); simplifyRangeRef.current = null; }}
-              className="text-xs transition-colors"
-              style={{ color: 'var(--text-3)' }}
-            >
-              ✕
-            </button>
-          </div>
-          {simplifyOptions.map((option, i) => (
-            <button
-              key={i}
-              onClick={() => applySimplify(option)}
-              className="w-full text-left px-3 py-2.5 text-xs"
-              style={{
-                color: 'var(--text-1)',
-                borderBottom: i < 2 ? '1px solid var(--border)' : undefined,
-                backgroundColor: 'transparent',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(151,71,255,0.06)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-            >
-              <span className="text-[10px] font-semibold uppercase tracking-wide block mb-0.5" style={{ color: 'var(--text-3)' }}>
-                Option {i + 1}
-              </span>
-              {option}
-            </button>
-          ))}
-        </div>
-      </div>
+    {editor && (
+      <EditorBubbleToolbar
+        editor={editor}
+        bubblePos={bubblePos}
+        onBubblePosChange={setBubblePos}
+        onSimplify={handleSimplify}
+        simplifyLoading={simplifyLoading}
+        simplifyOptions={simplifyOptions}
+        onApplySimplify={applySimplify}
+        onClearSimplify={() => { setSimplifyOptions(null); simplifyRangeRef.current = null; }}
+      />
     )}
 
     <div className="flex h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
-    <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
+    <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
       {/* Path label + action buttons */}
       <div className="flex items-center gap-2 mb-4">
         {!embedded && (
@@ -844,7 +646,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
         ))}
         <TagDropdown
           tags={allDocTags}
-          placeholder="+ Tag"
+          variant="add-tag"
           selectedIds={new Set((doc.tags ?? []).map(dt => dt.tagId))}
           onChange={async tagId => {
             const isApplied = (doc.tags ?? []).some(dt => dt.tagId === tagId);

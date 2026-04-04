@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { SlidersHorizontal, Plus } from 'lucide-react';
 
 export type Tag = { id: string; name: string; color: string | null };
 
@@ -15,6 +15,8 @@ interface Props {
   onManageTags: () => void;
   placeholder?: string;
   align?: 'left' | 'right';
+  /** 'icon' = sliders icon only (default). 'add-tag' = Plus + "Add tag" text with dotted border. */
+  variant?: 'icon' | 'add-tag';
 }
 
 export default function TagDropdown({
@@ -25,6 +27,7 @@ export default function TagDropdown({
   onManageTags,
   placeholder = 'All Tags',
   align = 'left',
+  variant = 'icon',
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -43,9 +46,24 @@ export default function TagDropdown({
 
   return (
     <div className="relative" ref={ref} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button className="flex items-center gap-1.5 px-1.5 py-1 rounded text-xs transition-colors">
-        <SlidersHorizontal size={13} style={{ color: selected ? 'var(--brand)' : 'var(--text-2)' }} />
-      </button>
+      {variant === 'add-tag' ? (
+        <button
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors group"
+          style={{ border: '1px dashed var(--border-md)', color: 'var(--text-2)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border-md)'; }}
+        >
+          <Plus size={12} />
+          Add tag
+        </button>
+      ) : (
+        <button
+          className="flex items-center gap-1.5 px-1.5 py-1 rounded text-xs transition-colors"
+          style={{ color: selected ? 'var(--brand)' : 'var(--text-2)' }}
+        >
+          <SlidersHorizontal size={13} />
+        </button>
+      )}
 
       {open && (
         <div
