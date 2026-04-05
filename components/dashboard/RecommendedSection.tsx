@@ -66,7 +66,7 @@ export default function RecommendedSection() {
           {/* New Note */}
           <button
             onClick={() => setShowTypePicker(true)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors md:flex-col md:items-start md:gap-5 md:px-6 md:py-6 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
             style={{ backgroundColor: 'var(--bg-card)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
@@ -77,14 +77,14 @@ export default function RecommendedSection() {
             </div>
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-[var(--text-1)] truncate md:text-body-lg md:font-semibold md:whitespace-normal">New Note</p>
-              <p className="text-xs text-[var(--text-3)] truncate md:text-body-sm md:mt-1 md:whitespace-normal">Upload, record, or write</p>
+              <p className="text-xs text-[var(--text-3)] truncate md:mt-1 md:whitespace-normal">From any format</p>
             </div>
           </button>
 
           {/* Study Plan */}
           <button
             onClick={() => setShowPlanModal(true)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors md:flex-col md:items-start md:gap-5 md:px-6 md:py-6 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
             style={{ backgroundColor: 'var(--bg-card)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
@@ -95,14 +95,14 @@ export default function RecommendedSection() {
             </div>
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-[var(--text-1)] truncate md:text-body-lg md:font-semibold md:whitespace-normal">Create a Study Plan</p>
-              <p className="text-xs text-[var(--text-3)] truncate md:text-body-sm md:mt-1 md:whitespace-normal">Set a test date and get a day-by-day schedule</p>
+              <p className="text-xs text-[var(--text-3)] truncate md:mt-1 md:whitespace-normal">AI day-by-day schedule</p>
             </div>
           </button>
 
           {/* Quiz */}
           <Link
             href="/dashboard/quizzes"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors md:flex-col md:items-start md:gap-5 md:px-6 md:py-6"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4"
             style={{ backgroundColor: 'var(--bg-card)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
@@ -113,14 +113,14 @@ export default function RecommendedSection() {
             </div>
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-[var(--text-1)] truncate md:text-body-lg md:font-semibold md:whitespace-normal">Take a Quiz</p>
-              <p className="text-xs text-[var(--text-3)] truncate md:text-body-sm md:mt-1 md:whitespace-normal">Test your knowledge and track weak topics</p>
+              <p className="text-xs text-[var(--text-3)] truncate md:mt-1 md:whitespace-normal">Test and track weak spots</p>
             </div>
           </Link>
 
           {/* Practice Exam */}
           <button
             onClick={handlePracticeExamClick}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors md:flex-col md:items-start md:gap-5 md:px-6 md:py-6 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
             style={{ backgroundColor: 'var(--bg-card)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
@@ -131,7 +131,7 @@ export default function RecommendedSection() {
             </div>
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-[var(--text-1)] truncate md:text-body-lg md:font-semibold md:whitespace-normal">Practice Exam</p>
-              <p className="text-xs text-[var(--text-3)] truncate md:text-body-sm md:mt-1 md:whitespace-normal">Simulate the real exam experience</p>
+              <p className="text-xs text-[var(--text-3)] truncate md:mt-1 md:whitespace-normal">Full timed simulation</p>
             </div>
           </button>
 

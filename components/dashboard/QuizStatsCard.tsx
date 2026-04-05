@@ -156,7 +156,7 @@ export default function QuizStatsCard({ avgScore: avgProp, totalQuizzesTaken: to
 
   return (
     <div>
-      <h2 className="text-xs font-medium text-[var(--text-2)] mb-2">Quiz Stats</h2>
+      <h2 className="text-xs font-medium text-[var(--text-1)] mb-2">Quiz Stats</h2>
 
       {/* Metrics row */}
       <div
