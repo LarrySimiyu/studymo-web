@@ -139,7 +139,7 @@ function DashboardContent() {
         {recentNotes.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-medium text-[var(--text-2)]">Recent Notes</h2>
+              <h2 className="text-xs font-medium text-[var(--text-1)]">Recent Notes</h2>
               <Link href="/dashboard/notes" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] sm:[&::-webkit-scrollbar]:block sm:[scrollbar-width:thin]">
@@ -184,7 +184,7 @@ function DashboardContent() {
         {topWeakTopics.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-medium text-[var(--text-2)]">Weak Topics</h2>
+              <h2 className="text-xs font-medium text-[var(--text-1)]">Weak Topics</h2>
               <Link href="/dashboard/weak-topics" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
