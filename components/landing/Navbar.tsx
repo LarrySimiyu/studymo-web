@@ -44,7 +44,7 @@ export default function Navbar() {
           </Link>
           {/* Animated gradient CTA */}
           <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
-            Try free
+            Try For $0
           </Link>
         </div>
       </div>

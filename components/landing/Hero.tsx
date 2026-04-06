@@ -119,11 +119,11 @@ export default function Hero() {
           className="mt-10 flex items-center gap-4 flex-wrap justify-center"
         >
           <Link
-            href="/onboarding"
+            href="/sign-up"
             className="px-12 py-4 rounded-full text-base font-bold text-white transition-transform hover:scale-105 w-full sm:w-auto text-center"
             style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
-            Start For Free
+            Try For $0
           </Link>
         </motion.div>
 
@@ -151,7 +151,7 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        <style>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           @property --beam-angle {
             syntax: '<angle>';
             initial-value: 0deg;
@@ -173,7 +173,7 @@ export default function Hero() {
             );
             animation: beam-spin 10s linear infinite;
           }
-        `}</style>
+        ` }} />
 
       </div>
     </section>

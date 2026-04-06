@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, CreditCard, CheckCircle, AlertCircle, Clock, CalendarX, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, AlertCircle, Clock, CalendarX } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { billingApi, SubscriptionStatus } from '@/lib/api/billing';
 import { Button } from '@/components/ui/Button';
@@ -184,13 +184,15 @@ export default function BillingSettingsPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
-              <Button variant="brand" size="sm" disabled={portalLoading} onClick={handleManage}>
-                {portalLoading ? <><RefreshCw size={13} className="animate-spin" /> Loading…</> : 'Manage Subscription'}
-              </Button>
-              <Button variant="outline" size="sm" disabled={portalLoading} onClick={handleManage}>
-                Change Plan
-              </Button>
+            <div className="flex items-center justify-end px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
+              <button
+                onClick={handleManage}
+                disabled={portalLoading}
+                className="text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                style={{ color: 'var(--text-3)' }}
+              >
+                {portalLoading ? 'Loading…' : 'Cancel subscription'}
+              </button>
             </div>
           </div>
 

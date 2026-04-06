@@ -10,6 +10,7 @@ import TopNav from '@/components/dashboard/TopNav';
 import { billingApi } from '@/lib/api/billing';
 import UploadModal from '@/components/upload/UploadModal';
 import { LibraryProvider } from '@/context/LibraryContext';
+import PaywallModal from '@/components/ui/PaywallModal';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -73,6 +74,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [refreshing, setRefreshing] = useState(false);
   const [showGlobalUpload, setShowGlobalUpload] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   // Listen for global upload trigger (e.g. sidebar + button)
   useEffect(() => {
@@ -80,6 +82,24 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     window.addEventListener('app:open-upload', handler);
     return () => window.removeEventListener('app:open-upload', handler);
   }, []);
+
+  // Listen for paywall trigger from upload gate or nav buttons
+  useEffect(() => {
+    const handler = () => setShowPaywall(true);
+    window.addEventListener('app:show-paywall', handler);
+    return () => window.removeEventListener('app:show-paywall', handler);
+  }, []);
+
+  // Show paywall on first dashboard visit if user has no access
+  useEffect(() => {
+    if (loading || !currentUser || subscriptionStatus === null) return;
+    if (subscriptionStatus?.hasAccess) return;
+    const key = `paywall_shown_${currentUser.uid}`;
+    if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+      setShowPaywall(true);
+    }
+  }, [loading, currentUser, subscriptionStatus]);
 
   // After Stripe checkout, session_id lands in the URL. Refresh subscription
   // status before deciding whether to bounce the user back to /subscribe.
@@ -110,13 +130,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading || refreshing) return;
     if (!currentUser) {
-      router.replace('/onboarding');
-      return;
+      router.replace('/');
     }
-    if (subscriptionStatus && !subscriptionStatus.hasAccess) {
-      router.replace('/subscribe');
-    }
-  }, [currentUser, loading, subscriptionStatus, refreshing, router]);
+  }, [currentUser, loading, refreshing, router]);
 
   // Cmd+K / Ctrl+K global shortcut — shelved with assistant panel
   // const { toggleOpen } = useAssistant();
@@ -141,7 +157,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   }
 
   if (!currentUser) return null;
-  if (subscriptionStatus && !subscriptionStatus.hasAccess) return null;
 
   return (
     <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
@@ -159,11 +174,12 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           onClose={() => setShowGlobalUpload(false)}
           onSuccess={() => {
             setShowGlobalUpload(false);
-            // Notify library page to refetch if it's open
             window.dispatchEvent(new CustomEvent('library:refetch'));
           }}
         />
       )}
+
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
     </div>
   );
 }
