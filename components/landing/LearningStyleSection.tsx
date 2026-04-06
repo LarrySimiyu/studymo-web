@@ -86,7 +86,7 @@ export default function LearningStyleSection() {
         </h2>
 
         <p className="mt-5 text-base sm:text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Your StudyMo tutor remembers your grade level, goals, struggles, and the exact topics you keep getting wrong — so every session feels like it was made for you.
+          Your StudyMo tutor remembers your grade level, goals, struggles, and the exact topics you keep getting wrong, so every session feels like it was made for you.
         </p>
       </div>
 

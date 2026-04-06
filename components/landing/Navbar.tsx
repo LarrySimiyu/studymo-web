@@ -32,10 +32,6 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Animated gradient CTA */}
-          <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
-            Try free
-          </Link>
           {/* Login */}
           <Link
             href="/sign-in"
@@ -45,6 +41,10 @@ export default function Navbar() {
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
           >
             Login
+          </Link>
+          {/* Animated gradient CTA */}
+          <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
+            Try free
           </Link>
         </div>
       </div>
