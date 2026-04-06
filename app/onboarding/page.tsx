@@ -6,10 +6,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   School, GraduationCap, BookOpen, Briefcase, Globe,
   Headphones, HelpCircle, Shuffle,
-  Brain, Lightbulb, Smartphone, Clock, Moon, Zap, Heart, LayoutList, Flame,
-  Target, TrendingUp, FolderOpen, Timer, Play, ArrowLeft, ArrowRight, CalendarDays,
+  Brain, Lightbulb, Smartphone, Clock, Moon, Zap, Heart, Flame,
+  Target, TrendingUp, TrendingDown, FolderOpen, ArrowLeft, ArrowRight,
+  CalendarDays, Timer, Repeat, Scale, Users,
   type LucideIcon,
 } from 'lucide-react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from '@/components/ui/Button';
 import { saveOnboardingData, getOnboardingData, defaultOnboardingData } from '@/lib/onboarding';
 
@@ -38,31 +40,50 @@ const LEARNING_STYLES = [
   { id: 'mix',       label: 'A mix of everything',         Icon: Shuffle,     color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
 ];
 
-const STRUGGLE_OPTIONS = [
-  { id: 'understanding',   label: 'Understanding the material',               Icon: Brain,       color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
-  { id: 'remembering',     label: 'Remembering what I studied',               Icon: Lightbulb,   color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
-  { id: 'distractions',    label: 'Staying focused / avoiding distractions',  Icon: Smartphone,  color: '#EF4444', bg: 'rgba(239,68,68,0.12)'   },
-  { id: 'time_management', label: 'Time management',                          Icon: Clock,       color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
-  { id: 'procrastination', label: 'Procrastination',                          Icon: Moon,        color: '#14B8A6', bg: 'rgba(20,184,166,0.12)'  },
-  { id: 'adhd',            label: 'ADHD or focus challenges',                 Icon: Zap,         color: '#FF6500', bg: 'rgba(255,101,0,0.12)'   },
-  { id: 'mental_health',   label: 'Mental health affecting my focus',         Icon: Heart,       color: '#EC4899', bg: 'rgba(236,72,153,0.12)'  },
-  { id: 'organizing',      label: 'Staying organized',                        Icon: LayoutList,  color: '#22C55E', bg: 'rgba(34,197,94,0.12)'   },
-  { id: 'all',             label: 'All of the above',                         Icon: Flame,       color: '#EF4444', bg: 'rgba(239,68,68,0.12)'   },
+const STRUGGLE_GROUPS: { category: string; items: { id: string; label: string; Icon: LucideIcon; color: string; bg: string }[] }[] = [
+  {
+    category: 'Keeping Up',
+    items: [
+      { id: 'falling_behind',  label: 'Falling behind on coursework',          Icon: TrendingDown, color: '#FF6500', bg: 'rgba(255,101,0,0.12)'   },
+      { id: 'deadlines',       label: 'Managing multiple deadlines at once',    Icon: CalendarDays, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)'  },
+      { id: 'balance',         label: 'Balancing school with work or life',     Icon: Scale,        color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
+    ],
+  },
+  {
+    category: 'Studying',
+    items: [
+      { id: 'where_to_start',  label: 'Not knowing where to start',            Icon: HelpCircle,   color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+      { id: 'cramming',        label: 'Cramming the night before',              Icon: Timer,        color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
+      { id: 'consistency',     label: 'Staying consistent with studying',       Icon: Repeat,       color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+      { id: 'forgetting',      label: 'Forgetting what I studied',             Icon: Brain,        color: '#EF4444', bg: 'rgba(239,68,68,0.12)'  },
+    ],
+  },
+  {
+    category: 'Focus',
+    items: [
+      { id: 'distractions',    label: 'Phone & social media distractions',     Icon: Smartphone,   color: '#EF4444', bg: 'rgba(239,68,68,0.12)'  },
+      { id: 'focus_span',      label: 'Losing focus quickly',                  Icon: Zap,          color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+    ],
+  },
+  {
+    category: 'Mindset & Wellbeing',
+    items: [
+      { id: 'procrastination', label: 'Procrastination',                       Icon: Clock,        color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
+      { id: 'burnout',         label: 'Burnout or low motivation',             Icon: Flame,        color: '#EF4444', bg: 'rgba(239,68,68,0.12)'  },
+      { id: 'test_anxiety',    label: 'Test anxiety',                          Icon: Heart,        color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+      { id: 'overwhelmed',     label: 'Feeling overwhelmed',                   Icon: Lightbulb,    color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+      { id: 'sleep',           label: 'Poor sleep affecting my focus',         Icon: Moon,         color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+      { id: 'accountability',  label: 'No one to study with or keep me accountable', Icon: Users,  color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
+    ],
+  },
 ];
 
-const FOCUS_STRUGGLES = new Set(['procrastination','adhd','distractions','time_management','mental_health','all']);
 
 const GOALS = [
   { id: 'pass_exams',     label: 'Pass my upcoming exams',       Icon: Target,     color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
   { id: 'improve_grades', label: 'Improve my grades',            Icon: TrendingUp, color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
   { id: 'learn_faster',   label: 'Learn faster and retain more', Icon: Zap,        color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
   { id: 'stay_organized', label: 'Stay organized this semester', Icon: FolderOpen, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
-];
-
-const STATS = [
-  { number: '40%', desc: 'less time studying for the same results',         Icon: Clock,        color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
-  { number: '3x',  desc: 'more practice exams completed before test day',   Icon: Target,       color: '#22C55E', bg: 'rgba(34,197,94,0.12)'  },
-  { number: '2x',  desc: 'more consistent studying with time blocking',     Icon: CalendarDays, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
 ];
 
 // ─── step numbering ──────────────────────────────────────────────────────────
@@ -72,11 +93,8 @@ const STATS = [
 // 4  Subjects
 // 5  Learning style
 // 6  Struggles
-// 7  Time blocking     (conditional on focus struggles)
-// 8  Main goal
-// 9  Upcoming test     (skippable)
-// 10 Demo video        (skippable)
-// 11 Social proof
+// 7  Main goal
+// 9  Social proof (Lottie)
 
 // ─── animation variants ─────────────────────────────────────────────────────
 
@@ -222,19 +240,10 @@ export default function OnboardingPage() {
 
   const [customSubject, setCustomSubject] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [testChoice, setTestChoice] = useState<'yes' | 'skip' | null>(null);
-  const [statIndex, setStatIndex] = useState(0);
   const customInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (step !== 11) return;
-    const t = setInterval(() => setStatIndex(i => (i + 1) % STATS.length), 3000);
-    return () => clearInterval(t);
-  }, [step]);
-
   const showGpaSteps = data.gradeLevel === 'high_school' || data.gradeLevel === 'undergrad';
-  const hasFocusStruggles = data.struggles.some(s => FOCUS_STRUGGLES.has(s));
-  const TOTAL_STEPS = showGpaSteps ? 11 : 9;
+  const TOTAL_STEPS = showGpaSteps ? 9 : 7;
   const progress = (step / TOTAL_STEPS) * 100;
 
   function go(nextStep: number, direction = 1) {
@@ -251,8 +260,6 @@ export default function OnboardingPage() {
     let prev = step - 1;
     // skip GPA steps if not applicable
     if ((prev === 3 || prev === 2) && !showGpaSteps) prev = 1;
-    // skip time blocking if no focus struggles
-    if (prev === 7 && !hasFocusStruggles) prev = 6;
     go(prev, -1);
   }
 
@@ -282,18 +289,14 @@ export default function OnboardingPage() {
   }
 
   function toggleStruggle(id: string) {
-    let struggles: string[];
-    if (id === 'all') {
-      struggles = data.struggles.includes('all') ? [] : STRUGGLE_OPTIONS.map(s => s.id);
-    } else {
-      const without = data.struggles.filter(s => s !== 'all');
-      struggles = without.includes(id) ? without.filter(x => x !== id) : [...without, id];
-    }
+    const struggles = data.struggles.includes(id)
+      ? data.struggles.filter(x => x !== id)
+      : [...data.struggles, id];
     setData(d => ({ ...d, struggles }));
     saveOnboardingData({ struggles });
   }
 
-  const skippable = [10]; // demo video
+  const skippable: number[] = [];
 
   function renderStep() {
     switch (step) {
@@ -455,48 +458,53 @@ export default function OnboardingPage() {
       case 6:
         return (
           <StepWrapper heading="What gets in the way of your studying?" sub="Select everything that applies — no judgment here">
-            <div className="flex flex-wrap gap-2 justify-center w-full max-w-md">
-              {STRUGGLE_OPTIONS.map(o => (
-                <Pill key={o.id} label={o.label} selected={data.struggles.includes(o.id)} onClick={() => toggleStruggle(o.id)} />
+            <div className="w-full max-w-lg flex flex-col gap-5">
+              {STRUGGLE_GROUPS.map(group => (
+                <div key={group.category} className="flex flex-col gap-2">
+                  <p className="text-xs uppercase tracking-widest font-semibold text-left px-1" style={{ color: '#4B5563' }}>
+                    {group.category}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {group.items.map(o => {
+                      const selected = data.struggles.includes(o.id);
+                      return (
+                        <button
+                          key={o.id}
+                          onClick={() => toggleStruggle(o.id)}
+                          className="flex items-center gap-3 p-4 rounded-xl text-left transition-all min-h-[56px]"
+                          style={{
+                            backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
+                            border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+                          }}
+                        >
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                            style={{ backgroundColor: o.bg }}
+                          >
+                            <o.Icon size={17} style={{ color: o.color }} />
+                          </div>
+                          <span className="text-sm font-medium leading-snug" style={{ color: selected ? '#ffffff' : '#9CA3AF' }}>
+                            {o.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
             <ContinueBtn
               disabled={data.struggles.length === 0}
               onClick={() => {
                 saveOnboardingData({ struggles: data.struggles });
-                const hasFocus = data.struggles.some(s => FOCUS_STRUGGLES.has(s));
-                next(hasFocus ? 7 : 8);
+                next(7);
               }}
             />
           </StepWrapper>
         );
 
-      // ── Step 7: Time blocking callout (conditional) ───────────────────────
+      // ── Step 7: Main goal ─────────────────────────────────────────────────
       case 7:
-        return (
-          <StepWrapper heading="We've got something for that">
-            <div className="w-full max-w-sm rounded-2xl p-5 sm:p-6 flex flex-col gap-4" style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
-                  <Timer size={20} style={{ color: '#8B5CF6' }} />
-                </div>
-                <p className="font-semibold text-white">Time Block Mode</p>
-              </div>
-              <p className="text-sm text-white leading-relaxed">
-                Break study sessions into focused blocks with a built-in countdown timer. Progress saves automatically when you're done.
-              </p>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-full self-start" style={{ backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs font-mono" style={{ color: '#A78BFA' }}>25:00</span>
-                <span className="text-xs text-white">· Studying Biology</span>
-              </div>
-            </div>
-            <ContinueBtn onClick={() => next(8)} />
-          </StepWrapper>
-        );
-
-      // ── Step 8: Main goal ─────────────────────────────────────────────────
-      case 8:
         return (
           <StepWrapper heading="What's your main goal with Studymo?">
             <div className="flex flex-col gap-3 w-full max-w-sm sm:max-w-md">
@@ -524,150 +532,33 @@ export default function OnboardingPage() {
           </StepWrapper>
         );
 
-      // ── Step 9: Upcoming test ─────────────────────────────────────────────
+      // ── Step 9: Social proof with Lottie ─────────────────────────────────
       case 9:
         return (
-          <StepWrapper heading="Do you have an upcoming test?" sub="We'll build you a personalized study plan around it">
-            <div className="flex flex-col gap-3 w-full max-w-sm">
-              <button
-                onClick={() => setTestChoice(testChoice === 'yes' ? null : 'yes')}
-                className="p-4 sm:p-5 rounded-2xl text-left transition-all"
-                style={{
-                  backgroundColor: testChoice === 'yes' ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
-                  border: `1.5px solid ${testChoice === 'yes' ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
-                    <Target size={20} style={{ color: '#22C55E' }} />
-                  </div>
-                  <span className="font-medium text-white text-sm">Yes, I have a test coming up</span>
-                </div>
-                {testChoice === 'yes' && (
-                  <div className="mt-4 flex flex-col gap-3" onClick={e => e.stopPropagation()}>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Subject</label>
-                      <select
-                        value={data.upcomingTest?.subject ?? ''}
-                        onChange={e => setData(d => ({ ...d, upcomingTest: { subject: e.target.value, date: d.upcomingTest?.date ?? '' } }))}
-                        className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                        style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
-                      >
-                        <option value="">Select a subject…</option>
-                        {data.subjects.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Test Date</label>
-                      <input
-                        type="date"
-                        value={data.upcomingTest?.date ?? ''}
-                        min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
-                        onChange={e => setData(d => ({ ...d, upcomingTest: { subject: d.upcomingTest?.subject ?? '', date: e.target.value } }))}
-                        className="w-full px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                        style={{ backgroundColor: '#2A2A2A', border: '1px solid #333' }}
-                      />
-                    </div>
-                    <Button
-                      variant="brand"
-                      size="default"
-                      className="w-full"
-                      onClick={() => {
-                        if (data.upcomingTest?.subject && data.upcomingTest?.date) {
-                          saveOnboardingData({ upcomingTest: data.upcomingTest });
-                          next(10);
-                        }
-                      }}
-                      disabled={!data.upcomingTest?.subject || !data.upcomingTest?.date}
-                    >
-                      Got it
-                    </Button>
-                  </div>
-                )}
-              </button>
-
-              <button
-                onClick={() => { saveOnboardingData({ upcomingTest: null }); next(10); }}
-                className="p-4 sm:p-5 rounded-2xl text-left transition-all"
-                style={{ backgroundColor: '#1A1A1A', border: '1.5px solid #2A2A2A' }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(107,114,128,0.12)' }}>
-                    <ArrowRight size={20} style={{ color: '#9CA3AF' }} />
-                  </div>
-                  <span className="font-medium text-white text-sm">Skip for now</span>
-                </div>
-              </button>
+          <div className="flex flex-col items-center gap-6 w-full max-w-sm text-center px-2">
+            <div className="w-full max-w-[260px] sm:max-w-[320px] aspect-square">
+              <DotLottieReact
+                src="/improvement-animation.lottie"
+                loop
+                autoplay
+                backgroundColor="transparent"
+                style={{ width: '100%', height: '100%' }}
+              />
             </div>
-          </StepWrapper>
-        );
-
-      // ── Step 10: Demo video (skippable) ───────────────────────────────────
-      case 10:
-        return (
-          <StepWrapper heading="See Studymo in action" sub="Watch how students are transforming their study sessions">
-            <div className="w-full max-w-sm flex flex-col gap-4">
-              <div
-                className="w-full rounded-2xl flex flex-col items-center justify-center gap-3 py-14"
-                style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
-              >
-                <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
-                  <Play size={28} style={{ color: '#FF6500' }} fill="#FF6500" />
-                </div>
-                <p className="text-xs text-gray-600 text-center">[ Demo video — add final video here ]</p>
-              </div>
-              <ContinueBtn onClick={() => next(11)} />
+            <div className="flex flex-col gap-2">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight" style={{ color: '#111111' }}>
+                Students increase their average test grade by{' '}
+                <span style={{ color: '#22C55E' }}>14%</span>{' '}
+                using Studymo
+              </h1>
+              <p className="text-sm sm:text-base" style={{ color: '#6B7280' }}>
+                Join thousands of students already studying smarter
+              </p>
             </div>
-          </StepWrapper>
-        );
-
-      // ── Step 11: Social proof ─────────────────────────────────────────────
-      case 11:
-        return (
-          <StepWrapper heading="You're in good company" sub="Here's what students are saying about Studymo">
-            <div className="w-full max-w-sm flex flex-col gap-6 items-center">
-              <div className="relative w-full h-40 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={statIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl p-6"
-                    style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
-                  >
-                    {(() => { const StatIcon = STATS[statIndex].Icon; return (
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: STATS[statIndex].bg }}>
-                      <StatIcon size={22} style={{ color: STATS[statIndex].color }} />
-                    </div>
-                    ); })()}
-                    <span className="text-4xl font-extrabold" style={{ color: STATS[statIndex].color }}>
-                      {STATS[statIndex].number}
-                    </span>
-                    <p className="text-sm text-gray-400 text-center">{STATS[statIndex].desc}</p>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              <div className="flex gap-2">
-                {STATS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setStatIndex(i)}
-                    className="h-2 rounded-full transition-all"
-                    style={{ backgroundColor: i === statIndex ? '#FF6500' : '#2A2A2A', width: i === statIndex ? 20 : 8 }}
-                  />
-                ))}
-              </div>
-
-              <p className="text-sm text-gray-500 text-center">Join thousands of students studying smarter</p>
-
-              <Button variant="brand" size="lg" className="w-full" onClick={() => router.push('/dashboard')}>
-                Start studying
-              </Button>
-            </div>
-          </StepWrapper>
+            <Button variant="brand" size="lg" className="w-full sm:max-w-xs" onClick={() => router.push('/dashboard')}>
+              Get Started
+            </Button>
+          </div>
         );
 
       default:
@@ -676,9 +567,9 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#111111' }}>
+    <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ backgroundColor: step === 9 ? '#ffffff' : '#111111' }}>
       {/* Progress bar */}
-      <div className="h-1 w-full" style={{ backgroundColor: '#1A1A1A' }}>
+      <div className="h-1 w-full" style={{ backgroundColor: step === 9 ? '#E5E7EB' : '#1A1A1A' }}>
         <div className="h-1 transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: '#FF6500' }} />
       </div>
 
@@ -686,12 +577,13 @@ export default function OnboardingPage() {
       <div className="flex items-center justify-between px-4 sm:px-6 py-4">
         <button
           onClick={back}
-          className="text-gray-500 hover:text-white transition-colors p-1 -ml-1"
+          className="transition-colors p-1 -ml-1"
+          style={{ color: step === 9 ? '#6B7280' : '#6B7280' }}
         >
           <ArrowLeft size={20} />
         </button>
 
-        <span className="text-xs text-gray-600">{step} of {TOTAL_STEPS}</span>
+        <span className="text-xs" style={{ color: step === 9 ? '#9CA3AF' : '#4B5563' }}>{step} of {TOTAL_STEPS}</span>
 
         {skippable.includes(step) ? (
           <button onClick={() => next(step + 1)} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
@@ -703,21 +595,23 @@ export default function OnboardingPage() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-8 lg:px-16 pb-10 overflow-hidden">
-        <AnimatePresence mode="wait" custom={dir}>
-          <motion.div
-            key={step}
-            custom={dir}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={transition}
-            className="w-full flex justify-center"
-          >
-            {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+      <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 sm:px-8 lg:px-16">
+        <div className="min-h-full flex items-center justify-center py-8">
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div
+              key={step}
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={transition}
+              className="w-full flex justify-center pb-6"
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

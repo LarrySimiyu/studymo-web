@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { House, Star, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Menu, LucideIcon } from 'lucide-react';
+import { House, Star, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Menu, Zap, LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
@@ -107,6 +107,7 @@ interface SidebarContentProps {
   showCollapseBtn?: boolean;
   displayName: string;
   initials: string;
+  subscriptionStatus: { hasAccess: boolean } | null;
 }
 
 function SidebarContent({
@@ -123,6 +124,7 @@ function SidebarContent({
   showCollapseBtn,
   displayName,
   initials,
+  subscriptionStatus,
 }: SidebarContentProps) {
   const flat = flattenFolders(folders);
 
@@ -291,6 +293,31 @@ function SidebarContent({
         </AnimatePresence>
       </nav>
 
+      {/* Get Unlimited banner (free users only) */}
+      {!subscriptionStatus?.hasAccess && (
+        <div className="px-1.5 pb-1">
+          {!collapsed ? (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
+              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              <Zap size={14} className="text-white shrink-0" />
+              <span className="text-xs font-semibold text-white">Get Unlimited</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
+              title="Get Unlimited"
+              className="w-full flex items-center justify-center py-2 rounded-xl transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            >
+              <Zap size={14} className="text-white" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* User footer */}
       <div className="px-1.5 pb-2 pt-1">
         {!collapsed ? (
@@ -328,7 +355,7 @@ function SidebarContent({
 }
 
 export default function Sidebar() {
-  const { currentUser, dbUser } = useAuth();
+  const { currentUser, dbUser, subscriptionStatus } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -439,6 +466,7 @@ export default function Sidebar() {
     toggleSection,
     displayName,
     initials,
+    subscriptionStatus,
   };
 
   // ── Small screen: overlay only (hamburger lives in TopNav) ──────────

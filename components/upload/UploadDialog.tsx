@@ -6,6 +6,7 @@ import { documentsApi, notesApi } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 export type UploadType = 'blank' | 'file' | 'record' | 'video';
 
@@ -340,8 +341,33 @@ function RecordForm({ loading, onStart, onSuccess, onError }: { loading: boolean
 export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
+  const [checking, setChecking] = useState(true);
   const stopPollRef = useRef<(() => void) | null>(null);
   const { title, icon: Icon, color, bg } = TYPE_META[type];
+  const { subscriptionStatus, loading: authLoading } = useAuth();
+
+  // Free-tier gate: check document count before showing form
+  useEffect(() => {
+    if (authLoading) return; // wait for auth to finish loading
+
+    if (subscriptionStatus?.hasAccess) {
+      setChecking(false);
+      return;
+    }
+
+    // Free user or auth failed — check count; on any error just show the form
+    documentsApi.getCount()
+      .then(({ data }) => {
+        if (data && data.count >= 1) {
+          onClose();
+          window.dispatchEvent(new CustomEvent('app:show-paywall'));
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, subscriptionStatus]);
 
   useEffect(() => () => { stopPollRef.current?.(); }, []);
 
@@ -380,7 +406,11 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
       onClick={(e) => e.target === e.currentTarget && !isOverlay && onClose()}
     >
       <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        {isOverlay ? (
+        {checking ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-6 h-6 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#FF6500' }} />
+          </div>
+        ) : isOverlay ? (
           <ProcessingOverlay state={uploadState as 'processing' | 'failed'} onRetry={handleRetry} onClose={onClose} />
         ) : (
           <>
@@ -406,3 +436,4 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     </div>
   );
 }
+

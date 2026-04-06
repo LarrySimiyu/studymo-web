@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Mic } from 'lucide-react';
 import { Podcast } from '@/lib/api/podcasts';
 import { podcastsApi } from '@/lib/api/podcasts';
@@ -16,6 +17,27 @@ interface Props {
 }
 
 export default function PodcastTab({ documentId, podcasts, setPodcasts, showModal, setShowModal }: Props) {
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const hasGenerating = podcasts.some(p => p.status === 'generating');
+    if (hasGenerating) {
+      intervalRef.current = setInterval(async () => {
+        const { data } = await podcastsApi.getByDocument(documentId);
+        if (data) {
+          setPodcasts(data);
+          if (!data.some(p => p.status === 'generating')) {
+            clearInterval(intervalRef.current!);
+            intervalRef.current = null;
+          }
+        }
+      }, 3000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [podcasts.map(p => p.status).join(','), documentId]);
+
   return (
     <div>
       {podcasts.length === 0 ? (

@@ -7,8 +7,7 @@ import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import SchoolsMarquee from '@/components/landing/SchoolsMarquee';
 import LearningStyleSection from '@/components/landing/LearningStyleSection';
-import Features from '@/components/landing/Features';
-import Pricing from '@/components/landing/Pricing';
+import HowItWorks from '@/components/landing/HowItWorks';
 
 export default function LandingPage() {
   const { currentUser, loading } = useAuth();
@@ -26,8 +25,7 @@ export default function LandingPage() {
       <Hero />
       <SchoolsMarquee />
       <LearningStyleSection />
-      <Features />
-      <Pricing />
+      <HowItWorks />
     </main>
   );
 }
