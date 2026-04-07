@@ -565,7 +565,7 @@ export default function LibraryPage() {
       {uploadType && (
         <UploadDialog
           type={uploadType}
-          onClose={() => setUploadType(null)}
+          onClose={() => { setUploadType(null); refetch(); }}
           onSuccess={(docId) => { setUploadType(null); refetch(); if (docId) selectDoc(docId); }}
         />
       )}

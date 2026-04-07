@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
 import { documentsApi, notesApi, docTagsApi, Document } from '@/lib/api/documents';
 import { foldersApi, Folder } from '@/lib/api/organization';
+import { invalidatePrefix } from '@/lib/api';
 
 type Tag = { id: string; name: string; color: string | null };
 
@@ -37,6 +38,8 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
     try {
+      invalidatePrefix('/documents');
+      invalidatePrefix('/notes');
       const [docsRes, foldersRes, tagsRes, notesRes] = await Promise.all([
         documentsApi.getAll(),
         foldersApi.getAll(),

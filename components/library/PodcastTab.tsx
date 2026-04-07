@@ -7,6 +7,7 @@ import { podcastsApi } from '@/lib/api/podcasts';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
 import GeneratePodcastModal from '@/components/podcast/GeneratePodcastModal';
 import { Button } from '@/components/ui/Button';
+import { analytics } from '@/lib/analytics';
 
 interface Props {
   documentId: string;
@@ -97,7 +98,11 @@ export default function PodcastTab({ documentId, podcasts, setPodcasts, showModa
                 <p className="text-xs py-1.5 px-2 rounded-lg" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>Generation failed. Please try again.</p>
               )}
               {podcast.status === 'complete' && podcast.audioUrl && (
-                <PodcastPlayer audioUrl={podcast.audioUrl} title={podcast.title} />
+                <PodcastPlayer
+                  audioUrl={podcast.audioUrl}
+                  title={podcast.title}
+                  onFirstPlay={() => analytics.podcastPlayed(documentId)}
+                />
               )}
             </div>
           ))}

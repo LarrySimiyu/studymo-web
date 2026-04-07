@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { PenLine, Upload, Mic, Youtube } from 'lucide-react';
 import { documentsApi, notesApi } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
+import { analytics } from '@/lib/analytics';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
@@ -102,6 +103,7 @@ function BlankNoteForm({ onSuccess, onError }: { onSuccess: (docId: string) => v
     const { data, error } = await notesApi.createBlank(title.trim() || undefined);
     setLoading(false);
     if (error || !data) { onError(error ?? 'Failed to create note'); return; }
+    analytics.uploadCompleted('blank');
     onSuccess(data.documentId);
   }
 
@@ -374,14 +376,15 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   function handleUploadStart() {
     setError('');
     setUploadState('uploading');
+    analytics.uploadStarted(type);
   }
 
   async function handleUploadSuccess(docId: string) {
     setUploadState('processing');
     stopPollRef.current = await pollDocumentStatus(
       docId,
-      () => { onSuccess(docId); },
-      () => setUploadState('failed'),
+      () => { analytics.uploadCompleted(type); onSuccess(docId); },
+      () => { analytics.uploadFailed(type); setUploadState('failed'); },
     );
   }
 

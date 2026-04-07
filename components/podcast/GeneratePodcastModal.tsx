@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import { PODCAST_VOICES, podcastsApi } from '@/lib/api/podcasts';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
+import { analytics } from '@/lib/analytics';
 
 interface Props {
   documentId: string;
@@ -82,6 +83,7 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
     try {
       const { error: err } = await podcastsApi.create({ documentId, lengthMins, voice });
       if (err) { setError(err); setGenerating(false); return; }
+      analytics.podcastGenerated(documentId, lengthMins, voice);
       onCreated();
     } catch {
       setError('Failed to start generation. Please try again.');

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Document, Quiz } from '@/lib/api/documents';
 import { quizzesApi } from '@/lib/api/documents';
+import { analytics } from '@/lib/analytics';
 import ProgressBar from '@/components/ui/ProgressBar';
 import QuestionCard from '@/components/ui/QuestionCard';
 
@@ -68,6 +69,7 @@ export default function QuizRunner({ document: doc, quiz, onBack }: Props) {
       setScore(correct);
       setDone(true);
       quizzesApi.submitAttempt(quiz.id, (correct / questions.length) * 100, answers).catch(() => {});
+      analytics.quizCompleted(doc.id, Math.round((correct / questions.length) * 100), questions.length);
     } else {
       setQIndex(i => i + 1);
       setSelected(null);
