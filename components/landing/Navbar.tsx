@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
+import studymoLogo from '@/assets/studymo_logo.png';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -27,8 +29,8 @@ export default function Navbar() {
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
         {/* Wordmark */}
-        <Link href="/" className="text-base font-bold tracking-tight text-white select-none">
-          StudyMo
+        <Link href="/" className="flex items-center select-none">
+          <Image src={studymoLogo} alt="StudyMo" height={80} className="h-14 sm:h-20 w-auto" />
         </Link>
 
         <div className="flex items-center gap-3">
