@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { documentsApi, Document, docTagsApi } from '@/lib/api/documents';
 import { foldersApi, Folder } from '@/lib/api/organization';
@@ -356,7 +356,7 @@ export default function LibraryPage() {
     if (!initialized) {
       refetch().finally(() => setLoading(false));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-select: prefer ?note= param on first load, otherwise keep current or pick first
