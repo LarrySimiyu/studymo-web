@@ -40,6 +40,8 @@ import {
   Flashcard,
   Quiz,
 } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
+import { analytics } from '@/lib/analytics';
 import { tasksApi } from '@/lib/api/tasks';
 import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
@@ -131,6 +133,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   const tabs: Tab[] = ['notes', 'flashcards', 'quiz', 'podcast', 'weak-topics', ...(isAudioDoc ? ['transcript' as Tab] : [])];
 
   const fetchAll = useCallback(async () => {
+    invalidatePrefix(`/documents/${id}`);
     const { data: docData } = await documentsApi.getById(id);
     if (!docData) return;
     setDoc(docData);
@@ -229,6 +232,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
         hasTouchedRef.current = false;
         setDoc(prev => prev ? { ...prev, updatedAt: new Date().toISOString() } : prev);
         window.dispatchEvent(new CustomEvent('library:refetch'));
+        analytics.noteEdited(id);
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus(''), 2000);
       }, 30000);
@@ -437,7 +441,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
                   flashcards={flashcards}
                   onGenerate={async () => {
                     const { data } = await flashcardsApi.generate(id);
-                    if (data) setFlashcards(data);
+                    if (data) { setFlashcards(data); analytics.flashcardsGenerated(id); }
                   }}
                 />
               )}
@@ -448,7 +452,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
                   quiz={quiz}
                   onGenerate={async (types) => {
                     const { data } = await quizzesApi.generate(id, types);
-                    if (data) setQuiz(data);
+                    if (data) { setQuiz(data); analytics.quizGenerated(id); }
                   }}
                 />
               )}

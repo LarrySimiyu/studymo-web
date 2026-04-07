@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 interface Props {
   audioUrl: string;
   title: string;
+  onFirstPlay?: () => void;
 }
 
 function fmtTime(secs: number): string {
@@ -16,9 +17,10 @@ function fmtTime(secs: number): string {
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
 
-export default function PodcastPlayer({ audioUrl }: Props) {
+export default function PodcastPlayer({ audioUrl, onFirstPlay }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const hasPlayedRef = useRef(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
@@ -45,7 +47,10 @@ export default function PodcastPlayer({ audioUrl }: Props) {
     const audio = audioRef.current;
     if (!audio) return;
     if (playing) { audio.pause(); setPlaying(false); }
-    else { audio.play(); setPlaying(true); }
+    else {
+      audio.play(); setPlaying(true);
+      if (!hasPlayedRef.current) { hasPlayedRef.current = true; onFirstPlay?.(); }
+    }
   }
 
   function skip(secs: number) {

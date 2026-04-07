@@ -11,6 +11,7 @@ import { billingApi } from '@/lib/api/billing';
 import UploadModal from '@/components/upload/UploadModal';
 import { LibraryProvider } from '@/context/LibraryContext';
 import PaywallModal from '@/components/ui/PaywallModal';
+import { analytics } from '@/lib/analytics';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -85,7 +86,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   // Listen for paywall trigger from upload gate or nav buttons
   useEffect(() => {
-    const handler = () => setShowPaywall(true);
+    const handler = () => { setShowPaywall(true); analytics.paywallSeen('upload_limit'); };
     window.addEventListener('app:show-paywall', handler);
     return () => window.removeEventListener('app:show-paywall', handler);
   }, []);
@@ -98,6 +99,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     if (!localStorage.getItem(key)) {
       localStorage.setItem(key, '1');
       setShowPaywall(true);
+      analytics.paywallSeen('first_visit');
     }
   }, [loading, currentUser, subscriptionStatus]);
 

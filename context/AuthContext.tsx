@@ -14,6 +14,7 @@ import {
 import { auth, appleProvider } from '@/lib/firebase';
 import { billingApi, SubscriptionStatus } from '@/lib/api/billing';
 import { getOnboardingData, clearOnboardingData } from '@/lib/onboarding';
+import { identifyUser, aliasUser, resetAnalytics, analytics } from '@/lib/analytics';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -134,6 +135,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const synced = await syncUser(user);
         setDbUser(synced);
         await fetchSubscriptionStatus();
+        identifyUser(user.uid, {
+          email: user.email ?? undefined,
+          name: user.displayName ?? undefined,
+        });
       } else {
         setDbUser(null);
         setSubscriptionStatus(null);
@@ -148,6 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const synced = await syncUser(cred.user);
     setDbUser(synced);
     await fetchSubscriptionStatus();
+    analytics.loginCompleted('email');
+    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined });
     return cred;
   };
 
@@ -157,24 +164,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setDbUser(synced);
     await syncOnboardingIfNeeded(cred.user);
     setSubscriptionStatus({ status: 'none', plan: null, isActive: false, hasAccess: false, isTrial: false, trialEnd: null, daysLeftInTrial: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, daysUntilRenewal: null });
+    aliasUser(cred.user.uid);
+    analytics.signupCompleted('email');
+    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: name ?? undefined });
     return cred;
   };
 
   const googleSignIn = async (): Promise<UserCredential> => {
     const cred = await signInWithPopup(auth, googleProvider);
+    const isNew = cred.user.metadata.creationTime === cred.user.metadata.lastSignInTime;
     const synced = await syncUser(cred.user);
     setDbUser(synced);
     await syncOnboardingIfNeeded(cred.user);
     await fetchSubscriptionStatus();
+    if (isNew) {
+      aliasUser(cred.user.uid);
+      analytics.signupCompleted('google');
+    } else {
+      analytics.loginCompleted('google');
+    }
+    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     return cred;
   };
 
   const appleSignIn = async (): Promise<UserCredential> => {
     const cred = await signInWithPopup(auth, appleProvider);
+    const isNew = cred.user.metadata.creationTime === cred.user.metadata.lastSignInTime;
     const synced = await syncUser(cred.user);
     setDbUser(synced);
     await syncOnboardingIfNeeded(cred.user);
     await fetchSubscriptionStatus();
+    if (isNew) {
+      aliasUser(cred.user.uid);
+      analytics.signupCompleted('apple');
+    } else {
+      analytics.loginCompleted('apple');
+    }
+    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     return cred;
   };
 
@@ -182,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await firebaseSignOut(auth);
     setDbUser(null);
     setSubscriptionStatus(null);
+    resetAnalytics();
   };
 
   const refreshSubscription = useCallback(async () => {
