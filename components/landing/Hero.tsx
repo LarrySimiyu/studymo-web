@@ -6,10 +6,17 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import chatScreenshot from '@/assets/chat-screenshot.png';
 
-const CYCLING_WORDS = ['harder.', 'faster.', 'longer.', 'better.'];
-const TYPE_SPEED = 60;    // ms per character
-const DELETE_SPEED = 40;  // ms per character
-const HOLD_MS = 1800;     // how long to hold the full word
+const CYCLING_WORDS = [
+  'lose notes.',
+  'have midterms.',
+  "can't focus.",
+  'need a tutor.',
+  'need planning.',
+  'learn differently.',
+];
+const TYPE_SPEED = 45;
+const DELETE_SPEED = 25;
+const HOLD_MS = 2000;
 
 function useTypewriter(words: string[]) {
   const [displayed, setDisplayed] = useState('');
@@ -88,11 +95,10 @@ export default function Hero() {
         <motion.h1
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.55, delay: 0.2 }}
-          className="text-6xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.08] text-white"
+          className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12] text-white"
         >
-          Study smarter,
+          StudyMo was built for people who
           <br />
-          not{' '}
           <span className="relative inline-block" style={{ color: '#FF6500' }}>
             {typed}
             <span
@@ -106,10 +112,10 @@ export default function Hero() {
         <motion.p
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.55, delay: 0.35 }}
-          className="mt-6 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto"
-          style={{ color: '#ffffff' }}
+          className="mt-6 text-sm sm:text-base md:text-lg leading-relaxed max-w-xs sm:max-w-sm md:max-w-md mx-auto"
+          style={{ color: 'rgba(255,255,255,0.6)' }}
         >
-          Upload your notes, generate flashcards and quizzes, get an AI tutor, and finally understand what you&apos;re studying.
+          Upload your notes. Get flashcards, quizzes, and an AI tutor. Finally understand what you&apos;re studying.
         </motion.p>
 
         {/* CTA */}
