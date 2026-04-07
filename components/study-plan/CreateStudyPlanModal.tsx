@@ -5,7 +5,7 @@ import { studyPlansApi, StudyPlan } from '@/lib/api/studyPlan';
 import { api } from '@/lib/api';
 import { CalendarIcon, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
 
