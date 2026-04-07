@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import {
   Brain, BookOpen, Zap, HelpCircle, Headphones, Target, BarChart2, FileText,
 } from 'lucide-react';
@@ -27,7 +27,7 @@ function FloatingIcon({
   color: string; bg: string;
   top: string; left?: string; right?: string;
   dx: number; dy: number;
-  progress: ReturnType<typeof useTransform>;
+  progress: MotionValue<number>;
 }) {
   const x = useTransform(progress, [0, 1], [0, dx]);
   const y = useTransform(progress, [0, 1], [0, dy]);

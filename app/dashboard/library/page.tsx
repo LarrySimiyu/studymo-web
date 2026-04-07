@@ -549,13 +549,6 @@ export default function LibraryPage() {
                 <p className="text-body font-semibold text-[var(--text-1)]">Select a note to view it</p>
                 <p className="text-body-sm text-[var(--text-3)] mt-1">Or create a new note to get started</p>
               </div>
-              <button
-                onClick={() => setShowUpload(true)}
-                className="mt-1 px-5 py-2.5 rounded-xl text-body-sm font-medium text-white hover:opacity-90 transition-opacity"
-                style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-              >
-                + New Note
-              </button>
             </div>
           )}
         </div>

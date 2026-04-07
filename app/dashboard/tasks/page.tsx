@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Pen, Trash2 } from 'lucide-react';
 import { tasksApi, Task, Tag } from '@/lib/api/tasks';
 import { docTagsApi } from '@/lib/api/documents';
 import TaskItem from '@/components/tasks/TaskItem';
@@ -133,10 +134,10 @@ function TagManager({ tags, onClose, onChange }: { tags: Tag[]; onClose: () => v
                     onClick={() => { setEditId(tag.id); setEditName(tag.name); setEditColor(tag.color); }}
                     className="text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors p-1 shrink-0"
                   >
-                    <EditIcon />
+                    <Pen />
                   </button>
                   <button onClick={() => deleteTag(tag.id)} className="text-[var(--text-3)] hover:text-red-400 transition-colors p-1 shrink-0">
-                    <TrashIcon />
+                    <Trash2 />
                   </button>
                 </>
               )}
@@ -166,7 +167,7 @@ export default function TasksPage() {
       docTagsApi.getAll(),
     ]);
     if (tasksRes.data) setTasks(tasksRes.data);
-    if (tagsRes.data) setTags(tagsRes.data.map(t => ({ ...t, color: t.color ?? '#FF6500' })));
+    if (tagsRes.data) setTags(tagsRes.data.map(t => ({ ...t, color: t.color ?? '#FF6500' })) as Tag[]);
     setLoading(false);
   }, []);
 
