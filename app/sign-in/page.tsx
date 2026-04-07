@@ -23,9 +23,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       await googleSignIn();
-      const { billingApi } = await import('@/lib/api/billing');
-      const { data } = await billingApi.getStatus();
-      router.push(data?.hasAccess ? '/dashboard' : '/subscribe');
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
@@ -38,9 +36,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       await appleSignIn();
-      const { billingApi } = await import('@/lib/api/billing');
-      const { data } = await billingApi.getStatus();
-      router.push(data?.hasAccess ? '/dashboard' : '/subscribe');
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple sign in failed');
     } finally {
