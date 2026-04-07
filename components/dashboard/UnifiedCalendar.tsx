@@ -462,7 +462,7 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
               <Section title="Tasks" count={dayData.tasks.length}>
                 <div className="space-y-1.5">
                   {dayData.tasks.map(task => (
-                    <TaskItem key={task.id} task={task} size="compact" onToggle={toggleTask} />
+                    <TaskItem key={task.id} task={task} onToggle={toggleTask} />
                   ))}
                 </div>
               </Section>

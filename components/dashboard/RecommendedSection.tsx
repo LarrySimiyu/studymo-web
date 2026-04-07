@@ -157,7 +157,7 @@ export default function RecommendedSection() {
               >×</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {UPLOAD_OPTIONS.map(({ type, icon, label, desc }) => (
+              {UPLOAD_OPTIONS.map(({ type, icon, label }) => (
                 <button
                   key={type}
                   onClick={() => handleSelectType(type)}
