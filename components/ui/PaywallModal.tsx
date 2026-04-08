@@ -34,11 +34,11 @@ const PLANS: { id: PlanId; label: string; price: string; sub: string; priceId: s
 ];
 
 const FEATURES = [
-  { icon: Upload,        color: '#FF6500', bg: 'rgba(255,101,0,0.12)',    text: 'Unlimited uploads, files, audio & video' },
-  { icon: FileText,      color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)',   text: 'AI notes, flashcards & quizzes' },
-  { icon: Mic,           color: '#EC4899', bg: 'rgba(236,72,153,0.12)',   text: 'Podcast from any document' },
-  { icon: MessageSquare, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)',   text: 'Chat with your AI tutor' },
-  { icon: BookOpen,      color: '#14B8A6', bg: 'rgba(20,184,166,0.12)',   text: 'Practice exams & study plans' },
+  { icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)', text: 'Unlimited uploads, files, audio & video' },
+  { icon: FileText, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)', text: 'AI notes, flashcards & quizzes' },
+  { icon: Mic, color: '#EC4899', bg: 'rgba(236,72,153,0.12)', text: 'Podcast from any document' },
+  { icon: MessageSquare, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', text: 'Chat with your AI tutor' },
+  { icon: BookOpen, color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', text: 'Practice exams & study plans' },
 ];
 
 function useCountdown(seconds: number) {
@@ -70,15 +70,12 @@ export default function PaywallModal({ onClose }: Props) {
   const plan = PLANS.find(p => p.id === selected)!;
 
   async function handleCTA() {
-    console.log('handleCTA fired, priceId:', plan.priceId);
     if (!plan.priceId) {
-      alert('Missing price ID — check NEXT_PUBLIC_STRIPE env vars');
       return;
     }
     setLoading(true);
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
-      console.log('checkout response:', { data, error });
       if (data?.url) {
         window.location.href = data.url;
       } else {
