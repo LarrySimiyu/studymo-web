@@ -73,9 +73,15 @@ export default function PaywallModal({ onClose }: Props) {
     if (!plan.priceId) return;
     setLoading(true);
     try {
-      const { data } = await billingApi.createCheckout(plan.priceId);
-      if (data?.url) window.location.href = data.url;
+      const { data, error } = await billingApi.createCheckout(plan.priceId);
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        alert(error ?? 'Failed to start checkout. Please try again.');
+        setLoading(false);
+      }
     } catch {
+      alert('Something went wrong. Please try again.');
       setLoading(false);
     }
   }
