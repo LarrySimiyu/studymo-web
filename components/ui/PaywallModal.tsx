@@ -70,17 +70,23 @@ export default function PaywallModal({ onClose }: Props) {
   const plan = PLANS.find(p => p.id === selected)!;
 
   async function handleCTA() {
-    if (!plan.priceId) return;
+    console.log('handleCTA fired, priceId:', plan.priceId);
+    if (!plan.priceId) {
+      alert('Missing price ID — check NEXT_PUBLIC_STRIPE env vars');
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
+      console.log('checkout response:', { data, error });
       if (data?.url) {
         window.location.href = data.url;
       } else {
         alert(error ?? 'Failed to start checkout. Please try again.');
         setLoading(false);
       }
-    } catch {
+    } catch (err) {
+      console.error('checkout error:', err);
       alert('Something went wrong. Please try again.');
       setLoading(false);
     }
