@@ -1,8 +1,4 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import AuthRedirect from '@/components/landing/AuthRedirect';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import SchoolsMarquee from '@/components/landing/SchoolsMarquee';
@@ -10,15 +6,6 @@ import LearningStyleSection from '@/components/landing/LearningStyleSection';
 import HowItWorks from '@/components/landing/HowItWorks';
 
 export default function LandingPage() {
-  const { currentUser, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && currentUser) {
-      router.replace('/dashboard');
-    }
-  }, [currentUser, loading, router]);
-
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -54,12 +41,14 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <AuthRedirect />
       <Navbar />
       <Hero />
       <SchoolsMarquee />
       <LearningStyleSection />
       <HowItWorks />
       <footer className="flex justify-center gap-6 py-6">
+        <a href="/blog" className="text-xs" style={{ color: 'var(--text-2)' }}>Blog</a>
         <a href="/privacy" className="text-xs" style={{ color: 'var(--text-2)' }}>Privacy Policy</a>
         <a href="/terms" className="text-xs" style={{ color: 'var(--text-2)' }}>Terms of Service</a>
       </footer>
