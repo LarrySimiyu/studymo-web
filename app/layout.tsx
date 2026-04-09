@@ -8,8 +8,22 @@ import RouteTracker from '@/components/analytics/RouteTracker';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'StudyMo',
-  description: 'Your app description',
+  title: 'StudyMo - AI Notes, Tutoring and Study App',
+  description: 'Upload your notes, lectures, and slides. StudyMo instantly builds your study plan, generates flashcards, quizzes, and gives you an AI tutor available 24/7.',
+  keywords: ['AI study app', 'study plan generator', 'AI flashcards', 'AI tutor', 'college study tool'],
+  openGraph: {
+    title: 'StudyMo - AI Notes, Tutoring and Study App',
+    description: 'Upload your notes and let AI build your entire study plan, flashcards, quizzes and more.',
+    url: 'https://studymo.app',
+    siteName: 'StudyMo',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'StudyMo - AI Notes, Tutoring and Study App',
+    description: 'Upload your notes and let AI build your entire study plan, flashcards, quizzes and more.',
+  },
+  metadataBase: new URL('https://studymo.app'),
 };
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
