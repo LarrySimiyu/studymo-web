@@ -13,7 +13,18 @@ export interface SubscriptionStatus {
   daysUntilRenewal: number | null;
 }
 
+export interface Plan {
+  id: 'weekly' | 'monthly' | 'yearly';
+  label: string;
+  price: string;
+  sub: string;
+  priceId: string;
+  trialDays: number | null;
+  badge: string | null;
+}
+
 export const billingApi = {
+  getPlans: () => api.get<Plan[]>('/billing/plans'),
   getStatus: () => api.get<SubscriptionStatus>('/billing/status'),
   createCheckout: (priceId: string) =>
     api.post<{ url: string }>('/billing/checkout', { priceId }),

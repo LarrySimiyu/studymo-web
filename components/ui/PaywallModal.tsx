@@ -1,37 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Upload, FileText, Mic, MessageSquare, BookOpen, Check } from 'lucide-react';
-import { billingApi } from '@/lib/api/billing';
-
-type PlanId = 'yearly' | 'monthly' | 'weekly';
-
-const PLANS: { id: PlanId; label: string; price: string; sub: string; priceId: string; badge: string | null }[] = [
-  {
-    id: 'yearly',
-    label: 'Yearly',
-    price: '$99.99',
-    sub: 'per year',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID ?? '',
-    badge: 'Save 81%',
-  },
-  {
-    id: 'monthly',
-    label: 'Monthly',
-    price: '$14.99',
-    sub: 'per month',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID ?? '',
-    badge: 'Save 65%',
-  },
-  {
-    id: 'weekly',
-    label: 'Weekly',
-    price: '$9.99',
-    sub: 'per week',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_WEEKLY_PRICE_ID ?? '',
-    badge: null,
-  },
-];
+import { billingApi, type Plan } from '@/lib/api/billing';
 
 const FEATURES = [
   { icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)', text: 'Unlimited uploads, files, audio & video' },
@@ -57,8 +28,15 @@ interface Props {
 }
 
 export default function PaywallModal({ onClose }: Props) {
-  const [selected, setSelected] = useState<PlanId>('yearly');
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [selected, setSelected] = useState<Plan['id']>('yearly');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    billingApi.getPlans().then(({ data }) => {
+      if (data) setPlans(data);
+    });
+  }, []);
 
   const countdown = useCountdown(120);
 
@@ -67,10 +45,10 @@ export default function PaywallModal({ onClose }: Props) {
     [],
   );
 
-  const plan = PLANS.find(p => p.id === selected)!;
+  const plan = plans.find(p => p.id === selected);
 
   async function handleCTA() {
-    if (!plan.priceId) {
+    if (!plan?.priceId) {
       return;
     }
     setLoading(true);
@@ -118,13 +96,19 @@ export default function PaywallModal({ onClose }: Props) {
 
           {/* Heading — one line on sm+, wraps naturally on mobile with orange on its own line */}
           <h1 className="font-extrabold tracking-tight" style={{ color: 'var(--text-1)', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.15 }}>
-            <span className="sm:hidden">
-              Try StudyMo{' '}<br />
-              <span style={{ color: '#FF6500' }}>free for 7 days</span>
-            </span>
-            <span className="hidden sm:inline whitespace-nowrap">
-              Try StudyMo <span style={{ color: '#FF6500' }}>free for 7 days</span>
-            </span>
+            {plan?.trialDays ? (
+              <>
+                <span className="sm:hidden">
+                  Try StudyMo{' '}<br />
+                  <span style={{ color: '#FF6500' }}>free for {plan.trialDays} days</span>
+                </span>
+                <span className="hidden sm:inline whitespace-nowrap">
+                  Try StudyMo <span style={{ color: '#FF6500' }}>free for {plan.trialDays} days</span>
+                </span>
+              </>
+            ) : (
+              <span>Get Unlimited Access</span>
+            )}
           </h1>
 
           {/* Feature list */}
@@ -150,7 +134,7 @@ export default function PaywallModal({ onClose }: Props) {
             className="flex rounded-2xl p-1.5 gap-1.5"
             style={{ backgroundColor: 'var(--bg-input)' }}
           >
-            {PLANS.map(p => {
+            {plans.map(p => {
               const isSelected = selected === p.id;
               return (
                 <button
@@ -201,12 +185,12 @@ export default function PaywallModal({ onClose }: Props) {
             >
               {loading
                 ? 'Loading…'
-                : selected === 'yearly'
+                : plan?.trialDays
                   ? 'Try StudyMo for $0'
                   : 'Get Unlimited'}
             </button>
 
-            {selected === 'yearly' && (
+            {plan?.trialDays && (
               <p className="text-center text-xs" style={{ color: 'var(--text-3)' }}>
                 No risk, no payment today
               </p>
