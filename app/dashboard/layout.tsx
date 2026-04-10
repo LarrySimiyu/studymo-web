@@ -183,15 +183,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
 
-      {process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={() => setShowPaywall(p => !p)}
-          className="fixed bottom-4 right-4 z-[200] px-3 py-1.5 rounded-lg text-xs font-mono font-semibold shadow-lg"
-          style={{ backgroundColor: '#FF6500', color: '#fff', opacity: 0.85 }}
-        >
-          {showPaywall ? 'hide paywall' : 'show paywall'}
-        </button>
-      )}
     </div>
   );
 }

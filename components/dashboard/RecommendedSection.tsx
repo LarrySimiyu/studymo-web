@@ -19,10 +19,11 @@ const UPLOAD_OPTIONS: { type: UploadType; icon: React.ReactNode; label: string }
 ];
 
 const ICON_BG: Record<UploadType, string> = {
-  file:   'rgba(255,101,0,0.12)',
-  video:  'rgba(59,130,246,0.12)',
-  record: 'rgba(236,72,153,0.12)',
-  blank:  'rgba(139,92,246,0.12)',
+  file:    'rgba(255,101,0,0.12)',
+  video:   'rgba(59,130,246,0.12)',
+  record:  'rgba(236,72,153,0.12)',
+  blank:   'rgba(139,92,246,0.12)',
+  webpage: 'rgba(20,184,166,0.12)',
 };
 
 export default function RecommendedSection() {

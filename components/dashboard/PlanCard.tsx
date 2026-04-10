@@ -82,13 +82,15 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
   const [toggling, setToggling] = useState(false);
   const topics = parsedTopics(day);
 
-  const storageKey = `topic-done-${day.id}`;
   const [doneTopics, setDoneTopics] = useState<Set<number>>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? new Set<number>(JSON.parse(saved)) : new Set<number>();
+      return day.completedTopics ? new Set<number>(JSON.parse(day.completedTopics)) : new Set<number>();
     } catch { return new Set<number>(); }
   });
+
+  useEffect(() => {
+    if (!day.completedTopics) setDoneTopics(new Set());
+  }, [day.completedTopics]);
 
   const doneCount = doneTopics.size;
   const totalCount = topics.length;
@@ -99,7 +101,7 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
     setDoneTopics(prev => {
       const next = new Set(prev);
       if (next.has(i)) next.delete(i); else next.add(i);
-      try { localStorage.setItem(storageKey, JSON.stringify([...next])); } catch {}
+      studyPlansApi.saveTopics(planId, day.id, [...next]).catch(() => {});
       return next;
     });
   }

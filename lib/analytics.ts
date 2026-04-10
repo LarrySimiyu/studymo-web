@@ -68,14 +68,14 @@ export const analytics = {
   onboardingCompleted: () =>
     track('onboarding_completed'),
 
-  // Uploads — type matches UploadType: 'blank' | 'file' | 'record' | 'video'
-  uploadStarted: (type: 'blank' | 'file' | 'record' | 'video') =>
+  // Uploads — type matches UploadType: 'blank' | 'file' | 'record' | 'video' | 'webpage'
+  uploadStarted: (type: 'blank' | 'file' | 'record' | 'video' | 'webpage') =>
     track('upload_started', { type }),
 
-  uploadCompleted: (type: 'blank' | 'file' | 'record' | 'video') =>
+  uploadCompleted: (type: 'blank' | 'file' | 'record' | 'video' | 'webpage') =>
     track('upload_completed', { type }),
 
-  uploadFailed: (type: 'blank' | 'file' | 'record' | 'video', reason?: string) =>
+  uploadFailed: (type: 'blank' | 'file' | 'record' | 'video' | 'webpage', reason?: string) =>
     track('upload_failed', { type, reason }),
 
   // Feature usage

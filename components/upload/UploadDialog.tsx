@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { PenLine, Upload, Mic, Youtube } from 'lucide-react';
+import { PenLine, Upload, Mic, Youtube, Globe } from 'lucide-react';
 import { documentsApi, notesApi } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
 import { analytics } from '@/lib/analytics';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
 
-export type UploadType = 'blank' | 'file' | 'record' | 'video';
+export type UploadType = 'blank' | 'file' | 'record' | 'video' | 'webpage';
 
 interface Props {
   type: UploadType;
@@ -24,10 +24,11 @@ const POLL_INTERVAL_MS = 2000;
 const POLL_MAX_ATTEMPTS = 150;
 
 const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; color: string; bg: string }> = {
-  blank:  { title: 'New Note',        icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
-  file:   { title: 'Upload File',     icon: Upload,  color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
-  record: { title: 'Record Audio',    icon: Mic,     color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
-  video:  { title: 'Upload Video URL',icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  blank:   { title: 'New Note',        icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  file:    { title: 'Upload File',     icon: Upload,  color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
+  record:  { title: 'Record Audio',    icon: Mic,     color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+  video:   { title: 'YouTube URL',     icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  webpage: { title: 'Import Website',  icon: Globe,   color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
 };
 
 async function pollDocumentStatus(
@@ -218,6 +219,48 @@ function VideoForm({ loading, onStart, onSuccess, onError }: { loading: boolean;
       </div>
       <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url || loading}>
         {loading ? 'Importing…' : 'Import Video'}
+      </Button>
+    </div>
+  );
+}
+
+// ─── Webpage form ─────────────────────────────────────────────────────────────
+function WebpageForm({ loading, onStart, onSuccess, onError }: { loading: boolean; onStart: () => void; onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+
+  async function handleImport() {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    try { new URL(trimmed); } catch { onError('Please enter a valid URL including https://'); return; }
+    onStart();
+    const { data, error } = await documentsApi.uploadWebpage({ url: trimmed, title: title.trim() || undefined });
+    if (error || !data) { onError(error ?? 'Import failed'); return; }
+    onSuccess(data.id);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title <span className="text-[var(--text-3)]">(optional)</span></label>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Leave blank to use page title" />
+      </div>
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Website URL</label>
+        <Input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleImport()}
+          placeholder="https://example.com/article"
+          autoFocus
+        />
+      </div>
+      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
+        <p className="text-[var(--text-2)]">Works with articles, Wikipedia, documentation, and most public pages. Paywalled or login-required pages won't import.</p>
+      </div>
+      <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url.trim() || loading}>
+        {loading ? 'Importing…' : 'Import Page'}
       </Button>
     </div>
   );
@@ -429,10 +472,11 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
 
             {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{error}</div>}
 
-            {type === 'blank'  && <BlankNoteForm  onSuccess={(docId) => onSuccess(docId)} onError={handleUploadError} />}
-            {type === 'file'   && <FileUploadForm loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
-            {type === 'record' && <RecordForm     loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
-            {type === 'video'  && <VideoForm      loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
+            {type === 'blank'   && <BlankNoteForm  onSuccess={(docId) => onSuccess(docId)} onError={handleUploadError} />}
+            {type === 'file'    && <FileUploadForm loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
+            {type === 'record'  && <RecordForm     loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
+            {type === 'video'   && <VideoForm      loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
+            {type === 'webpage' && <WebpageForm    loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
           </>
         )}
       </div>
