@@ -17,8 +17,8 @@ interface Props {
   onBubblePosChange: (pos: BubblePos | null) => void;
   onSimplify: () => void;
   simplifyLoading: boolean;
-  simplifyOptions: string[] | null;
-  onApplySimplify: (option: string) => void;
+  simplifyOptions: { label: string; text: string }[] | null;
+  onApplySimplify: (text: string) => void;
   onClearSimplify: () => void;
 }
 
@@ -171,10 +171,10 @@ export default function EditorBubbleToolbar({
             className="flex items-center gap-1 px-2 py-1.5 rounded transition-colors shrink-0 disabled:opacity-50"
             style={{
               color: '#fff',
-              backgroundColor: simplifyActive ? 'var(--brand)' : 'rgba(255,101,0,0.2)',
+              backgroundColor: 'var(--brand)',
             }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--brand)'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = simplifyActive ? 'var(--brand)' : 'rgba(255,101,0,0.2)'; }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
           >
             {simplifyLoading
               ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
@@ -250,7 +250,7 @@ export default function EditorBubbleToolbar({
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
           >
             <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
-              <span className="text-xs font-medium" style={{ color: 'var(--brand)' }}>3 Options</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--brand)' }}>Simplify</span>
               <button
                 onClick={onClearSimplify}
                 className="text-xs transition-colors"
@@ -262,17 +262,17 @@ export default function EditorBubbleToolbar({
             {simplifyOptions.map((option, i) => (
               <button
                 key={i}
-                onClick={() => onApplySimplify(option)}
-                className="w-full text-left px-3 py-2.5 text-xs transition-colors"
+                onClick={() => onApplySimplify(option.text)}
+                className="w-full text-left px-3 py-2.5 transition-colors"
                 style={{
-                  color: 'var(--text-1)',
                   borderBottom: i < 2 ? '1px solid var(--border)' : undefined,
                   backgroundColor: 'transparent',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,101,0,0.06)'; }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                {option}
+                <span className="block text-[10px] font-semibold mb-0.5" style={{ color: 'var(--brand)' }}>{option.label}</span>
+                <span className="block text-xs" style={{ color: 'var(--text-1)', whiteSpace: 'pre-line' }}>{option.text}</span>
               </button>
             ))}
           </div>

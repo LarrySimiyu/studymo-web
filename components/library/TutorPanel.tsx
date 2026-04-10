@@ -10,6 +10,8 @@ import {
   TutorNoteMeta,
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
+import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import TutorInput from '@/components/tutor/TutorInput';
 import UserBubble from '@/components/tutor/UserBubble';
@@ -20,6 +22,8 @@ interface Props {
   sessionId: string | null;
   onSessionCreated: (id: string) => void;
   onClose: () => void;
+  initialMessage?: string;
+  onInitialMessageConsumed?: () => void;
 }
 
 type UIMessage = TutorMessage & { isStreaming?: boolean };
@@ -32,7 +36,7 @@ function renderMarkdown(text: string): string {
 let msgIdCounter = 0;
 function nextId() { return `local-${++msgIdCounter}`; }
 
-export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose }: Props) {
+export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, onInitialMessageConsumed }: Props) {
   const { currentUser } = useAuth();
   const [session, setSession] = useState<TutorSession | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -47,6 +51,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const initialMessageSentRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -82,14 +87,11 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId]);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const sendText = useCallback(async (text: string, withReveal = false) => {
     if (!text || isStreaming || !session || !currentUser) return;
 
     const token = await currentUser.getIdToken();
-    const wasReveal = revealAnswer;
     setRevealAnswer(false);
-    setInput('');
     if (inputRef.current) { inputRef.current.style.height = 'auto'; }
 
     const userMsg: UIMessage = { id: nextId(), sessionId: session.id, role: 'user', content: text, createdAt: new Date().toISOString() };
@@ -102,7 +104,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     try {
       await streamTutorChat(
         session.id,
-        wasReveal ? `${text}\n\n[STUDENT_REQUESTING_DIRECT_ANSWER]` : text,
+        withReveal ? `${text}\n\n[STUDENT_REQUESTING_DIRECT_ANSWER]` : text,
         chunk => setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
         () => {},
         token,
@@ -114,8 +116,18 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     } finally {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
       setIsStreaming(false);
+      // streamTutorChat bypasses the api cache layer, so invalidate manually
+      // so the next panel open fetches fresh session data with all messages
+      invalidatePrefix('/tutor');
     }
-  }, [input, isStreaming, session, currentUser, revealAnswer]);
+  }, [isStreaming, session, currentUser]);
+
+  const send = useCallback(async () => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    await sendText(text, revealAnswer);
+  }, [input, revealAnswer, sendText]);
 
   async function removeNote(id: string) {
     if (!session) return;
@@ -129,6 +141,16 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     if (data) setSession(data);
   }
 
+  useEffect(() => {
+    if (!loading && session && initialMessage && !initialMessageSentRef.current) {
+      initialMessageSentRef.current = true;
+      setTimeout(() => {
+        sendText(initialMessage).then(() => onInitialMessageConsumed?.());
+      }, 150);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session]);
+
   const loadedNoteIds = new Set(session?.noteIds ?? []);
   const availableNotes = allNotes.filter(n => {
     if (loadedNoteIds.has(n.id)) return false;
@@ -136,7 +158,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     return n.document.title.toLowerCase().includes(noteSearch.toLowerCase());
   });
 
-  async function changeMode(mode: 'casual' | 'tutor' | 'strict' | 'teach_back' | 'eli5') {
+  async function changeMode(mode: TutorMode) {
     if (!session || session.mode === mode) return;
     const { data } = await tutorApi.updateMode(session.id, mode);
     if (data) setSession(data);
@@ -149,18 +171,10 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
         <span className="text-xs font-semibold text-[var(--text-1)]">AI Tutor</span>
         <div className="flex items-center gap-2">
           {session && (
-            <select
-              value={session.mode}
-              onChange={e => changeMode(e.target.value as Parameters<typeof changeMode>[0])}
-              className="text-xs rounded-lg px-2 py-1 font-medium focus:outline-none cursor-pointer"
-              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
-            >
-              <option value="casual">💬 Casual</option>
-              <option value="tutor">🎓 Tutor</option>
-              <option value="strict">🔬 Strict</option>
-              <option value="teach_back">🗣️ Teach Back</option>
-              <option value="eli5">🧩 Simple</option>
-            </select>
+            <TutorModeDropdown
+              value={session.mode as TutorMode}
+              onChange={changeMode}
+            />
           )}
           <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
         </div>
