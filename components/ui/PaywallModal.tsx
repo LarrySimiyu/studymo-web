@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, Upload, FileText, Mic, MessageSquare, BookOpen, Check } from 'lucide-react';
+import { X, Star, Upload, FileText, Mic, MessageSquare, BookOpen, Check } from 'lucide-react';
 import { billingApi, type Plan } from '@/lib/api/billing';
 
 const FEATURES = [
@@ -21,6 +21,10 @@ function useCountdown(seconds: number) {
   const m = Math.floor(remaining / 60);
   const s = remaining % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function parseDollars(price: string): number {
+  return parseFloat(price.replace('$', '')) || 0;
 }
 
 interface Props {
@@ -47,10 +51,20 @@ export default function PaywallModal({ onClose }: Props) {
 
   const plan = plans.find(p => p.id === selected);
 
+  // Compute yearly savings vs weekly (weekly * 52 weeks)
+  const yearlySavings = useMemo(() => {
+    const weekly = plans.find(p => p.id === 'weekly');
+    const yearly = plans.find(p => p.id === 'yearly');
+    if (!weekly || !yearly) return null;
+    const weeklyAnnual = parseDollars(weekly.price) * 52;
+    const yearlyPrice = parseDollars(yearly.price);
+    if (weeklyAnnual <= 0) return null;
+    const pct = Math.round(((weeklyAnnual - yearlyPrice) / weeklyAnnual) * 100);
+    return pct > 0 ? pct : null;
+  }, [plans]);
+
   async function handleCTA() {
-    if (!plan?.priceId) {
-      return;
-    }
+    if (!plan?.priceId) return;
     setLoading(true);
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
@@ -66,6 +80,8 @@ export default function PaywallModal({ onClose }: Props) {
       setLoading(false);
     }
   }
+
+  const isYearly = selected === 'yearly';
 
   return (
     <div
@@ -91,11 +107,11 @@ export default function PaywallModal({ onClose }: Props) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex items-center justify-center py-10 px-4">
-        <div className="w-full max-w-md flex flex-col gap-7">
+      <div className="flex-1 flex items-start justify-center pt-6 pb-10 px-4">
+        <div className="w-full max-w-lg flex flex-col gap-10 items-center text-center">
 
-          {/* Heading — one line on sm+, wraps naturally on mobile with orange on its own line */}
-          <h1 className="font-extrabold tracking-tight" style={{ color: 'var(--text-1)', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.15 }}>
+          {/* Heading */}
+          <h1 className="font-extrabold tracking-tight w-full" style={{ color: 'var(--text-1)', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.15 }}>
             {plan?.trialDays ? (
               <>
                 <span className="sm:hidden">
@@ -111,98 +127,151 @@ export default function PaywallModal({ onClose }: Props) {
             )}
           </h1>
 
-          {/* Feature list */}
-          <div className="flex flex-col gap-3.5">
-            {FEATURES.map(({ icon: Icon, color, bg, text }) => (
-              <div key={text} className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: bg }}
+          {/* Plan toggle + savings callout */}
+          <div className="flex flex-col items-center gap-6">
+            {/* Savings callout — always reserves space to prevent layout shift */}
+            <div className="h-8 flex items-center">
+              {isYearly && yearlySavings && (
+                <span
+                  className="text-base font-bold px-4 py-1 rounded-full"
+                  style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}
                 >
-                  <Icon size={18} style={{ color }} />
-                </div>
-                <span className="text-sm sm:text-base font-medium" style={{ color: 'var(--text-1)' }}>
-                  {text}
+                  {yearlySavings}% OFF
                 </span>
-                <Check size={16} className="ml-auto shrink-0" style={{ color: '#22C55E' }} />
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
 
-          {/* Plan tabs */}
-          <div
-            className="flex rounded-2xl p-1.5 gap-1.5"
-            style={{ backgroundColor: 'var(--bg-input)' }}
-          >
-            {plans.map(p => {
-              const isSelected = selected === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelected(p.id)}
-                  className="flex-1 flex flex-col items-center py-3 px-1 rounded-xl transition-all"
-                  style={{
-                    backgroundColor: isSelected ? '#FF6500' : 'transparent',
-                  }}
-                >
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: isSelected ? 'rgba(255,255,255,0.85)' : 'var(--text-3)' }}
+            {/* Toggle pill */}
+            <div
+              className="flex rounded-full p-1 gap-1"
+              style={{ backgroundColor: 'var(--bg-input)' }}
+            >
+              {plans.map(p => {
+                const isSelected = selected === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelected(p.id)}
+                    className="px-5 py-1.5 rounded-full text-sm font-semibold transition-all"
+                    style={{
+                      backgroundColor: isSelected ? '#FF6500' : 'transparent',
+                      color: isSelected ? '#fff' : 'var(--text-3)',
+                    }}
                   >
                     {p.label}
-                  </span>
-                  <span
-                    className="text-base font-bold mt-0.5 tabular-nums"
-                    style={{ color: isSelected ? '#fff' : 'var(--text-1)' }}
-                  >
-                    {p.price}
-                  </span>
-                  {p.badge ? (
-                    <span
-                      className="mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: isSelected ? '#fff' : 'rgba(34,197,94,0.15)',
-                        color: isSelected ? '#000' : '#22C55E',
-                      }}
-                    >
-                      {p.badge}
-                    </span>
-                  ) : (
-                    <span className="mt-1 text-[10px] opacity-0 px-2 py-0.5">-</span>
-                  )}
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* CTA button */}
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={handleCTA}
-              disabled={loading}
-              className="w-full py-4 rounded-2xl font-bold text-base sm:text-lg text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #FF6500 0%, #FF9A3C 100%)' }}
-            >
-              {loading
-                ? 'Loading…'
-                : plan?.trialDays
-                  ? 'Try StudyMo for $0'
-                  : 'Get Unlimited'}
-            </button>
+          {/* Plan card */}
+          <div
+            className="rounded-3xl p-6 flex flex-col gap-5 transition-all w-full text-left"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '2px solid var(--border)',
+            }}
+          >
+            {/* Card top row: icon + most popular badge */}
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 flex items-center justify-center">
+                <Star
+                  size={32}
+                  style={{
+                    color: selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : '#fff',
+                    fill: selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : '#fff',
+                  }}
+                />
+              </div>
+              <span
+                className="text-xs font-bold px-3 py-1 rounded-full transition-opacity"
+                style={{
+                  backgroundColor: 'rgba(34,197,94,0.15)',
+                  color: '#22C55E',
+                  opacity: isYearly ? 1 : 0,
+                  pointerEvents: 'none',
+                }}
+              >
+                Most popular
+              </span>
+            </div>
 
-            {plan?.trialDays && (
-              <p className="text-center text-xs" style={{ color: 'var(--text-3)' }}>
-                No risk, no payment today
+            {/* Plan name */}
+            <div>
+              <p className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>
+                {plan?.label ?? '—'} Plan
               </p>
-            )}
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>
+                {isYearly ? 'Best value, one simple payment' : `Billed ${plan?.sub ?? ''}`}
+              </p>
+            </div>
+
+            {/* Price row */}
+            <div className="flex items-end justify-between gap-3">
+              <div className="flex items-end gap-1.5">
+                <span className="font-extrabold tabular-nums leading-none" style={{ color: 'var(--text-1)', fontSize: 'clamp(2.5rem, 8vw, 3.25rem)' }}>
+                  {plan?.price ?? '—'}
+                </span>
+                <span className="text-sm font-medium mb-1.5" style={{ color: 'var(--text-3)' }}>
+                  {plan?.sub}
+                </span>
+              </div>
+              <span className="text-sm text-right shrink-0 mb-1.5" style={{ color: 'var(--text-3)' }}>
+                Cancel<br />any time
+              </span>
+            </div>
+
+            {/* Features inner box */}
+            <div
+              className="rounded-2xl p-4 flex flex-col gap-3"
+              style={{ backgroundColor: 'var(--bg-input)' }}
+            >
+              {FEATURES.map(({ icon: Icon, color, bg, text }) => (
+                <div key={text} className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: bg }}
+                  >
+                    <Icon size={15} style={{ color }} />
+                  </div>
+                  <span className="text-sm font-medium flex-1" style={{ color: 'var(--text-1)' }}>
+                    {text}
+                  </span>
+                  <Check size={14} className="shrink-0" style={{ color: '#22C55E' }} />
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleCTA}
+                disabled={loading || !plan}
+                className="w-full py-4 rounded-2xl font-bold text-base sm:text-lg text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #FF6500 0%, #FF9A3C 100%)' }}
+              >
+                {loading
+                  ? 'Loading…'
+                  : plan?.trialDays
+                    ? 'Try for $0'
+                    : 'Get Unlimited'}
+              </button>
+              {plan?.trialDays && (
+                <p className="text-center text-xs" style={{ color: 'var(--text-3)' }}>
+                  No risk, no payment today
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Social proof */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center -mt-4">
             <span className="text-sm font-medium" style={{ color: '#FF6500' }}>
               {othersCount} others started today
             </span>
           </div>
+
         </div>
       </div>
     </div>

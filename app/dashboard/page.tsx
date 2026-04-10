@@ -140,7 +140,7 @@ function DashboardContent() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-xs font-medium text-[var(--text-1)]">Recent Notes</h2>
-              <Link href="/dashboard/notes" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
+              <Link href="/dashboard/library" className="text-xs font-medium" style={{ color: 'var(--text-2)' }}>View All</Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] sm:[&::-webkit-scrollbar]:block sm:[scrollbar-width:thin]">
               {recentNotes.map(note => {
