@@ -51,6 +51,7 @@ export interface Flashcard {
   documentId: string;
   front: string;
   back: string;
+  type?: string;
   createdAt: string;
 }
 
@@ -77,6 +78,8 @@ export const documentsApi = {
   uploadVideo: (data: { url: string; title: string; folderId?: string }) =>
     api.post<Document>('/documents/video', data),
   uploadRecording: (formData: FormData) => api.postForm<Document>('/documents/recording', formData),
+  uploadWebpage: (data: { url: string; title?: string; folderId?: string }) =>
+    api.post<Document>('/documents/webpage', data),
   getAll: (params?: { folderId?: string; tagId?: string; search?: string; type?: string; sort?: string }) => {
     const qs = params
       ? new URLSearchParams(
@@ -104,7 +107,7 @@ export const notesApi = {
   getByDocument: (documentId: string) => api.get<Note>(`/notes/${documentId}`),
   update: (id: string, content: string) => api.patch<Note>(`/notes/${id}`, { content }),
   append: (id: string, heading: string, content: string) => api.post<Note>(`/notes/${id}/append`, { heading, content }),
-  simplify: (text: string) => api.post<{ options: string[] }>('/notes/simplify', { text }),
+  simplify: (text: string) => api.post<{ options: { label: string; text: string }[] }>('/notes/simplify', { text }),
   share: (id: string) => api.post<{ shareUrl: string; note: Note }>(`/notes/${id}/share`, {}),
   getShared: (shareToken: string) => api.get<Note>(`/notes/shared/${shareToken}`),
 };

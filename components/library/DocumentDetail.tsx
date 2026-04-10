@@ -23,6 +23,7 @@ export function flushPendingNoteSave(): Promise<void> {
 // Tracks edited-but-not-yet-saved content keyed by documentId
 const _unsavedContent: Record<string, string> = {};
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -30,6 +31,7 @@ import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import { marked } from 'marked';
+import { ArrowUp, X } from 'lucide-react';
 import {
   documentsApi,
   notesApi,
@@ -70,8 +72,9 @@ function convertNoteToHTML(content: string): string {
     if (notes.keyTerms?.length) {
       md += `## Key Terms\n\n`;
       for (const kt of notes.keyTerms) {
-        md += `**${kt.term}**: ${kt.definition}\n\n`;
+        md += `- **${kt.term}**: ${kt.definition}\n`;
       }
+      md += '\n';
     }
     if (notes.keyTakeaways?.length) {
       md += `## Key Takeaways\n\n`;
@@ -105,7 +108,10 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   const [, forceTabUpdate] = useState(0);
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number; bottom: number } | null>(null);
   const [simplifyLoading, setSimplifyLoading] = useState(false);
-  const [simplifyOptions, setSimplifyOptions] = useState<string[] | null>(null);
+  const [simplifyOptions, setSimplifyOptions] = useState<{ label: string; text: string }[] | null>(null);
+  const [floatingInput, setFloatingInput] = useState('');
+  const [showFloatingInput, setShowFloatingInput] = useState(true);
+  const [pendingTutorMessage, setPendingTutorMessage] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -256,9 +262,18 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
     if (editor && note && !editor.getText()) {
       isSettingContent.current = true;
       editor.commands.setContent(convertNoteToHTML(note.content));
-      setTimeout(() => { isSettingContent.current = false; }, 100);
+      setTimeout(() => {
+        isSettingContent.current = false;
+        editor.commands.focus('start');
+      }, 100);
     }
   }, [editor, note]);
+
+  useEffect(() => {
+    if (tab === 'notes' && editor) {
+      setTimeout(() => editor.commands.focus(), 0);
+    }
+  }, [tab, editor]);
 
   async function flushSave() {
     if (!pendingContent.current) return;
@@ -332,10 +347,23 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
     finally { setSimplifyLoading(false); }
   }
 
-  function applySimplify(option: string) {
+  function handleFloatingSend() {
+    const text = floatingInput.trim();
+    if (!text) return;
+    setPendingTutorMessage(text);
+    setFloatingInput('');
+    setShowTutorPanel(true);
+  }
+
+  function handleCloseTutorPanel() {
+    setShowTutorPanel(false);
+    setShowFloatingInput(true);
+  }
+
+  function applySimplify(text: string) {
     if (!editor || !simplifyRangeRef.current) return;
     const { from, to } = simplifyRangeRef.current;
-    editor.chain().focus().insertContentAt({ from, to }, option).run();
+    editor.chain().focus().insertContentAt({ from, to }, text).run();
     setSimplifyOptions(null);
     simplifyRangeRef.current = null;
     setBubblePos(null);
@@ -373,7 +401,7 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
             }}
             titleDebounceRef={titleDebounceRef}
             onBack={onBack}
-            onShowTutorPanel={() => setShowTutorPanel(v => !v)}
+            onShowTutorPanel={() => { if (showTutorPanel) { handleCloseTutorPanel(); } else { setShowTutorPanel(true); } }}
             showNote={!!note}
             allDocTags={allDocTags}
             setAllDocTags={setAllDocTags}
@@ -434,7 +462,104 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
                 />
               </div>
 
-              {tab === 'notes' && <NoteEditor editor={editor} saveStatus={saveStatus} />}
+              {tab === 'notes' && (
+                <>
+                  <NoteEditor editor={editor} saveStatus={saveStatus} />
+                  {/* Spacer so the last lines of the note aren't hidden behind the floating input */}
+                  <div className="h-20" />
+                  {/* Floating Ask input — must be after note content so sticky bottom works correctly */}
+                  <AnimatePresence>
+                    {!showTutorPanel && (
+                      <motion.div
+                        key="floating-ask"
+                        className="sticky bottom-4 z-10 pointer-events-none"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className={`pointer-events-auto ${embedded ? 'px-2' : 'max-w-2xl mx-auto px-4'}`}>
+                          <AnimatePresence mode="wait">
+                            {showFloatingInput ? (
+                              <motion.div
+                                key="input"
+                                initial={{ opacity: 0, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.97 }}
+                                transition={{ duration: 0.15 }}
+                                className="floating-beam-wrap rounded-xl p-[1.5px]"
+                                style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.18)' }}
+                              >
+                                <div className="rounded-[10px] overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
+                                  <div className="flex gap-2 p-3">
+                                    <textarea
+                                      value={floatingInput}
+                                      onChange={e => {
+                                        setFloatingInput(e.target.value);
+                                        const el = e.target as HTMLTextAreaElement;
+                                        el.style.height = 'auto';
+                                        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+                                      }}
+                                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleFloatingSend(); } }}
+                                      placeholder="Ask AI Tutor anything about this note…"
+                                      rows={2}
+                                      className="flex-1 text-sm bg-transparent outline-none resize-none min-w-0 leading-relaxed placeholder-[var(--text-3)]"
+                                      style={{ color: 'var(--text-1)', caretColor: 'var(--brand)', minHeight: 48, maxHeight: 140 }}
+                                    />
+                                    <div className="flex flex-col items-center justify-between gap-1 shrink-0">
+                                      <button
+                                        onClick={handleFloatingSend}
+                                        disabled={!floatingInput.trim()}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-30 transition-opacity hover:opacity-90"
+                                        style={{ backgroundColor: 'var(--brand)' }}
+                                      >
+                                        <ArrowUp size={15} color="white" strokeWidth={2.5} />
+                                      </button>
+                                      <button
+                                        onClick={() => setShowFloatingInput(false)}
+                                        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
+                                        style={{ color: 'var(--text-3)' }}
+                                      >
+                                        <X size={14} strokeWidth={2.5} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ) : (
+                              <motion.div
+                                key="pill"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.15 }}
+                                className="flex justify-end"
+                              >
+                                <button
+                                  onClick={() => {
+                                    if (tutorSessionId) {
+                                      setShowTutorPanel(true);
+                                    } else {
+                                      setShowFloatingInput(true);
+                                    }
+                                  }}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity hover:opacity-80"
+                                  style={{ backgroundColor: 'var(--bg-card)', boxShadow: '0 2px 12px rgba(0,0,0,0.18)', border: '1px solid var(--border-md)', color: 'var(--brand)' }}
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                  </svg>
+                                  {tutorSessionId ? 'Open chat' : 'Ask tutor'}
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
 
               {tab === 'flashcards' && (
                 <FlashcardsTab
@@ -496,26 +621,81 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
         </div>
 
         {/* Tutor Panel */}
-        {showTutorPanel && note && (
-          isMobile ? (
-            <>
-              <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.35)' }} onClick={() => setShowTutorPanel(false)} />
-              <div className="fixed top-0 right-0 h-full z-50 flex flex-col shadow-2xl w-full" style={{ backgroundColor: 'var(--bg-page)', borderLeft: '1px solid var(--border)' }}>
-                <TutorPanel noteId={note.id} sessionId={tutorSessionId} onSessionCreated={setTutorSessionId} onClose={() => setShowTutorPanel(false)} />
-              </div>
-            </>
-          ) : (
-            <>
-              <div onMouseDown={handleResizeMouseDown} className="w-2 shrink-0 cursor-col-resize flex items-center justify-center" style={{ backgroundColor: 'transparent' }}>
-                <div className="w-px h-full transition-colors" style={{ backgroundColor: 'var(--border)' }} />
-              </div>
-              <div style={{ width: tutorPanelWidth, minWidth: 280, maxWidth: 700, flexShrink: 0 }}>
-                <TutorPanel noteId={note.id} sessionId={tutorSessionId} onSessionCreated={setTutorSessionId} onClose={() => setShowTutorPanel(false)} />
-              </div>
-            </>
-          )
-        )}
+        <AnimatePresence>
+          {showTutorPanel && note && (
+            isMobile ? (
+              <>
+                <motion.div
+                  className="fixed inset-0 z-40"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={handleCloseTutorPanel}
+                />
+                <motion.div
+                  className="fixed top-0 right-0 h-full z-50 flex flex-col shadow-2xl w-full"
+                  style={{ backgroundColor: 'var(--bg-page)', borderLeft: '1px solid var(--border)' }}
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <TutorPanel noteId={note.id} sessionId={tutorSessionId} onSessionCreated={setTutorSessionId} onClose={handleCloseTutorPanel} initialMessage={pendingTutorMessage ?? undefined} onInitialMessageConsumed={() => setPendingTutorMessage(null)} />
+                </motion.div>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  onMouseDown={handleResizeMouseDown}
+                  className="w-2 shrink-0 cursor-col-resize flex items-center justify-center"
+                  style={{ backgroundColor: 'transparent' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <div className="w-px h-full transition-colors" style={{ backgroundColor: 'var(--border)' }} />
+                </motion.div>
+                <motion.div
+                  style={{ minWidth: 280, maxWidth: 700, flexShrink: 0 }}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: tutorPanelWidth, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <TutorPanel noteId={note.id} sessionId={tutorSessionId} onSessionCreated={setTutorSessionId} onClose={handleCloseTutorPanel} initialMessage={pendingTutorMessage ?? undefined} onInitialMessageConsumed={() => setPendingTutorMessage(null)} />
+                </motion.div>
+              </>
+            )
+          )}
+        </AnimatePresence>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @property --floating-beam-angle {
+          syntax: '<angle>';
+          initial-value: 0deg;
+          inherits: false;
+        }
+        @keyframes floating-beam-spin {
+          to { --floating-beam-angle: 360deg; }
+        }
+        .floating-beam-wrap {
+          background: conic-gradient(
+            from var(--floating-beam-angle),
+            transparent 0%,
+            transparent 72%,
+            rgba(255, 101, 0, 0.04) 78%,
+            rgba(255, 101, 0, 0.25) 86%,
+            rgba(255, 101, 0, 0.75) 93%,
+            #FF6500 98%,
+            transparent 100%
+          );
+          animation: floating-beam-spin 18s linear infinite;
+        }
+      ` }} />
     </>
   );
 }

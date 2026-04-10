@@ -1,5 +1,7 @@
 import { api } from '@/lib/api';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
 export interface SubscriptionStatus {
   status: string; // 'none' | 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete'
   plan: string | null; // 'weekly' | 'monthly' | 'yearly' | null
@@ -24,7 +26,17 @@ export interface Plan {
 }
 
 export const billingApi = {
-  getPlans: () => api.get<Plan[]>('/billing/plans'),
+  // Public endpoint — no auth token needed
+  getPlans: async (): Promise<{ data: Plan[] | null; error: string | null }> => {
+    try {
+      const res = await fetch(`${API_URL}/billing/plans`);
+      if (!res.ok) return { data: null, error: `HTTP ${res.status}` };
+      const data = await res.json() as Plan[];
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: err instanceof Error ? err.message : 'Unknown error' };
+    }
+  },
   getStatus: () => api.get<SubscriptionStatus>('/billing/status'),
   createCheckout: (priceId: string) =>
     api.post<{ url: string }>('/billing/checkout', { priceId }),

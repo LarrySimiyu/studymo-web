@@ -10,7 +10,7 @@ import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
 import { Input } from '@/components/ui/Input';
-import { PenLine, Upload, Mic, Youtube, Plus } from 'lucide-react';
+import { PenLine, Upload, Mic, Youtube, Globe, Plus } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
@@ -438,7 +438,8 @@ export default function LibraryPage() {
                       { type: 'blank' as UploadType, label: 'New Note', icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
                       { type: 'file' as UploadType, label: 'Upload File', icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)' },
                       { type: 'record' as UploadType, label: 'Record Audio', icon: Mic, color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
-                      { type: 'video' as UploadType, label: 'Upload Video URL', icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+                      { type: 'video' as UploadType, label: 'YouTube URL', icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+                      { type: 'webpage' as UploadType, label: 'Import Website', icon: Globe, color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
                     ] as const).map(({ type, label, icon: Icon, color, bg }) => (
                       <button
                         key={type}

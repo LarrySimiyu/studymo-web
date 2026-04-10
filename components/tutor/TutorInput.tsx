@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { SendHorizontal } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 
 export interface ContextNote { id: string; title: string }
 
@@ -108,7 +108,7 @@ export default function TutorInput({
             className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
             style={{ backgroundColor: 'var(--brand)' }}
           >
-            <SendHorizontal size={14} color="white" />
+            <ArrowUp size={15} color="white" strokeWidth={2.5} />
           </button>
         </div>
       </div>

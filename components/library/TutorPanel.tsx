@@ -10,6 +10,8 @@ import {
   TutorNoteMeta,
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
+import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import TutorInput from '@/components/tutor/TutorInput';
 import UserBubble from '@/components/tutor/UserBubble';
@@ -20,6 +22,8 @@ interface Props {
   sessionId: string | null;
   onSessionCreated: (id: string) => void;
   onClose: () => void;
+  initialMessage?: string;
+  onInitialMessageConsumed?: () => void;
 }
 
 type UIMessage = TutorMessage & { isStreaming?: boolean };
@@ -32,7 +36,7 @@ function renderMarkdown(text: string): string {
 let msgIdCounter = 0;
 function nextId() { return `local-${++msgIdCounter}`; }
 
-export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose }: Props) {
+export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, onInitialMessageConsumed }: Props) {
   const { currentUser } = useAuth();
   const [session, setSession] = useState<TutorSession | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -42,10 +46,12 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [revealAnswer, setRevealAnswer] = useState(false);
   const [noteSearch, setNoteSearch] = useState('');
+  const [resolvedTopics, setResolvedTopics] = useState<string[]>([]);
   const [allNotes, setAllNotes] = useState<{ id: string; summary: string | null; document: { title: string } }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const initialMessageSentRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,14 +87,11 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [noteId]);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const sendText = useCallback(async (text: string, withReveal = false) => {
     if (!text || isStreaming || !session || !currentUser) return;
 
     const token = await currentUser.getIdToken();
-    const wasReveal = revealAnswer;
     setRevealAnswer(false);
-    setInput('');
     if (inputRef.current) { inputRef.current.style.height = 'auto'; }
 
     const userMsg: UIMessage = { id: nextId(), sessionId: session.id, role: 'user', content: text, createdAt: new Date().toISOString() };
@@ -101,18 +104,30 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     try {
       await streamTutorChat(
         session.id,
-        wasReveal ? `${text}\n\n[STUDENT_REQUESTING_DIRECT_ANSWER]` : text,
+        withReveal ? `${text}\n\n[STUDENT_REQUESTING_DIRECT_ANSWER]` : text,
         chunk => setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
         () => {},
         token,
+        undefined,
+        resolved => setResolvedTopics(prev => [...prev, resolved.topic])
       );
     } catch {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
     } finally {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
       setIsStreaming(false);
+      // streamTutorChat bypasses the api cache layer, so invalidate manually
+      // so the next panel open fetches fresh session data with all messages
+      invalidatePrefix('/tutor');
     }
-  }, [input, isStreaming, session, currentUser, revealAnswer]);
+  }, [isStreaming, session, currentUser]);
+
+  const send = useCallback(async () => {
+    const text = input.trim();
+    if (!text) return;
+    setInput('');
+    await sendText(text, revealAnswer);
+  }, [input, revealAnswer, sendText]);
 
   async function removeNote(id: string) {
     if (!session) return;
@@ -126,6 +141,16 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     if (data) setSession(data);
   }
 
+  useEffect(() => {
+    if (!loading && session && initialMessage && !initialMessageSentRef.current) {
+      initialMessageSentRef.current = true;
+      setTimeout(() => {
+        sendText(initialMessage).then(() => onInitialMessageConsumed?.());
+      }, 150);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session]);
+
   const loadedNoteIds = new Set(session?.noteIds ?? []);
   const availableNotes = allNotes.filter(n => {
     if (loadedNoteIds.has(n.id)) return false;
@@ -133,12 +158,26 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     return n.document.title.toLowerCase().includes(noteSearch.toLowerCase());
   });
 
+  async function changeMode(mode: TutorMode) {
+    if (!session || session.mode === mode) return;
+    const { data } = await tutorApi.updateMode(session.id, mode);
+    if (data) setSession(data);
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <span className="text-xs font-semibold text-[var(--text-1)]">AI Tutor</span>
-        <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
+        <div className="flex items-center gap-2">
+          {session && (
+            <TutorModeDropdown
+              value={session.mode as TutorMode}
+              onChange={changeMode}
+            />
+          )}
+          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -177,6 +216,17 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
 
       {/* Input */}
       <div className="shrink-0 px-3 pb-3 relative">
+        {resolvedTopics.length > 0 && (
+          <div className="mb-2 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <div className="flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <span style={{ color: '#22C55E' }}>
+                {resolvedTopics.length === 1 ? `"${resolvedTopics[0]}" understood` : `${resolvedTopics.length} weak topics understood`}
+              </span>
+            </div>
+            <button onClick={() => setResolvedTopics([])} className="opacity-50 hover:opacity-100" style={{ color: '#22C55E' }}>×</button>
+          </div>
+        )}
         {session && (
           <ContextPicker
             open={showContextPanel}
