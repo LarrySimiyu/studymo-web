@@ -405,7 +405,7 @@ export default function LibraryPage() {
 
         {/* LEFT: Note list — full width on mobile when no doc selected, hidden when doc selected */}
         <div
-          className={`flex-col shrink-0 overflow-hidden ${selectedDocId ? 'hidden lg:flex' : 'flex w-full'} lg:w-[280px]`}
+          className={`flex-col shrink-0 overflow-hidden ${selectedDocId ? 'hidden md:flex' : 'flex w-full'} md:w-[260px]`}
           style={{ borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
         >
           {/* Left header: title + upload */}
@@ -528,7 +528,7 @@ export default function LibraryPage() {
         </div>
 
         {/* RIGHT: Document detail — hidden on mobile when no doc selected */}
-        <div className={`flex-1 overflow-hidden ${selectedDocId ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`} style={{ backgroundColor: 'var(--bg-page)' }}>
+        <div className={`flex-1 overflow-hidden ${selectedDocId ? 'flex flex-col' : 'hidden md:flex md:flex-col'}`} style={{ backgroundColor: 'var(--bg-page)' }}>
           {debouncedDocId ? (
             <DocumentDetail
               key={debouncedDocId}
