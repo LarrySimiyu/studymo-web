@@ -156,21 +156,22 @@ Collected once after signup. All steps are required except GPA (high school / un
 ### What AI Content Generation Currently Uses
 - **Notes / Flashcards / Quizzes**: document title + raw content only. No user profile context.
 - **Practice Exams**: document titles + notes/transcripts. No user profile context.
-- **Study Plans**: document titles + summaries + test date. No user profile context.
-- **Tutor chat**: full user profile (grade, GPA, learning style, struggles), loaded notes (up to 15), unresolved weak topics sorted by missed count.
+- **Study Plans**: document content + user profile (grade level, learning style, hoursPerWeek, struggles) + unresolved weak topics for selected documents.
+- **Tutor chat**: full user profile, up to 15 loaded notes, unresolved weak topics, active study plan context (today's topics, days until test).
 - **Assistant chat**: profile, active study plans, weak topics, recent quiz scores, subjects.
+- **Notes/flashcards/quizzes/podcasts**: document content only. No profile context.
 
-> **Note**: profile data (grade level, learning style, struggles, GPA) is collected at onboarding but is **not yet used** to personalize notes, flashcards, quiz, or podcast generation. This is a known gap and a planned improvement.
+> **Note**: profile data is not yet used to personalize notes, flashcards, quiz, or podcast generation.
 
 ---
 
 ## Features & Where They Live
 
 ### Document Library
-Users upload PDFs, audio files, YouTube URLs, or create blank notes. Each document goes through async AI processing (notes, flashcards, quiz generated server-side).
+Users upload PDFs, audio files, YouTube URLs, website URLs, or create blank notes. Each document goes through async AI processing (notes, flashcards, quiz generated server-side). Tags are auto-assigned from a fixed subject list during processing.
 
 - **List view**: `app/dashboard/library/page.tsx` — folder tree on left, document grid on right. Upload triggered via a dropdown that opens `UploadDialog` with the appropriate `type`.
-- **Upload modal**: `components/upload/UploadDialog.tsx` — handles all 4 upload types in one component. Polls `GET /documents/:id` until status is `complete` or `failed`.
+- **Upload modal**: `components/upload/UploadDialog.tsx` — handles all 5 upload types (`blank`, `file`, `record`, `video`, `webpage`) in one component. Polls `GET /documents/:id` until status is `complete` or `failed`.
 - **Document detail**: `components/library/DocumentDetail.tsx` — the main viewer. Has 6 tabs (Notes, Flashcards, Quiz, Podcast, Weak Topics, Transcript). Each tab shows an empty state with a generate button if content hasn't been created yet.
 - **API**: `lib/api/documents.ts` — `documentsApi`, `notesApi`, `flashcardsApi`, `quizzesApi`
 
@@ -212,12 +213,12 @@ Converts document notes into a spoken audio lecture. User picks length (5/10/15 
 - **API**: `lib/api/podcasts.ts` — `podcastsApi`
 
 ### Study Plans
-AI generates a day-by-day study schedule from selected documents and a test date. Users can mark days and topics complete.
+AI generates a day-by-day study schedule from selected documents, test date, user profile, and weak topics. Users can mark days and individual topics complete. Topic completion state is stored in DB (`completedTopics` field), not localStorage.
 
 - **Plan list**: `app/dashboard/study-plan/page.tsx`
 - **Plan detail**: `app/dashboard/study-plan/[id]/page.tsx` — day rows, topic checkboxes, progress bars, calendar view
 - **Calendar**: `components/dashboard/PlanCalendar.tsx`
-- **API**: `lib/api/studyPlan.ts` — `studyPlansApi`
+- **API**: `lib/api/studyPlan.ts` — `studyPlansApi` (includes `saveTopics`, `completeDay`, `incompleteDay`)
 
 ### Tasks
 Simple to-do list with due dates, estimated time, tags, and complete/incomplete toggle.
@@ -237,12 +238,12 @@ Automatically tracked when a user answers a quiz or practice exam question incor
 - **API**: `lib/api/studyPlan.ts` — `weakTopicsApi`
 
 ### AI Tutor
-Streaming chat assistant that can reference the user's notes. Also lives as a slide-in panel inside the document viewer.
+Streaming chat with 5 teaching modes (`casual`, `tutor`, `strict`, `teach_back`, `eli5`) — same chat, mode changes teaching method. Tutor is aware of user's weak topics, active study plans, and loaded notes. Weak topics are resolved in DB when the student demonstrates understanding.
 
-- **Standalone page**: `app/dashboard/tutor/page.tsx`
-- **In-document panel**: `components/library/TutorPanel.tsx` — slides in from the right inside DocumentDetail, resizable by dragging
+- **Standalone page**: `app/dashboard/tutor/page.tsx` — session list + mode selector on welcome screen
+- **In-document panel**: `components/library/TutorPanel.tsx` — slides in from the right inside DocumentDetail
 - **Input + bubbles**: `components/tutor/` — `TutorInput`, `UserBubble`, `ContextPicker`
-- **API**: `lib/api/tutor.ts` — `tutorApi`
+- **API**: `lib/api/tutor.ts` — `tutorApi`, `streamTutorChat` (SSE stream, handles `delta`, `offer`, `resolved`, `done` events)
 
 ### Analytics
 Overview stats, time by subject, quiz history, study session summaries, and an activity heatmap.

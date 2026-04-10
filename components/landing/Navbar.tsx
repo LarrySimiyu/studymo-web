@@ -33,8 +33,30 @@ export default function Navbar() {
           <Image src={studymoLogo} alt="StudyMo" height={80} className="h-14 sm:h-20 w-auto" />
         </Link>
 
+        {/* Center nav links */}
+        <div className="hidden sm:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+          <Link
+            href="/pricing"
+            className="text-sm font-medium transition-colors"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+          >
+            Pricing
+          </Link>
+          <Link
+            href="/blog"
+            className="text-sm font-medium transition-colors"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+          >
+            Blog
+          </Link>
+        </div>
+
+        {/* Right auth buttons */}
         <div className="flex items-center gap-3">
-          {/* Login */}
           <Link
             href="/sign-in"
             className="text-sm font-medium transition-colors"
@@ -44,7 +66,6 @@ export default function Navbar() {
           >
             Login
           </Link>
-          {/* Animated gradient CTA */}
           <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
             Try For $0
           </Link>

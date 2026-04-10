@@ -10,6 +10,7 @@ export interface StudyPlanDay {
   documentIds: string; // JSON
   completed: boolean;
   completedAt: string | null;
+  completedTopics: string | null; // JSON number[]
   createdAt: string;
 }
 
@@ -65,6 +66,8 @@ export const studyPlansApi = {
     api.patch<StudyPlanDay>(`/study-plans/${planId}/days/${dayId}/complete`, {}),
   incompleteDay: (planId: string, dayId: string) =>
     api.patch<StudyPlanDay>(`/study-plans/${planId}/days/${dayId}/incomplete`, {}),
+  saveTopics: (planId: string, dayId: string, completedTopics: number[]) =>
+    api.patch<StudyPlanDay>(`/study-plans/${planId}/days/${dayId}/topics`, { completedTopics }),
   delete: (id: string) => api.delete<void>(`/study-plans/${id}`),
 };
 
