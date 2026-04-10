@@ -101,6 +101,7 @@ export default function TutorPage() {
   const [noteOffer, setNoteOffer] = useState<NoteOffer | null>(null);
   const [offerSaving, setOfferSaving] = useState(false);
   const [offerSaved, setOfferSaved] = useState(false);
+  const [resolvedTopics, setResolvedTopics] = useState<string[]>([]);
   const [showChat, setShowChat] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -158,13 +159,13 @@ export default function TutorPage() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  async function createSession() {
+  async function createSession(mode: 'tutor' | 'eli5' | 'casual' | 'strict' | 'teach_back' = 'casual') {
     if (creatingSession) return;
     setCreatingSession(true);
     try {
-      const { data } = await tutorApi.createSession({ mode: 'tutor' });
+      const { data } = await tutorApi.createSession({ mode });
       if (!data) return;
-      setSessions(prev => [{ id: data.id, title: data.title, mode: 'tutor', noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
+      setSessions(prev => [{ id: data.id, title: data.title, mode, noteIds: data.noteIds, messageCount: 0, lastMessage: null, createdAt: data.createdAt, updatedAt: data.updatedAt }, ...prev]);
       setActiveSession(data);
       setMessages([]);
       setSuggestions([]);
@@ -176,6 +177,12 @@ export default function TutorPage() {
     } finally {
       setCreatingSession(false);
     }
+  }
+
+  async function changeMode(mode: 'casual' | 'tutor' | 'strict' | 'teach_back' | 'eli5') {
+    if (!activeSession || activeSession.mode === mode) return;
+    const { data } = await tutorApi.updateMode(activeSession.id, mode);
+    if (data) setActiveSession(data);
   }
 
   async function sendMessage(override?: string) {
@@ -210,7 +217,8 @@ export default function TutorPage() {
         },
         () => {},
         token,
-        offer => setNoteOffer(offer)
+        offer => setNoteOffer(offer),
+        resolved => setResolvedTopics(prev => [...prev, resolved.topic])
       );
     } catch {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
@@ -339,26 +347,16 @@ export default function TutorPage() {
                 <p className="text-[var(--text-2)] text-body-sm mt-2">Choose a mode to get started</p>
               </div>
 
-              <div className="flex flex-col gap-4 w-full max-w-sm">
-                {/* Tutor card */}
-                <div className="flex flex-col gap-4 p-6 rounded-2xl text-left" style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)' }}>
-                  <div>
-                    <div className="text-3xl mb-2">🎓</div>
-                    <h3 className="font-semibold text-[var(--text-1)] text-body-lg mb-1">Tutor Mode</h3>
-                    <p className="text-xs text-[var(--text-2)] leading-relaxed">I'll guide you with questions instead of giving direct answers. Proven to improve retention and understanding.</p>
-                  </div>
-                  <button
-                    onClick={createSession}
-                    disabled={creatingSession}
-                    className="w-full py-2.5 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: 'var(--brand)' }}
-                  >
-                    {creatingSession ? 'Creating…' : 'Start Study Session'}
-                  </button>
-                </div>
-              </div>
+              <button
+                onClick={() => createSession()}
+                disabled={creatingSession}
+                className="w-full py-3 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 max-w-xs"
+                style={{ backgroundColor: 'var(--brand)' }}
+              >
+                {creatingSession ? 'Starting…' : 'Start a Session'}
+              </button>
 
-              <p className="text-xs text-[var(--text-3)]">You can switch modes at any time during a session</p>
+              <p className="text-xs text-[var(--text-3)]">Pick a study mode once the session opens</p>
             </div>
           </div>
         ) : (
@@ -396,6 +394,19 @@ export default function TutorPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
+                {/* Mode selector */}
+                <select
+                  value={activeSession.mode}
+                  onChange={e => changeMode(e.target.value as Parameters<typeof changeMode>[0])}
+                  className="text-xs rounded-lg px-2 py-1.5 font-medium transition-colors focus:outline-none cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+                >
+                  <option value="casual">💬 Casual</option>
+                  <option value="tutor">🎓 Tutor</option>
+                  <option value="strict">🔬 Strict</option>
+                  <option value="teach_back">🗣️ Teach Back</option>
+                  <option value="eli5">🧩 Simple</option>
+                </select>
                 {/* Delete */}
                 <button
                   onClick={e => deleteSession(activeSession.id, e)}
@@ -474,6 +485,19 @@ export default function TutorPage() {
                 <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center gap-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   Added to notes successfully.
+                </div>
+              )}
+              {resolvedTopics.length > 0 && (
+                <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <div className="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span style={{ color: '#22C55E' }}>
+                      {resolvedTopics.length === 1
+                        ? `"${resolvedTopics[0]}" marked as understood`
+                        : `${resolvedTopics.length} weak topics marked as understood`}
+                    </span>
+                  </div>
+                  <button onClick={() => setResolvedTopics([])} className="opacity-50 hover:opacity-100 transition-opacity" style={{ color: '#22C55E' }}>×</button>
                 </div>
               )}
 

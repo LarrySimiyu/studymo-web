@@ -97,6 +97,73 @@ Audio player for a generated podcast MP3.
 
 ---
 
+## Data Collected
+
+### Onboarding (`app/onboarding/page.tsx` → `POST /profile/sync`)
+Collected once after signup. All steps are required except GPA (high school / undergrad only).
+
+**Step 1 — Grade Level** (`gradeLevel`) — single select:
+- `high_school` — High School
+- `undergrad` — Undergrad
+- `grad` — Grad School
+- `self_learner` — Self Learner
+- `other` — Other
+- GPA steps only shown for `high_school` / `undergrad`
+
+**Step 2 — Current GPA** (`gpa`) — float 0.0–4.0, +/− stepper (0.1 increments). High school / undergrad only.
+
+**Step 3 — Goal GPA** (`goalGpa`) — float 0.0–4.0, +/− stepper. High school / undergrad only.
+
+**Step 4 — Subjects** (`subjects`) — multi-select pill chips + free-text custom entry. Saved as colored `Tag` records. Preset options:
+- Mathematics, Biology, Chemistry, Physics, History, English / Literature, Computer Science, Economics, Psychology, Law, Medicine / Nursing, Engineering, Coding, Personal Finance, Language Learning, Business, Design, Marketing, Philosophy, Music Theory
+
+**Step 5 — Learning Style** (`learningStyle`) — single select:
+- `notes` — Reading notes and summaries
+- `listening` — Listening to explanations
+- `quizzing` — Being quizzed on material
+- `mix` — A mix of everything
+
+**Step 6 — Struggles** (`struggles`) — multi-select array, grouped:
+- *Keeping Up*: `falling_behind`, `deadlines`, `balance`
+- *Studying*: `where_to_start`, `cramming`, `consistency`, `forgetting`
+- *Focus*: `distractions`, `focus_span`
+- *Mindset & Wellbeing*: `procrastination`, `burnout`, `test_anxiety`, `overwhelmed`, `sleep`, `accountability`
+
+**Step 7 — Main Goal** (`mainGoal`) — single select:
+- `pass_exams` — Pass my upcoming exams
+- `improve_grades` — Improve my grades
+- `learn_faster` — Learn faster and retain more
+- `stay_organized` — Stay organized this semester
+
+---
+
+### Behavioral & Activity Data
+
+| Data | Where | What's Stored |
+|---|---|---|
+| **Documents** | `lib/api/documents.ts` | Type, title, transcript, status, folder, tags |
+| **Quiz Attempts** | `lib/api/documents.ts` → `quizzesApi` | Score, all user answers (JSON), timestamp |
+| **Weak Topics** | Auto-generated on wrong answers | Topic string, missed count, correct answer, document source |
+| **Practice Exam Attempts** | `lib/api/organization.ts` → `practiceExamsApi` | Score, per-question results, in-progress auto-save |
+| **Study Plans** | `lib/api/studyPlan.ts` | Test date, selected docs, AI schedule, day completion |
+| **Tasks** | `lib/api/tasks.ts` | Title, due date, estimated time, tags, completion |
+| **Study Sessions** | `lib/api/tasks.ts` → `studySessionsService` | Mode, duration, start/end, linked tasks |
+| **Daily Activity** | API ping on visit/upload/study | Level 1–3 per day, drives heatmap + streak |
+| **Streak** | `GET /streak` | Current days, longest streak, last study date |
+| **Podcasts** | `lib/api/podcasts.ts` | Title, length, voice, status, audio URL, script |
+| **Tutor Sessions** | `lib/api/tutor.ts` | Full message history, loaded note IDs, mode |
+
+### What AI Content Generation Currently Uses
+- **Notes / Flashcards / Quizzes**: document title + raw content only. No user profile context.
+- **Practice Exams**: document titles + notes/transcripts. No user profile context.
+- **Study Plans**: document titles + summaries + test date. No user profile context.
+- **Tutor chat**: full user profile (grade, GPA, learning style, struggles), loaded notes (up to 15), unresolved weak topics sorted by missed count.
+- **Assistant chat**: profile, active study plans, weak topics, recent quiz scores, subjects.
+
+> **Note**: profile data (grade level, learning style, struggles, GPA) is collected at onboarding but is **not yet used** to personalize notes, flashcards, quiz, or podcast generation. This is a known gap and a planned improvement.
+
+---
+
 ## Features & Where They Live
 
 ### Document Library

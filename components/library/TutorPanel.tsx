@@ -42,6 +42,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   const [showContextPanel, setShowContextPanel] = useState(false);
   const [revealAnswer, setRevealAnswer] = useState(false);
   const [noteSearch, setNoteSearch] = useState('');
+  const [resolvedTopics, setResolvedTopics] = useState<string[]>([]);
   const [allNotes, setAllNotes] = useState<{ id: string; summary: string | null; document: { title: string } }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -105,6 +106,8 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
         chunk => setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m)),
         () => {},
         token,
+        undefined,
+        resolved => setResolvedTopics(prev => [...prev, resolved.topic])
       );
     } catch {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
@@ -133,12 +136,34 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     return n.document.title.toLowerCase().includes(noteSearch.toLowerCase());
   });
 
+  async function changeMode(mode: 'casual' | 'tutor' | 'strict' | 'teach_back' | 'eli5') {
+    if (!session || session.mode === mode) return;
+    const { data } = await tutorApi.updateMode(session.id, mode);
+    if (data) setSession(data);
+  }
+
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <span className="text-xs font-semibold text-[var(--text-1)]">AI Tutor</span>
-        <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
+        <div className="flex items-center gap-2">
+          {session && (
+            <select
+              value={session.mode}
+              onChange={e => changeMode(e.target.value as Parameters<typeof changeMode>[0])}
+              className="text-xs rounded-lg px-2 py-1 font-medium focus:outline-none cursor-pointer"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)', border: '1px solid var(--border)' }}
+            >
+              <option value="casual">💬 Casual</option>
+              <option value="tutor">🎓 Tutor</option>
+              <option value="strict">🔬 Strict</option>
+              <option value="teach_back">🗣️ Teach Back</option>
+              <option value="eli5">🧩 Simple</option>
+            </select>
+          )}
+          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -177,6 +202,17 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
 
       {/* Input */}
       <div className="shrink-0 px-3 pb-3 relative">
+        {resolvedTopics.length > 0 && (
+          <div className="mb-2 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <div className="flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+              <span style={{ color: '#22C55E' }}>
+                {resolvedTopics.length === 1 ? `"${resolvedTopics[0]}" understood` : `${resolvedTopics.length} weak topics understood`}
+              </span>
+            </div>
+            <button onClick={() => setResolvedTopics([])} className="opacity-50 hover:opacity-100" style={{ color: '#22C55E' }}>×</button>
+          </div>
+        )}
         {session && (
           <ContextPicker
             open={showContextPanel}

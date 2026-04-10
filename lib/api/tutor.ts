@@ -3,7 +3,7 @@ import { api } from '@/lib/api';
 export interface TutorSessionSummary {
   id: string;
   title: string;
-  mode: 'helper' | 'tutor';
+  mode: 'helper' | 'tutor' | 'eli5' | 'casual' | 'strict' | 'teach_back';
   noteIds: string[];
   messageCount: number;
   lastMessage: string | null;
@@ -34,13 +34,13 @@ export interface TutorSession extends TutorSessionSummary {
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export const tutorApi = {
-  createSession: (data: { noteIds?: string[]; mode: 'helper' | 'tutor' }) =>
+  createSession: (data: { noteIds?: string[]; mode: 'helper' | 'tutor' | 'eli5' | 'casual' | 'strict' | 'teach_back' }) =>
     api.post<TutorSession>('/tutor', data),
   getSessions: () => api.get<TutorSessionSummary[]>('/tutor'),
   getSession: (id: string) => api.get<TutorSession>(`/tutor/${id}`),
   updateNotes: (id: string, noteIds: string[]) =>
     api.patch<TutorSession>(`/tutor/${id}/notes`, { noteIds }),
-  updateMode: (id: string, mode: 'helper' | 'tutor') =>
+  updateMode: (id: string, mode: 'helper' | 'tutor' | 'eli5' | 'casual' | 'strict' | 'teach_back') =>
     api.patch<TutorSession>(`/tutor/${id}/mode`, { mode }),
   updateTitle: (id: string, title: string) =>
     api.patch<TutorSession>(`/tutor/${id}/title`, { title }),
@@ -61,7 +61,8 @@ export async function streamTutorChat(
   onDelta: (text: string) => void,
   onDone: () => void,
   token: string,
-  onOffer?: (offer: NoteOffer) => void
+  onOffer?: (offer: NoteOffer) => void,
+  onResolved?: (resolved: { id: string; topic: string }) => void
 ): Promise<void> {
   const response = await fetch(`${API_URL}/tutor/${sessionId}/chat`, {
     method: 'POST',
@@ -90,6 +91,7 @@ export async function streamTutorChat(
         const data = JSON.parse(line.slice(6));
         if (data.delta) onDelta(data.delta);
         if (data.offer && onOffer) onOffer(data.offer);
+        if (data.resolved && onResolved) onResolved(data.resolved);
         if (data.done) onDone();
       } catch {
         // ignore
