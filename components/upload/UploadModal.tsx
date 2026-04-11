@@ -15,15 +15,13 @@ interface Props {
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
 const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 150; // 5 minutes
-
-// Polls a document until complete, deleted (404 = failure), or timeout
+// Polls a document until complete or failed. No timeout — user can close the modal
+// at any time and check their library. Real server failures still surface the error.
 async function pollDocumentStatus(
   docId: string,
   onComplete: () => void,
-  onFailed: () => void
+  onFailed: (errorMessage?: string) => void
 ): Promise<() => void> {
-  let attempts = 0;
   let stopped = false;
 
   const poll = async () => {
@@ -42,13 +40,7 @@ async function pollDocumentStatus(
       return;
     }
     if (data?.status === 'failed') {
-      onFailed();
-      return;
-    }
-
-    attempts++;
-    if (attempts >= POLL_MAX_ATTEMPTS) {
-      onFailed();
+      onFailed(data.errorMessage ?? undefined);
       return;
     }
 
@@ -59,13 +51,38 @@ async function pollDocumentStatus(
   return () => { stopped = true; };
 }
 
+// ─── Presigned R2 upload (PUT directly to R2, no server RAM) ─────────────────
+function uploadToPresignedUrl(
+  url: string,
+  file: Blob,
+  mimeType: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', mimeType);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed: ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.send(file);
+  });
+}
+
 // ─── Processing / Failed overlay ─────────────────────────────────────────────
 function ProcessingOverlay({
   state,
+  errorMessage,
   onRetry,
   onClose,
 }: {
   state: 'processing' | 'failed';
+  errorMessage?: string;
   onRetry: () => void;
   onClose: () => void;
 }) {
@@ -95,7 +112,9 @@ function ProcessingOverlay({
       </div>
       <div>
         <p className="text-[var(--text-1)] font-medium">Upload failed</p>
-        <p className="text-[var(--text-2)] text-xs mt-1">Something went wrong while processing your note.</p>
+        <p className="text-[var(--text-2)] text-xs mt-1 max-w-xs">
+          {errorMessage ?? 'Something went wrong while processing your note.'}
+        </p>
       </div>
       <div className="flex gap-3">
         <button
@@ -122,6 +141,7 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'file');
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
+  const [failedMessage, setFailedMessage] = useState<string | undefined>(undefined);
   const stopPollRef = useRef<(() => void) | null>(null);
 
   useEffect(() => () => { stopPollRef.current?.(); }, []);
@@ -136,7 +156,7 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
     stopPollRef.current = await pollDocumentStatus(
       docId,
       () => { onSuccess(docId); },
-      () => setUploadState('failed'),
+      (errorMessage) => { setFailedMessage(errorMessage); setUploadState('failed'); },
     );
   }
 
@@ -150,6 +170,7 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
     stopPollRef.current = null;
     setUploadState('idle');
     setError('');
+    setFailedMessage(undefined);
   }
 
   const isOverlay = uploadState === 'processing' || uploadState === 'failed';
@@ -164,6 +185,7 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
         {isOverlay ? (
           <ProcessingOverlay
             state={uploadState as 'processing' | 'failed'}
+            errorMessage={failedMessage}
             onRetry={handleRetry}
             onClose={onClose}
           />
@@ -239,6 +261,7 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File) => {
@@ -255,13 +278,30 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
 
   async function handleUpload() {
     if (!file) return;
+    if (file.type === 'application/pdf' && file.size > 32 * 1024 * 1024) {
+      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 32MB.`);
+      return;
+    }
     onStart();
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('title', title || file.name);
-    const { data, error } = await documentsApi.uploadFile(fd);
-    if (error || !data) { onError(error ?? 'Upload failed'); return; }
-    onSuccess(data.id);
+    setUploadProgress(0);
+
+    const { data: presignData, error: presignError } = await documentsApi.presign({
+      mimeType: file.type,
+      title: title || file.name,
+      fileSize: file.size,
+    });
+    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
+
+    try {
+      await uploadToPresignedUrl(presignData.uploadUrl, file, file.type, setUploadProgress);
+    } catch {
+      onError('Upload failed — please try again'); return;
+    }
+
+    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
+    if (processError) { onError(processError); return; }
+
+    onSuccess(presignData.doc.id);
   }
 
   return (
@@ -305,6 +345,20 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
           placeholder="Note title"
         />
       </div>
+      {loading && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-[var(--text-2)]">
+            <span>{uploadProgress < 100 ? 'Uploading…' : 'Finalizing…'}</span>
+            {uploadProgress < 100 && <span>{uploadProgress}%</span>}
+          </div>
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-200"
+              style={{ width: `${uploadProgress}%`, backgroundColor: '#9747FF' }}
+            />
+          </div>
+        </div>
+      )}
       <button
         onClick={handleUpload}
         disabled={!file || loading}
@@ -431,6 +485,7 @@ function RecordTab({ loading, onStart, onSuccess, onError }: {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -504,12 +559,26 @@ function RecordTab({ loading, onStart, onSuccess, onError }: {
   async function handleUpload() {
     if (!audioBlob) return;
     onStart();
-    const fd = new FormData();
-    fd.append('audio', audioBlob, 'recording.webm');
-    fd.append('title', title || `Recording ${new Date().toLocaleString()}`);
-    const { data, error } = await documentsApi.uploadRecording(fd);
-    if (error || !data) { onError(error ?? 'Upload failed'); return; }
-    onSuccess(data.id);
+    setUploadProgress(0);
+
+    const recordingTitle = title || `Recording ${new Date().toLocaleString()}`;
+    const { data: presignData, error: presignError } = await documentsApi.presign({
+      mimeType: 'audio/webm',
+      title: recordingTitle,
+      isRecording: true,
+    });
+    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
+
+    try {
+      await uploadToPresignedUrl(presignData.uploadUrl, audioBlob, 'audio/webm', setUploadProgress);
+    } catch {
+      onError('Upload failed — please try again'); return;
+    }
+
+    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
+    if (processError) { onError(processError); return; }
+
+    onSuccess(presignData.doc.id);
   }
 
   return (
@@ -554,6 +623,20 @@ function RecordTab({ loading, onStart, onSuccess, onError }: {
               placeholder="Recording title"
             />
           </div>
+          {loading && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-[var(--text-2)]">
+                <span>{uploadProgress < 100 ? 'Uploading…' : 'Finalizing…'}</span>
+                {uploadProgress < 100 && <span>{uploadProgress}%</span>}
+              </div>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-200"
+                  style={{ width: `${uploadProgress}%`, backgroundColor: '#9747FF' }}
+                />
+              </div>
+            </div>
+          )}
           <button
             onClick={handleUpload}
             disabled={loading}

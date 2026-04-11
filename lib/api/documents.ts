@@ -18,6 +18,7 @@ export interface Document {
   fileUrl: string | null;
   videoUrl: string | null;
   status: string;
+  errorMessage: string | null;
   transcript: string | null;
   folderId: string | null;
   groupId: string | null;
@@ -78,6 +79,16 @@ export const documentsApi = {
   uploadVideo: (data: { url: string; title: string; folderId?: string }) =>
     api.post<Document>('/documents/video', data),
   uploadRecording: (formData: FormData) => api.postForm<Document>('/documents/recording', formData),
+  presign: (body: {
+    mimeType: string;
+    title: string;
+    folderId?: string;
+    groupId?: string;
+    isRecording?: boolean;
+    fileSize?: number;
+  }) => api.post<{ uploadUrl: string; doc: Document }>('/documents/presign', body),
+  triggerProcess: (docId: string) =>
+    api.post<{ message: string }>(`/documents/${docId}/process`, {}),
   uploadWebpage: (data: { url: string; title?: string; folderId?: string }) =>
     api.post<Document>('/documents/webpage', data),
   getAll: (params?: { folderId?: string; tagId?: string; search?: string; type?: string; sort?: string }) => {
