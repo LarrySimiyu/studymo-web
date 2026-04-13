@@ -129,6 +129,7 @@ export const flashcardsApi = {
 };
 
 export const quizzesApi = {
+  getAll: () => api.get<Quiz[]>(`/quizzes`),
   getByDocument: (documentId: string) => api.get<Quiz>(`/quizzes/${documentId}`),
   generate: (documentId: string, questionTypes?: string[]) => api.post<Quiz>(`/quizzes/${documentId}/generate`, { questionTypes }),
   submitAttempt: (id: string, score: number, answers: object) =>

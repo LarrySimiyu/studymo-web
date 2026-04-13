@@ -278,8 +278,8 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
 
   async function handleUpload() {
     if (!file) return;
-    if (file.type === 'application/pdf' && file.size > 32 * 1024 * 1024) {
-      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 32MB.`);
+    if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
+      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
       return;
     }
     onStart();
@@ -329,7 +329,7 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
           <p className="text-sm text-[var(--text-1)] font-medium">{file.name}</p>
         ) : (
           <>
-            <p className="text-sm text-[var(--text-1)]">Drag and drop a PDF or audio file</p>
+            <p className="text-sm text-[var(--text-1)]">Drag And Drop A PDF, Audio, DOCX, Or Text File</p>
             <p className="text-xs text-[var(--text-2)] mt-1">or click to browse</p>
           </>
         )}

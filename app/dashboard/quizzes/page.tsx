@@ -203,16 +203,13 @@ export default function QuizzesPage() {
   const [deckLoading, setDeckLoading] = useState(false);
 
   useEffect(() => {
-    documentsApi.getAll().then(async ({ data: docs }) => {
-      if (!docs) { setLoading(false); return; }
-      const completed = docs.filter(d => d.status === 'complete');
-      const results = await Promise.all(
-        completed.map(async doc => {
-          const { data } = await quizzesApi.getByDocument(doc.id);
-          return data ? { document: doc, quiz: data } : null;
-        })
-      );
-      setDecks(results.filter((r): r is DeckEntry => r !== null));
+    Promise.all([documentsApi.getAll(), quizzesApi.getAll()]).then(([{ data: docs }, { data: quizzes }]) => {
+      if (!docs || !quizzes) { setLoading(false); return; }
+      const quizByDocId = new Map(quizzes.map(q => [q.documentId, q]));
+      const results: DeckEntry[] = docs
+        .filter(d => d.status === 'complete' && quizByDocId.has(d.id))
+        .map(d => ({ document: d, quiz: quizByDocId.get(d.id)! }));
+      setDecks(results);
       setLoading(false);
     });
   }, []);
