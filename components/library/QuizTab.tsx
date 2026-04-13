@@ -14,13 +14,13 @@ interface Props {
 
 const ALL_TYPES = [
   { value: 'multiple_choice', label: 'Multiple Choice' },
-  { value: 'short_answer', label: 'Short Answer' },
   { value: 'true_false', label: 'True / False' },
+  { value: 'short_answer', label: 'Short Answer' },
 ];
 
 export default function QuizTab({ doc, quiz, onGenerate }: Props) {
   const [loading, setLoading] = useState(false);
-  const [types, setTypes] = useState<string[]>(['multiple_choice', 'short_answer']);
+  const [types, setTypes] = useState<string[]>(['multiple_choice']);
 
   function toggleType(t: string) {
     setTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
