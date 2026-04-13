@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 interface Tab<T extends string> {
   value: T;
   label: string;
+  icon?: React.ReactNode;
   count?: number;
 }
 
@@ -32,6 +33,7 @@ export default function SlidingTabs<T extends string>({ tabs, active, onChange }
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors shrink-0"
           style={{ color: active === tab.value ? 'var(--text-1)' : 'var(--text-3)' }}
         >
+          {tab.icon}
           {tab.label}
           {tab.count !== undefined && (
             <span
