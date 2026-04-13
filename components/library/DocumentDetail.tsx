@@ -48,7 +48,7 @@ import { tasksApi } from '@/lib/api/tasks';
 import { docTagsApi } from '@/lib/api/documents';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
-import { ScrollText } from 'lucide-react';
+import { ScrollText, BookOpen, Layers, Heart, Mic, Target } from 'lucide-react';
 
 type Tab = 'notes' | 'flashcards' | 'quiz' | 'podcast' | 'weak-topics' | 'transcript';
 
@@ -158,14 +158,16 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   }, [id]);
 
   const loadSideData = useCallback(async () => {
-    const [tasksRes, weakRes, podcastsRes] = await Promise.all([
+    const [tasksRes, weakRes, podcastsRes, quizRes] = await Promise.all([
       tasksApi.getAll({ documentId: id }),
       weakTopicsApi.getAll({ documentId: id }),
       podcastsApi.getByDocument(id),
+      quizzesApi.getByDocument(id),
     ]);
     if (tasksRes.data) {} // kept for side effects
     if (weakRes.data) setDocWeakTopics(weakRes.data);
     if (podcastsRes.data) setPodcasts(podcastsRes.data);
+    if (quizRes.data) setQuiz(quizRes.data);
     if (!hasParentTagsRef.current) {
       const tagsRes = await docTagsApi.getAll();
       if (tagsRes.data) setAllDocTags(tagsRes.data);
@@ -450,14 +452,11 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
                   tabs={tabs.map(t => ({
                     value: t,
                     label: t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1),
+                    icon: t === 'notes' ? <BookOpen size={13} /> : t === 'flashcards' ? <Layers size={13} /> : t === 'quiz' ? <Heart size={13} /> : t === 'podcast' ? <Mic size={13} /> : t === 'weak-topics' ? <Target size={13} /> : t === 'transcript' ? <ScrollText size={13} /> : undefined,
                   }))}
                   active={tab}
-                  onChange={async (t) => {
+                  onChange={(t) => {
                     setTab(t);
-                    if (t === 'quiz' && !quiz) {
-                      const { data } = await quizzesApi.getByDocument(id);
-                      if (data) setQuiz(data);
-                    }
                   }}
                 />
               </div>

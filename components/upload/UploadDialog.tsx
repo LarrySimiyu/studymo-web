@@ -34,7 +34,7 @@ const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; co
 async function pollDocumentStatus(
   docId: string,
   onComplete: () => void,
-  onFailed: () => void
+  onFailed: (errorMessage?: string) => void
 ): Promise<() => void> {
   let attempts = 0;
   let stopped = false;
@@ -51,7 +51,7 @@ async function pollDocumentStatus(
       (error && error.toLowerCase().includes('not found'))
     ) { onFailed(); return; }
     if (data?.status === 'complete') { onComplete(); return; }
-    if (data?.status === 'failed') { onFailed(); return; }
+    if (data?.status === 'failed') { onFailed(data.errorMessage ?? undefined); return; }
     attempts++;
     if (attempts >= POLL_MAX_ATTEMPTS) { onFailed(); return; }
     setTimeout(poll, POLL_INTERVAL_MS);
@@ -62,7 +62,7 @@ async function pollDocumentStatus(
 }
 
 // ─── Processing / Failed overlay ─────────────────────────────────────────────
-function ProcessingOverlay({ state, onRetry, onClose }: { state: 'processing' | 'failed'; onRetry: () => void; onClose: () => void }) {
+function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: { state: 'processing' | 'failed'; errorMessage?: string; onRetry: () => void; onClose: () => void }) {
   if (state === 'processing') {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
@@ -84,7 +84,9 @@ function ProcessingOverlay({ state, onRetry, onClose }: { state: 'processing' | 
       </div>
       <div>
         <p className="text-[var(--text-1)] font-semibold">Upload failed</p>
-        <p className="text-[var(--text-2)] text-xs mt-1">Something went wrong while processing your note.</p>
+        <p className="text-[var(--text-2)] text-xs mt-1 max-w-xs">
+          {errorMessage ?? 'Something went wrong while processing your note.'}
+        </p>
       </div>
       <div className="flex gap-3">
         <Button variant="brand" size="sm" onClick={onRetry}>Try Again</Button>
@@ -153,6 +155,10 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: { loading: boo
 
   async function handleUpload() {
     if (!file) return;
+    if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
+      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
+      return;
+    }
     onStart();
     const fd = new FormData();
     fd.append('file', file);
@@ -182,7 +188,7 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: { loading: boo
           <p className="text-sm text-[var(--text-1)] font-medium">{file.name}</p>
         ) : (
           <>
-            <p className="text-sm text-[var(--text-1)]">Drag and drop a PDF or audio file</p>
+            <p className="text-sm text-[var(--text-1)]">Drag And Drop A PDF, Audio, DOCX, Or Text File</p>
             <p className="text-xs text-[var(--text-2)] mt-1">or click to browse</p>
           </>
         )}
@@ -386,6 +392,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: { loading: boolean
 export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [error, setError] = useState('');
+  const [failedMessage, setFailedMessage] = useState<string | undefined>(undefined);
   const [checking, setChecking] = useState(true);
   const stopPollRef = useRef<(() => void) | null>(null);
   const { title, icon: Icon, color, bg } = TYPE_META[type];
@@ -427,7 +434,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     stopPollRef.current = await pollDocumentStatus(
       docId,
       () => { analytics.uploadCompleted(type); onSuccess(docId); },
-      () => { analytics.uploadFailed(type); setUploadState('failed'); },
+      (errorMessage) => { analytics.uploadFailed(type); setFailedMessage(errorMessage); setUploadState('failed'); },
     );
   }
 
@@ -441,6 +448,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     stopPollRef.current = null;
     setUploadState('idle');
     setError('');
+    setFailedMessage(undefined);
   }
 
   const isOverlay = uploadState === 'processing' || uploadState === 'failed';
@@ -457,7 +465,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
             <div className="w-6 h-6 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#FF6500' }} />
           </div>
         ) : isOverlay ? (
-          <ProcessingOverlay state={uploadState as 'processing' | 'failed'} onRetry={handleRetry} onClose={onClose} />
+          <ProcessingOverlay state={uploadState as 'processing' | 'failed'} errorMessage={failedMessage} onRetry={handleRetry} onClose={onClose} />
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
