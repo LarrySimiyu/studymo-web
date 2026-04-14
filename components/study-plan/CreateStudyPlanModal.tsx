@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
 
-interface Document { id: string; title: string }
+interface Document { id: string; title: string; status: string }
 
 interface Props {
   open: boolean;
@@ -28,7 +28,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
     setForm({ title: '', testDate: '', documentIds: [] });
     setCreating(false);
     api.get<Document[]>('/documents').then(({ data }) => {
-      if (data) setDocuments(data);
+      if (data) setDocuments(data.filter(d => d.status === 'complete'));
     }).catch(() => {});
   }, [open]);
 
@@ -52,7 +52,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
   }
 
   const minDate = new Date();
-  minDate.setDate(minDate.getDate() + 1);
+  minDate.setDate(minDate.getDate() + 2);
 
   if (!open) return null;
 
