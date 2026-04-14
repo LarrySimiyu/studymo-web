@@ -382,8 +382,14 @@ export default function LibraryPage() {
 
   async function confirmDelete(ids: Set<string>) {
     setDeleting(true);
-    await Promise.all([...ids].map(id => documentsApi.delete(id)));
+    const results = await Promise.all([...ids].map(id => documentsApi.delete(id)));
     setDeleting(false);
+    const failed = results.some(r => r.error);
+    if (failed) {
+      await refetch();
+      setDeleteTarget(null);
+      return;
+    }
     setDeleteTarget(null);
     if (selectedDocId && ids.has(selectedDocId)) selectDoc(null);
     ids.forEach(id => removeDocument(id));
