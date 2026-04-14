@@ -45,19 +45,22 @@ async function request<T>(
       return { data: null, error: errorData.error ?? `HTTP ${response.status}` };
     }
 
+    // Invalidate related GET cache on mutations before reading body
+    if (!isGet) {
+      const segments = path.split('?')[0].split('/');
+      const basePath = '/' + segments[1];
+      invalidatePrefix(basePath);
+    }
+
+    // 204/205 — no body, nothing to parse
+    if (response.status === 204 || response.status === 205) {
+      return { data: null, error: null };
+    }
+
     const data = (await response.json()) as T;
 
     if (isGet && !signal?.aborted) {
       cacheSet(path, data);
-    }
-
-    // Invalidate related GET cache on mutations
-    if (!isGet) {
-      // Use top-level resource (e.g. '/notes' from '/notes/abc123') so mutations
-      // correctly invalidate GET endpoints that use different IDs (note ID vs document ID)
-      const segments = path.split('?')[0].split('/');
-      const basePath = '/' + segments[1];
-      invalidatePrefix(basePath);
     }
 
     return { data, error: null };
