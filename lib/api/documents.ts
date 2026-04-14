@@ -1,4 +1,7 @@
 import { api } from '@/lib/api';
+import { auth } from '@/lib/firebase';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export interface DocumentTag {
   documentId: string;
@@ -135,6 +138,62 @@ export const quizzesApi = {
   submitAttempt: (id: string, score: number, answers: object) =>
     api.post<QuizAttempt>(`/quizzes/${id}/attempt`, { score, answers }),
 };
+
+// SSE watcher — opens a stream and calls onStatus when the doc reaches complete or failed.
+// Returns a cancel function. Falls back gracefully if the connection drops.
+export function watchDocumentStatus(
+  docId: string,
+  onStatus: (status: 'complete' | 'failed', errorMessage?: string) => void,
+): () => void {
+  let cancelled = false;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
+  const start = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+
+      const response = await fetch(`${API_URL}/documents/${docId}/status-stream`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok || !response.body) return;
+      if (cancelled) return;
+
+      reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done || cancelled) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6)) as { status: string; errorMessage?: string };
+            if (data.status === 'complete' || data.status === 'failed') {
+              onStatus(data.status, data.errorMessage);
+            }
+          } catch {
+            // malformed line — ignore
+          }
+        }
+      }
+    } catch {
+      // connection dropped — caller handles via onStatus not being called
+    }
+  };
+
+  start();
+
+  return () => {
+    cancelled = true;
+    reader?.cancel().catch(() => {});
+  };
+}
 
 // Document Tags API (for managing the tags themselves)
 export const docTagsApi = {
