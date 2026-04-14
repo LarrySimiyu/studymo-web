@@ -276,10 +276,19 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
     if (f) handleFile(f);
   };
 
+  const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
+  const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
+  const AUDIO_WARN_BYTES = 50 * 1024 * 1024;
+  const showLargeFileWarning = isAudioFile && file && file.size > AUDIO_WARN_BYTES && file.size <= AUDIO_MAX_BYTES;
+
   async function handleUpload() {
     if (!file) return;
     if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
       onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
+      return;
+    }
+    if (isAudioFile && file.size > AUDIO_MAX_BYTES) {
+      onError(`Audio file is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 200MB.`);
       return;
     }
     onStart();
@@ -334,6 +343,11 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
           </>
         )}
       </div>
+      {showLargeFileWarning && (
+        <p className="text-xs px-1" style={{ color: '#F59E0B' }}>
+          Large file ({Math.round(file!.size / 1024 / 1024)}MB) — processing may take a while, please be patient!
+        </p>
+      )}
       <div>
         <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
         <input
