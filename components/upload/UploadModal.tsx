@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { documentsApi, notesApi } from '@/lib/api/documents';
+import { documentsApi, notesApi, watchDocumentStatus } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
 
 type Tab = 'file' | 'video' | 'record' | 'blank';
@@ -14,41 +14,18 @@ interface Props {
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
-const POLL_INTERVAL_MS = 2000;
-// Polls a document until complete or failed. No timeout — user can close the modal
-// at any time and check their library. Real server failures still surface the error.
-async function pollDocumentStatus(
+// Watches a document via SSE until complete or failed.
+// Returns a cancel function. User can close the modal at any time.
+function startDocumentWatch(
   docId: string,
   onComplete: () => void,
   onFailed: (errorMessage?: string) => void
-): Promise<() => void> {
-  let stopped = false;
-
-  const poll = async () => {
-    if (stopped) return;
+): () => void {
+  return watchDocumentStatus(docId, (status, errorMessage) => {
     invalidatePrefix(`/documents/${docId}`);
-    const { data, error } = await documentsApi.getById(docId);
-
-    if (stopped) return;
-
-    if (error === 'HTTP 404' || error?.includes('404') || error === 'Document not found' || (error && error.toLowerCase().includes('not found'))) {
-      onFailed();
-      return;
-    }
-    if (data?.status === 'complete') {
-      onComplete();
-      return;
-    }
-    if (data?.status === 'failed') {
-      onFailed(data.errorMessage ?? undefined);
-      return;
-    }
-
-    setTimeout(poll, POLL_INTERVAL_MS);
-  };
-
-  setTimeout(poll, POLL_INTERVAL_MS);
-  return () => { stopped = true; };
+    if (status === 'complete') onComplete();
+    else onFailed(errorMessage);
+  });
 }
 
 // ─── Presigned R2 upload (PUT directly to R2, no server RAM) ─────────────────
@@ -151,9 +128,9 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
     setUploadState('uploading');
   }
 
-  async function handleUploadSuccess(docId: string) {
+  function handleUploadSuccess(docId: string) {
     setUploadState('processing');
-    stopPollRef.current = await pollDocumentStatus(
+    stopPollRef.current = startDocumentWatch(
       docId,
       () => { onSuccess(docId); },
       (errorMessage) => { setFailedMessage(errorMessage); setUploadState('failed'); },

@@ -1,288 +1,22 @@
 'use client';
 
-import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { documentsApi, Document, docTagsApi } from '@/lib/api/documents';
-import { foldersApi, Folder } from '@/lib/api/organization';
+import { documentsApi, docTagsApi, watchDocumentStatus } from '@/lib/api/documents';
+import { foldersApi } from '@/lib/api/organization';
 import { useLibrary } from '@/context/LibraryContext';
 import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
 import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
+import NoteListItem from '@/components/library/NoteListItem';
+import DeleteConfirmModal from '@/components/library/DeleteConfirmModal';
+import FolderModal from '@/components/library/FolderModal';
+import ManageTagsModal from '@/components/library/ManageTagsModal';
+import { flattenFolders, notifyFoldersChanged } from '@/components/library/libraryUtils';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
-import TagDropdown, { type Tag } from '@/components/ui/TagDropdown';
+import TagDropdown from '@/components/ui/TagDropdown';
 import { Input } from '@/components/ui/Input';
 import { PenLine, Upload, Mic, Youtube, Globe, Plus } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
-
-function timeAgo(dateStr: string): string {
-  const diffMs = Date.now() - new Date(dateStr).getTime();
-  const secs = Math.floor(diffMs / 1000);
-  if (secs < 60) return `${secs}s ago`;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 2) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function typeIcon(type: string) {
-  if (type === 'pdf') return '📄';
-  if (type === 'audio') return '🎵';
-  if (type === 'recording') return '🎙';
-  if (type === 'video_url') return '🎬';
-  return '📄';
-}
-
-function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number })[] {
-  const result: (Folder & { depth: number })[] = [];
-  for (const f of folders) {
-    result.push({ ...f, depth });
-    if (f.children?.length) result.push(...flattenFolders(f.children, depth + 1));
-  }
-  return result;
-}
-
-function notifyFoldersChanged() {
-  window.dispatchEvent(new CustomEvent('library:folders-changed'));
-}
-
-function DeleteConfirmModal({ count, onConfirm, onCancel, deleting }: {
-  count: number; onConfirm: () => void; onCancel: () => void; deleting: boolean;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="border border-black/10 rounded-2xl w-full max-w-sm p-6" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <div className="flex flex-col items-center text-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--danger-subtle)' }}>🗑</div>
-          <div>
-            <p className="text-[var(--text-1)] font-semibold">Delete {count} note{count !== 1 ? 's' : ''}?</p>
-            <p className="text-[var(--text-2)] opacity-60 text-sm mt-1">This action cannot be undone. All notes, flashcards, and quizzes for {count !== 1 ? 'these notes' : 'this note'} will be permanently deleted.</p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={onCancel} disabled={deleting}
-            className="flex-1 py-2.5 rounded-xl border border-black/10 text-[var(--text-2)] opacity-60 text-sm hover:bg-black/5 disabled:opacity-40 transition-colors">
-            Cancel
-          </button>
-          <button onClick={onConfirm} disabled={deleting}
-            className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50 transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#EF4444' }}>
-            {deleting ? 'Deleting…' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ManageTagsModal({ onClose, onChange }: { onClose: () => void; onChange: () => void }) {
-  const [tags, setTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
-  const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState(TAG_COLORS[0]);
-  const [saving, setSaving] = useState(false);
-
-  const load = useCallback(async () => {
-    const { data } = await docTagsApi.getAll();
-    if (data) setTags(data);
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const create = async () => {
-    if (!newName.trim() || saving) return;
-    setSaving(true);
-    await docTagsApi.create({ name: newName.trim(), color: newColor });
-    setSaving(false);
-    setNewName('');
-    load();
-    onChange();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="border border-black/10 rounded-2xl w-full max-w-sm p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <div className="flex justify-between mb-4">
-          <h3 className="font-semibold text-[var(--text-1)]">Note Tags</h3>
-          <button onClick={onClose} className="text-[var(--text-1)] opacity-40 hover:opacity-100 text-xl leading-none">×</button>
-        </div>
-        <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-input)' }}>
-          <input value={newName} onChange={e => setNewName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && create()}
-            placeholder="New tag name"
-            className="w-full bg-transparent text-sm text-[var(--text-1)] outline-none placeholder-[var(--text-3)] mb-2" />
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1.5">
-              {TAG_COLORS.map(c => (
-                <button key={c} onClick={() => setNewColor(c)} className="w-5 h-5 rounded-full border-2 transition-all"
-                  style={{ backgroundColor: c, borderColor: newColor === c ? 'var(--text-1)' : 'transparent' }} />
-              ))}
-            </div>
-            <button onClick={create} disabled={saving || !newName.trim()}
-              className="px-3 py-1 bg-[#9747FF] text-white text-xs rounded-lg disabled:opacity-40">Add</button>
-          </div>
-        </div>
-        <div className="space-y-1 max-h-48 overflow-y-auto">
-          {tags.map(t => (
-            <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color ?? '#9747FF' }} />
-              <span className="flex-1 text-sm text-[var(--text-2)]">{t.name}</span>
-              <button onClick={async () => { await docTagsApi.delete(t.id); load(); onChange(); }}
-                className="text-[var(--text-1)] opacity-20 hover:text-red-400 hover:opacity-100 text-xl leading-none">×</button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FolderModal({ folder, onClose, onSave }: {
-  folder?: Folder; onClose: () => void; onSave: (name: string, color: string) => void;
-}) {
-  const [name, setName] = useState(folder?.name ?? '');
-  const [color, setColor] = useState(folder?.color ?? TAG_COLORS[0]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="border border-black/10 rounded-2xl w-full max-w-sm p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <div className="flex justify-between mb-4">
-          <h3 className="font-semibold text-[var(--text-1)]">{folder ? 'Rename Collection' : 'New Collection'}</h3>
-          <button onClick={onClose} className="text-[var(--text-1)] opacity-40 hover:opacity-100 text-xl leading-none">×</button>
-        </div>
-        <input autoFocus value={name} onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && name.trim() && onSave(name.trim(), color)}
-          placeholder="Collection name"
-          className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 mb-3" style={{ backgroundColor: 'var(--bg-input)' }} />
-        <div className="flex gap-2 mb-4">
-          {TAG_COLORS.map(c => (
-            <button key={c} onClick={() => setColor(c)} className="w-7 h-7 rounded-full border-2 transition-all"
-              style={{ backgroundColor: c, borderColor: color === c ? 'var(--text-1)' : 'transparent' }} />
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-black/10 text-[var(--text-2)] text-sm">Cancel</button>
-          <button onClick={() => name.trim() && onSave(name.trim(), color)}
-            disabled={!name.trim()} className="flex-1 py-2 rounded-lg bg-[#9747FF] text-white text-sm disabled:opacity-40">
-            {folder ? 'Save' : 'Create'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function NoteListItem({ doc, preview, isSelected, onClick, onDelete, onMoveToFolder, folders }: {
-  doc: Document;
-  preview?: string;
-  isSelected: boolean;
-  onClick: () => void;
-  onDelete: (id: string) => void;
-  onMoveToFolder: (docId: string, folderId: string | null) => void;
-  folders: Folder[];
-}) {
-  const [showMenu, setShowMenu] = useState(false);
-  const [openSub, setOpenSub] = useState<'folder' | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const flat = flattenFolders(folders);
-  const docTags = doc.tags ?? [];
-
-  useEffect(() => {
-    if (!showMenu) return;
-    const h = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-        setOpenSub(null);
-      }
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, [showMenu]);
-
-  return (
-    <div
-      onClick={onClick}
-      className="group relative mx-2 my-2 px-3 py-2.5 cursor-pointer transition-colors rounded-xl"
-      style={{ backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-card)' }}
-      onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
-      onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}
-    >
-      <div className="flex items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-1">
-            <p className="text-xs font-medium leading-snug text-[var(--text-1)]">
-              {doc.title}
-            </p>
-            {/* ⋯ menu */}
-            <div ref={menuRef} className="shrink-0 relative">
-              <button
-                onClick={e => { e.stopPropagation(); setShowMenu(v => !v); setOpenSub(null); }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-black/5 transition-all text-[var(--text-2)] leading-none"
-              >
-                ⋯
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl min-w-[170px]"
-                  style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-
-                  {/* Collections list */}
-                  {flat.map(f => (
-                    <button key={f.id} className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
-                      onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}>
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
-                      {f.name}
-                    </button>
-                  ))}
-
-                  <div className="border-t mx-2 my-1" style={{ borderColor: 'var(--border)' }} />
-                  <button className="w-full text-left px-3 py-2 text-body-sm text-red-400 hover:bg-black/5"
-                    onClick={e => { e.stopPropagation(); onDelete(doc.id); setShowMenu(false); }}>
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Preview text — 1 line */}
-          {preview && (
-            <p className="text-xs mt-0 line-clamp-1 leading-snug" style={{ color: 'var(--text-2)' }}>
-              {preview}
-            </p>
-          )}
-
-          {doc.status === 'processing' && (
-            <div className="flex items-center gap-1 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-              <span className="text-xs text-yellow-500">Processing…</span>
-            </div>
-          )}
-
-          {/* Tags */}
-          {docTags.length > 0 && (
-            <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-              {docTags.slice(0, 3).map(dt => (
-                <span key={dt.tagId} className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '25', color: dt.tag.color ?? '#9747FF' }}>
-                  {dt.tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Dates */}
-          <div className="mt-1.5">
-            <span className="text-xs" style={{ color: 'var(--text-3)' }}>
-              Edited {timeAgo(doc.updatedAt)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function LibraryPage() {
   const searchParams = useSearchParams();
@@ -290,15 +24,15 @@ export default function LibraryPage() {
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [debouncedDocId, setDebouncedDocId] = useState<string | null>(null);
   const debounceDocRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Capture the ?note= param once on mount so we can pre-select that doc
   const noteParamRef = useRef(searchParams.get('note'));
 
   const selectDoc = (id: string | null) => {
-    flushPendingNoteSave(); // save before switching, fire-and-forget
+    flushPendingNoteSave();
     setSelectedDocId(id);
     if (debounceDocRef.current) clearTimeout(debounceDocRef.current);
     debounceDocRef.current = setTimeout(() => setDebouncedDocId(id), 300);
   };
+
   const { documents, folders, availableTags, notePreviews, initialized, refetch, removeDocument } = useLibrary();
   const [loading, setLoading] = useState(!initialized);
   const [uploadType, setUploadType] = useState<UploadType | null>(null);
@@ -310,7 +44,9 @@ export default function LibraryPage() {
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-  const [sort, setSort] = useState('newest');
+  const [deleteTarget, setDeleteTarget] = useState<Set<string> | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [, setTick] = useState(0);
 
   const filteredDocuments = useMemo(() => {
     let docs = documents;
@@ -321,9 +57,6 @@ export default function LibraryPage() {
     if (typeFilter) docs = docs.filter(d => d.type === typeFilter);
     return docs;
   }, [documents, selectedFolder, tagFilter, search, typeFilter]);
-  const [deleteTarget, setDeleteTarget] = useState<Set<string> | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [, setTick] = useState(0);
 
   // Tick every 30s so relative timestamps stay fresh
   useEffect(() => {
@@ -343,7 +76,7 @@ export default function LibraryPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, [showUploadDropdown]);
 
-  // Clear selection when folder changes so auto-select picks the new first doc
+  // Clear selection when filters change
   useEffect(() => { selectDoc(null); }, [selectedFolder, search, tagFilter, typeFilter]);
 
   useEffect(() => {
@@ -374,10 +107,12 @@ export default function LibraryPage() {
     });
   }, [filteredDocuments]);
 
+  // SSE: one connection per processing doc, refetch once on completion/failure
   useEffect(() => {
-    if (!documents.some(d => d.status === 'processing')) return;
-    const iv = setInterval(refetch, 3000);
-    return () => clearInterval(iv);
+    const processing = documents.filter(d => d.status === 'processing');
+    if (processing.length === 0) return;
+    const cancels = processing.map(doc => watchDocumentStatus(doc.id, () => { refetch(); }));
+    return () => { cancels.forEach(cancel => cancel()); };
   }, [documents, refetch]);
 
   async function confirmDelete(ids: Set<string>) {
@@ -397,7 +132,7 @@ export default function LibraryPage() {
 
   const folderName = selectedFolder === 'all' ? 'Notes'
     : selectedFolder === 'none' ? 'Unfiled'
-      : flattenFolders(folders).find(f => f.id === selectedFolder)?.name ?? 'Notes';
+    : flattenFolders(folders).find(f => f.id === selectedFolder)?.name ?? 'Notes';
 
   return (
     <DndContext onDragEnd={async (e: DragEndEvent) => {
@@ -406,15 +141,14 @@ export default function LibraryPage() {
       await documentsApi.setFolder(e.active.id as string, overId.replace('folder-', ''));
       refetch();
     }}>
-      {/* Full-height split panel */}
       <div className="flex h-full overflow-hidden">
 
-        {/* LEFT: Note list — full width on mobile when no doc selected, hidden when doc selected */}
+        {/* LEFT: Note list */}
         <div
           className={`flex-col shrink-0 overflow-hidden ${selectedDocId ? 'hidden md:flex' : 'flex w-full'} md:w-[260px]`}
           style={{ borderRight: '1px solid var(--border)', backgroundColor: 'var(--bg-page)' }}
         >
-          {/* Left header: title + upload */}
+          {/* Header */}
           <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-body-sm font-semibold text-[var(--text-1)]">{folderName}</h1>
@@ -465,7 +199,6 @@ export default function LibraryPage() {
                 )}
               </div>
             </div>
-            {/* Search + filter */}
             <div className="flex items-center gap-3">
               <Input
                 variant="search"
@@ -498,16 +231,13 @@ export default function LibraryPage() {
             })()}
           </div>
 
-          {/* Note list */}
+          {/* List */}
           <div className="flex-1 overflow-y-auto py-1 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {loading ? (
               <LoadingSpinner size="md" />
             ) : documents.length === 0 ? (
               <div className="flex flex-col items-center text-center py-12 px-4 gap-2">
-                <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center mb-1"
-                  style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
-                >
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-1" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
                   <PenLine size={20} style={{ color: 'var(--brand)' }} />
                 </div>
                 <p className="text-body-sm font-medium text-[var(--text-1)]">
@@ -534,7 +264,7 @@ export default function LibraryPage() {
           </div>
         </div>
 
-        {/* RIGHT: Document detail — hidden on mobile when no doc selected */}
+        {/* RIGHT: Document detail */}
         <div className={`flex-1 overflow-hidden ${selectedDocId ? 'flex flex-col' : 'hidden md:flex md:flex-col'}`} style={{ backgroundColor: 'var(--bg-page)' }}>
           {debouncedDocId ? (
             <DocumentDetail
@@ -546,10 +276,7 @@ export default function LibraryPage() {
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center gap-3 px-6">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}
-              >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
                 <PenLine size={28} style={{ color: 'var(--brand)' }} />
               </div>
               <div>
@@ -580,7 +307,9 @@ export default function LibraryPage() {
           }}
         />
       )}
-      {showManageTags && <ManageTagsModal onClose={() => setShowManageTags(false)} onChange={() => refetch()} />}
+      {showManageTags && (
+        <ManageTagsModal onClose={() => setShowManageTags(false)} onChange={() => refetch()} />
+      )}
       {deleteTarget && (
         <DeleteConfirmModal
           count={deleteTarget.size}
