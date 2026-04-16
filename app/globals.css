@@ -43,6 +43,35 @@
   --radius: 0.625rem;
 }
 
+/* ─── Light mode overrides ───────────────────────────────────────────────── */
+.light {
+  --bg-page:    #F5F5F7;
+  --bg-card:    #FFFFFF;
+  --bg-input:   #EEEEF3;
+  --bg-hover:   #E4E4EC;
+  --border:     #E0E0EA;
+  --border-md:  #D0D0DC;
+  --text-1:     #0E0E17;
+  --text-2:     #52526A;
+  --text-3:     #92949E;
+  --brand-subtle:   rgba(255, 101, 0, 0.10);
+  --danger-subtle:  rgba(239, 68, 68, 0.10);
+  --success-subtle: rgba(34, 197, 94, 0.10);
+  --warning-subtle: rgba(245, 158, 11, 0.10);
+  /* Tailwind HSL compat */
+  --background: 240 14% 97%;
+  --foreground: 240 30% 7%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 30% 7%;
+  --secondary: 240 10% 93%;
+  --secondary-foreground: 240 30% 7%;
+  --muted: 240 10% 93%;
+  --muted-foreground: 240 6% 40%;
+  --accent: 240 10% 90%;
+  --accent-foreground: 240 30% 7%;
+  --input: 240 10% 93%;
+}
+
 @layer base {
   * { @apply border-border; box-sizing: border-box; }
   body {
@@ -112,6 +141,7 @@
 ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
 input[type="date"] { color-scheme: dark; }
+.light input[type="date"] { color-scheme: light; }
 
 /* ── Blog post content styles ──────────────────────────────────────────── */
 .blog-content p { color: #fff; font-size: 1rem; line-height: 1.8; margin-bottom: 1.25rem; }

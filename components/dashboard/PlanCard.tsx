@@ -68,7 +68,7 @@ function TopicProgressBadge({ done, total }: { done: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-semibold tabular-nums text-white">
+        <span className="text-[10px] font-semibold tabular-nums text-[var(--text-1)]">
           {done}/{total}
         </span>
       </div>
@@ -132,11 +132,11 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
         <TopicProgressBadge done={doneCount} total={totalCount} />
         <div className="flex-1 min-w-0">
           <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-1)]`}>{day.title}</p>
-          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5 text-white`}>
+          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5 text-[var(--text-2)]`}>
             {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </p>
         </div>
-        <div className="text-white shrink-0">
+        <div className="text-[var(--text-1)] shrink-0">
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </button>
@@ -177,7 +177,7 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
                     style={{
                       color: isDone ? 'var(--text-3)' : 'var(--text-1)',
                       textDecoration: isDone ? 'line-through' : 'none',
-                      textDecorationColor: 'white',
+                      textDecorationColor: 'var(--text-3)',
                       textDecorationThickness: '0.3px',
                     }}
                   >
@@ -248,7 +248,7 @@ export default function PlanCard({
 
           <div className="flex-1 min-w-0">
             <p className={`text-[var(--text-1)] font-bold truncate ${compact ? 'text-xs' : ''}`}>{plan.title}</p>
-            <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-white`}>{formatDate(plan.testDate)}</span>
+            <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-2)]`}>{formatDate(plan.testDate)}</span>
           </div>
 
           <div className="shrink-0 flex items-center gap-1.5">

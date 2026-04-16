@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
                   />
                   {/* Stats */}
                   <div className="text-center">
-                    <p className="text-xs font-medium" style={{ color: isCurrent ? '#9747FF' : '#9CA3AF' }}>
+                    <p className="text-xs font-medium" style={{ color: isCurrent ? '#9747FF' : 'var(--text-3)' }}>
                       {fmtMins(week.totalMins)}
                     </p>
                     <p className="text-xs text-[var(--text-3)]">{week.sessionCount} sess.</p>

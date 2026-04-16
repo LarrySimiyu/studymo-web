@@ -12,6 +12,7 @@ import UploadModal from '@/components/upload/UploadModal';
 import { LibraryProvider } from '@/context/LibraryContext';
 import PaywallModal from '@/components/ui/PaywallModal';
 import { analytics } from '@/lib/analytics';
+import { ThemeProvider } from '@/components/ui/ThemeProvider';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -189,11 +190,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense>
-      {/* <StudyTimerProvider> */}
-      <DashboardInner>{children}</DashboardInner>
-      {/* <StudyTimerPanel /> */}
-      {/* </StudyTimerProvider> */}
-    </Suspense>
+    <ThemeProvider>
+      <Suspense>
+        {/* <StudyTimerProvider> */}
+        <DashboardInner>{children}</DashboardInner>
+        {/* <StudyTimerPanel /> */}
+        {/* </StudyTimerProvider> */}
+      </Suspense>
+    </ThemeProvider>
   );
 }
