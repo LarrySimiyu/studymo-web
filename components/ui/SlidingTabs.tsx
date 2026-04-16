@@ -39,7 +39,7 @@ export default function SlidingTabs<T extends string>({ tabs, active, onChange }
             <span
               className="text-[10px] px-1.5 py-0.5 rounded-full tabular-nums"
               style={{
-                backgroundColor: active === tab.value ? 'rgba(255,101,0,0.12)' : 'var(--bg-input)',
+                backgroundColor: active === tab.value ? 'var(--brand-subtle)' : 'var(--bg-input)',
                 color: active === tab.value ? 'var(--brand)' : 'var(--text-3)',
               }}
             >

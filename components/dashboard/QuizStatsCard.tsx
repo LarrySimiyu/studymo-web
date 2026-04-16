@@ -88,7 +88,7 @@ function QuizRow({ documentTitle, latestScore, attempts, improvement }: {
 }) {
   const color = scoreColor(latestScore);
   const impColor = improvement > 0 ? '#22C55E' : improvement < 0 ? '#EF4444' : 'var(--text-3)';
-  const impBg = improvement > 0 ? 'rgba(34,197,94,0.12)' : improvement < 0 ? 'rgba(239,68,68,0.12)' : 'var(--bg-input)';
+  const impBg = improvement > 0 ? 'var(--success-subtle)' : improvement < 0 ? 'var(--danger-subtle)' : 'var(--bg-input)';
   const arrow = improvement > 0 ? '↑' : improvement < 0 ? '↓' : '→';
 
   return (
