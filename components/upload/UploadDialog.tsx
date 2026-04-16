@@ -165,8 +165,6 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
 
   const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
   const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
-  const AUDIO_WARN_BYTES = 50 * 1024 * 1024;
-  const showLargeFileWarning = isAudioFile && file && file.size > AUDIO_WARN_BYTES && file.size <= AUDIO_MAX_BYTES;
 
   async function handleUpload() {
     if (!file) return;
@@ -230,9 +228,9 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
           </>
         )}
       </div>
-      {showLargeFileWarning && (
-        <p className="text-xs px-1" style={{ color: '#F59E0B' }}>
-          Large file ({Math.round(file!.size / 1024 / 1024)}MB) — processing may take a while.
+      {file && (
+        <p className="text-xs px-1" style={{ color: 'var(--text-3)' }}>
+          Size: {Math.round(file.size / 1024 / 1024)}MB
         </p>
       )}
       <div>
