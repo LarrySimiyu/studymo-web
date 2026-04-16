@@ -24,6 +24,9 @@ export const metadata: Metadata = {
     description: 'Upload your notes and let AI build your entire study plan, flashcards, quizzes and more.',
   },
   metadataBase: new URL('https://studymo.app'),
+  alternates: {
+    canonical: 'https://studymo.app',
+  },
 };
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
