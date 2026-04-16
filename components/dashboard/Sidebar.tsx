@@ -295,6 +295,43 @@ function SidebarContent({
         </AnimatePresence>
       </nav>
 
+      {/* Theme toggle */}
+      <div className="px-1.5 pb-1">
+        <div
+          className={cn(
+            'flex items-center gap-2 px-2.5 py-2',
+            collapsed ? 'justify-center' : ''
+          )}
+        >
+          <button
+            onClick={toggle}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
+            style={{ backgroundColor: '#FF6500' }}
+          >
+            {/* track icons */}
+            <Sun size={11} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-white" />
+            <Moon size={11} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white" />
+            {/* thumb */}
+            <span
+              className={cn(
+                'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center',
+                theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
+              )}
+            >
+              {theme === 'dark'
+                ? <Moon size={11} className="text-[#FF6500]" />
+                : <Sun size={11} className="text-[#FF6500]" />}
+            </span>
+          </button>
+          {!collapsed && (
+            <span className="text-xs" style={{ color: 'var(--text-2)' }}>
+              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Get Unlimited banner (free users only) */}
       {!subscriptionStatus?.hasAccess && (
         <div className="px-1.5 pb-1">
@@ -319,22 +356,6 @@ function SidebarContent({
           )}
         </div>
       )}
-
-      {/* Theme toggle */}
-      <div className="px-1.5 pb-1">
-        <button
-          onClick={toggle}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className={cn(
-            'flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors w-full hover:bg-[var(--bg-hover)]',
-            collapsed ? 'justify-center' : ''
-          )}
-          style={{ color: 'var(--text-2)' }}
-        >
-          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          {!collapsed && <span className="text-xs">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>}
-        </button>
-      </div>
 
       {/* User footer */}
       <div className="px-1.5 pb-2 pt-1">

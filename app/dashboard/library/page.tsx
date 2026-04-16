@@ -6,7 +6,7 @@ import { documentsApi, docTagsApi, watchDocumentStatus } from '@/lib/api/documen
 import { foldersApi } from '@/lib/api/organization';
 import { useLibrary } from '@/context/LibraryContext';
 import DocumentDetail, { flushPendingNoteSave } from '@/components/library/DocumentDetail';
-import UploadModal, { Tab as UploadTab } from '@/components/upload/UploadModal';
+import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
 import NoteListItem from '@/components/library/NoteListItem';
 import DeleteConfirmModal from '@/components/library/DeleteConfirmModal';
 import FolderModal from '@/components/library/FolderModal';
@@ -35,7 +35,7 @@ export default function LibraryPage() {
 
   const { documents, folders, availableTags, notePreviews, initialized, refetch, removeDocument } = useLibrary();
   const [loading, setLoading] = useState(!initialized);
-  const [uploadType, setUploadType] = useState<UploadTab | null>(null);
+  const [uploadType, setUploadType] = useState<UploadType | null>(null);
   const [showUploadDropdown, setShowUploadDropdown] = useState(false);
   const [uploadDropdownPos, setUploadDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const uploadDropdownRef = useRef<HTMLDivElement>(null);
@@ -175,11 +175,11 @@ export default function LibraryPage() {
                     style={{ top: uploadDropdownPos.top, left: uploadDropdownPos.left, backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
                   >
                     {([
-                      { type: 'blank' as UploadTab, label: 'New Note', icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
-                      { type: 'file' as UploadTab, label: 'Upload File', icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)' },
-                      { type: 'record' as UploadTab, label: 'Record Audio', icon: Mic, color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
-                      { type: 'video' as UploadTab, label: 'YouTube URL', icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
-                      { type: 'webpage' as UploadTab, label: 'Import Website', icon: Globe, color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
+                      { type: 'blank' as UploadType, label: 'New Note', icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+                      { type: 'file' as UploadType, label: 'Upload File', icon: Upload, color: '#FF6500', bg: 'rgba(255,101,0,0.12)' },
+                      { type: 'record' as UploadType, label: 'Record Audio', icon: Mic, color: '#EC4899', bg: 'rgba(236,72,153,0.12)' },
+                      { type: 'video' as UploadType, label: 'YouTube URL', icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+                      { type: 'webpage' as UploadType, label: 'Import Website', icon: Globe, color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
                     ] as const).map(({ type, label, icon: Icon, color, bg }) => (
                       <button
                         key={type}
@@ -290,8 +290,8 @@ export default function LibraryPage() {
 
       {/* Modals */}
       {uploadType && (
-        <UploadModal
-          initialTab={uploadType}
+        <UploadDialog
+          type={uploadType}
           onClose={() => { setUploadType(null); refetch(); }}
           onSuccess={(docId) => { setUploadType(null); refetch(); if (docId) selectDoc(docId); }}
         />
