@@ -7,18 +7,18 @@ import { CalendarDays, Heart, ClipboardList, FileText, Upload, Mic, PenLine, You
 import { documentsApi } from '@/lib/api/documents';
 import { practiceExamsApi } from '@/lib/api/organization';
 import GeneratePracticeExamModal from '@/components/practice-exams/GeneratePracticeExamModal';
-import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
+import UploadModal, { Tab as UploadTab } from '@/components/upload/UploadModal';
 import CreateStudyPlanModal from '@/components/study-plan/CreateStudyPlanModal';
 
 
-const UPLOAD_OPTIONS: { type: UploadType; icon: React.ReactNode; label: string }[] = [
+const UPLOAD_OPTIONS: { type: UploadTab; icon: React.ReactNode; label: string }[] = [
   { type: 'blank',  icon: <PenLine  size={22} color="#8B5CF6" />,  label: 'New Note'         },
   { type: 'file',   icon: <Upload   size={22} color="#FF6500" />,  label: 'Upload File'      },
   { type: 'record', icon: <Mic      size={22} color="#EC4899" />,  label: 'Record Audio'     },
   { type: 'video',  icon: <Youtube  size={22} color="#3B82F6" />,  label: 'Upload Video URL' },
 ];
 
-const ICON_BG: Record<UploadType, string> = {
+const ICON_BG: Record<UploadTab, string> = {
   file:    'rgba(255,101,0,0.12)',
   video:   'rgba(59,130,246,0.12)',
   record:  'rgba(236,72,153,0.12)',
@@ -38,7 +38,7 @@ export default function RecommendedSection() {
 
   // Upload flow: type picker → upload modal
   const [showTypePicker, setShowTypePicker] = useState(false);
-  const [uploadType, setUploadType] = useState<UploadType | null>(null);
+  const [uploadType, setUploadType] = useState<UploadTab | null>(null);
 
   const handlePracticeExamClick = async () => {
     const { data } = await documentsApi.getAll().catch(() => ({ data: null }));
@@ -53,7 +53,7 @@ export default function RecommendedSection() {
     router.push('/dashboard/practice-exams');
   };
 
-  const handleSelectType = (type: UploadType) => {
+  const handleSelectType = (type: UploadTab) => {
     setUploadType(type);
     setShowTypePicker(false);
   };
@@ -178,10 +178,9 @@ export default function RecommendedSection() {
         </div>
       )}
 
-      {/* Upload dialog — opens after type is selected */}
       {uploadType && (
-        <UploadDialog
-          type={uploadType}
+        <UploadModal
+          initialTab={uploadType}
           onClose={() => setUploadType(null)}
           onSuccess={() => {
             setUploadType(null);

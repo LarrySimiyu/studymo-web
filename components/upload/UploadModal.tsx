@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { documentsApi, notesApi } from '@/lib/api/documents';
+import { documentsApi, notesApi, watchDocumentStatus } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
 
-type Tab = 'file' | 'video' | 'record' | 'blank';
+export type Tab = 'file' | 'video' | 'record' | 'blank' | 'webpage';
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 
 interface Props {
@@ -14,41 +14,18 @@ interface Props {
 }
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
-const POLL_INTERVAL_MS = 2000;
-// Polls a document until complete or failed. No timeout — user can close the modal
-// at any time and check their library. Real server failures still surface the error.
-async function pollDocumentStatus(
+// Watches a document via SSE until complete or failed.
+// Returns a cancel function. User can close the modal at any time.
+function startDocumentWatch(
   docId: string,
   onComplete: () => void,
   onFailed: (errorMessage?: string) => void
-): Promise<() => void> {
-  let stopped = false;
-
-  const poll = async () => {
-    if (stopped) return;
+): () => void {
+  return watchDocumentStatus(docId, (status, errorMessage) => {
     invalidatePrefix(`/documents/${docId}`);
-    const { data, error } = await documentsApi.getById(docId);
-
-    if (stopped) return;
-
-    if (error === 'HTTP 404' || error?.includes('404') || error === 'Document not found' || (error && error.toLowerCase().includes('not found'))) {
-      onFailed();
-      return;
-    }
-    if (data?.status === 'complete') {
-      onComplete();
-      return;
-    }
-    if (data?.status === 'failed') {
-      onFailed(data.errorMessage ?? undefined);
-      return;
-    }
-
-    setTimeout(poll, POLL_INTERVAL_MS);
-  };
-
-  setTimeout(poll, POLL_INTERVAL_MS);
-  return () => { stopped = true; };
+    if (status === 'complete') onComplete();
+    else onFailed(errorMessage);
+  });
 }
 
 // ─── Presigned R2 upload (PUT directly to R2, no server RAM) ─────────────────
@@ -151,9 +128,9 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
     setUploadState('uploading');
   }
 
-  async function handleUploadSuccess(docId: string) {
+  function handleUploadSuccess(docId: string) {
     setUploadState('processing');
-    stopPollRef.current = await pollDocumentStatus(
+    stopPollRef.current = startDocumentWatch(
       docId,
       () => { onSuccess(docId); },
       (errorMessage) => { setFailedMessage(errorMessage); setUploadState('failed'); },
@@ -197,15 +174,15 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-5 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-page)' }}>
-              {(['file', 'video', 'record', 'blank'] as Tab[]).map((t) => (
+            <div className="flex gap-1 mb-5 p-1 rounded-lg flex-wrap" style={{ backgroundColor: 'var(--bg-page)' }}>
+              {(['file', 'video', 'record', 'blank', 'webpage'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setTab(t); setError(''); }}
-                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors"
+                  className="flex-1 py-1.5 rounded-md text-xs font-medium transition-colors min-w-fit px-2"
                   style={tab === t ? { backgroundColor: '#9747FF', color: '#fff' } : { color: 'var(--text-2)' }}
                 >
-                  {t === 'file' ? 'Upload File' : t === 'video' ? 'Video URL' : t === 'record' ? 'Record Audio' : 'Blank Note'}
+                  {t === 'file' ? 'Upload' : t === 'video' ? 'YouTube' : t === 'record' ? 'Record' : t === 'blank' ? 'Blank' : 'Website'}
                 </button>
               ))}
             </div>
@@ -244,6 +221,14 @@ export default function UploadModal({ onClose, onSuccess, initialTab }: Props) {
                 onError={handleUploadError}
               />
             )}
+            {tab === 'webpage' && (
+              <WebpageTab
+                loading={uploadState === 'uploading'}
+                onStart={handleUploadStart}
+                onSuccess={handleUploadSuccess}
+                onError={handleUploadError}
+              />
+            )}
           </>
         )}
       </div>
@@ -276,10 +261,19 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
     if (f) handleFile(f);
   };
 
+  const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
+  const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
+  const AUDIO_WARN_BYTES = 50 * 1024 * 1024;
+  const showLargeFileWarning = isAudioFile && file && file.size > AUDIO_WARN_BYTES && file.size <= AUDIO_MAX_BYTES;
+
   async function handleUpload() {
     if (!file) return;
     if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
       onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
+      return;
+    }
+    if (isAudioFile && file.size > AUDIO_MAX_BYTES) {
+      onError(`Audio file is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 200MB.`);
       return;
     }
     onStart();
@@ -334,6 +328,11 @@ function FileUploadTab({ loading, onStart, onSuccess, onError }: {
           </>
         )}
       </div>
+      {showLargeFileWarning && (
+        <p className="text-xs px-1" style={{ color: '#F59E0B' }}>
+          Large file ({Math.round(file!.size / 1024 / 1024)}MB) — processing may take a while, please be patient!
+        </p>
+      )}
       <div>
         <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
         <input
@@ -468,6 +467,67 @@ function BlankNoteTab({ onSuccess, onError }: {
         style={{ backgroundColor: '#9747FF' }}
       >
         {loading ? 'Creating…' : 'Create Note'}
+      </button>
+    </div>
+  );
+}
+
+// ─── Webpage import tab ───────────────────────────────────────────────────────
+function WebpageTab({ loading, onStart, onSuccess, onError }: {
+  loading: boolean;
+  onStart: () => void;
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+
+  async function handleImport() {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    try { new URL(trimmed); } catch { onError('Please enter a valid URL including https://'); return; }
+    onStart();
+    const { data, error } = await documentsApi.uploadWebpage({ url: trimmed, title: title.trim() || undefined });
+    if (error || !data) { onError(error ?? 'Import failed'); return; }
+    onSuccess(data.id);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title <span style={{ color: 'var(--text-3)' }}>(optional)</span></label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+          placeholder="Leave blank to use page title"
+        />
+      </div>
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Website URL</label>
+        <input
+          autoFocus
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleImport()}
+          className="w-full px-3 py-2 rounded-lg text-[var(--text-1)] text-sm focus:outline-none"
+          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-md)' }}
+          placeholder="https://example.com/article"
+        />
+      </div>
+      <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
+        <p style={{ color: 'var(--text-2)' }}>Works with articles, Wikipedia, documentation, and most public pages. Paywalled or login-required pages won't import.</p>
+      </div>
+      <button
+        onClick={handleImport}
+        disabled={!url.trim() || loading}
+        className="w-full py-2.5 rounded-lg font-medium text-white text-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
+        style={{ backgroundColor: '#9747FF' }}
+      >
+        {loading ? 'Importing…' : 'Import Page'}
       </button>
     </div>
   );
