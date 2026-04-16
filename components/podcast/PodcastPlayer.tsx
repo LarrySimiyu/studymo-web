@@ -84,7 +84,7 @@ export default function PodcastPlayer({ audioUrl, onFirstPlay }: Props) {
           style={{ backgroundColor: 'var(--bg-input)', height: 4 }}
           onClick={handleSeek}
         >
-          <div className="rounded-full h-full" style={{ width: `${progress}%`, backgroundColor: '#fff' }} />
+          <div className="rounded-full h-full" style={{ width: `${progress}%`, backgroundColor: '#FF6500' }} />
         </div>
         <div className="flex justify-between">
           <span className="text-xs tabular-nums" style={{ color: 'var(--text-3)' }}>{fmtTime(currentTime)}</span>
@@ -149,8 +149,8 @@ export default function PodcastPlayer({ audioUrl, onFirstPlay }: Props) {
               onClick={() => handleSpeedChange(s)}
               className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
               style={{
-                backgroundColor: speed === s ? '#fff' : 'var(--bg-input)',
-                color: speed === s ? '#000' : 'var(--text-3)',
+                backgroundColor: speed === s ? 'rgba(255,101,0,0.12)' : 'var(--bg-input)',
+                color: speed === s ? '#FF6500' : 'var(--text-3)',
               }}
               onMouseEnter={e => { if (speed !== s) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
               onMouseLeave={e => { if (speed !== s) e.currentTarget.style.backgroundColor = 'var(--bg-input)'; }}
