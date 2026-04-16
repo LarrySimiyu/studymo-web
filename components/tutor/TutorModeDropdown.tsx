@@ -37,7 +37,7 @@ export default function TutorModeDropdown({ value, onChange }: Props) {
     <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <button
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors hover:bg-[var(--bg-hover)]"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: '#fff' }}
+        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
       >
         <span>{current.emoji}</span>
         <span>{current.label}</span>

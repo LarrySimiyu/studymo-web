@@ -8,7 +8,6 @@ import TopNav from '@/components/dashboard/TopNav';
 // import { StudyTimerProvider } from '@/context/StudyTimerContext';
 // import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
-import UploadModal from '@/components/upload/UploadModal';
 import { LibraryProvider } from '@/context/LibraryContext';
 import PaywallModal from '@/components/ui/PaywallModal';
 import { analytics } from '@/lib/analytics';
@@ -75,15 +74,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [refreshing, setRefreshing] = useState(false);
-  const [showGlobalUpload, setShowGlobalUpload] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-
-  // Listen for global upload trigger (e.g. sidebar + button)
-  useEffect(() => {
-    const handler = () => setShowGlobalUpload(true);
-    window.addEventListener('app:open-upload', handler);
-    return () => window.removeEventListener('app:open-upload', handler);
-  }, []);
 
   // Listen for paywall trigger from upload gate or nav buttons
   useEffect(() => {
@@ -171,16 +162,6 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           <LibraryProvider>{children}</LibraryProvider>
         </main>
       </div>
-
-      {showGlobalUpload && (
-        <UploadModal
-          onClose={() => setShowGlobalUpload(false)}
-          onSuccess={() => {
-            setShowGlobalUpload(false);
-            window.dispatchEvent(new CustomEvent('library:refetch'));
-          }}
-        />
-      )}
 
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
 

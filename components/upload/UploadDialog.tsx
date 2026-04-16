@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { PenLine, Upload, Mic, Youtube, Globe } from 'lucide-react';
-import { documentsApi, notesApi } from '@/lib/api/documents';
+import { documentsApi, notesApi, watchDocumentStatus } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
 import { analytics } from '@/lib/analytics';
 import { Input } from '@/components/ui/Input';
@@ -20,8 +20,6 @@ interface Props {
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
-const POLL_INTERVAL_MS = 2000;
-const POLL_MAX_ATTEMPTS = 150;
 
 const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; color: string; bg: string }> = {
   blank:   { title: 'New Note',        icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
@@ -31,38 +29,35 @@ const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; co
   webpage: { title: 'Import Website',  icon: Globe,   color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
 };
 
-async function pollDocumentStatus(
-  docId: string,
-  onComplete: () => void,
-  onFailed: (errorMessage?: string) => void
-): Promise<() => void> {
-  let attempts = 0;
-  let stopped = false;
-
-  const poll = async () => {
-    if (stopped) return;
-    invalidatePrefix(`/documents/${docId}`);
-    const { data, error } = await documentsApi.getById(docId);
-    if (stopped) return;
-    if (
-      error === 'HTTP 404' ||
-      error?.includes('404') ||
-      error === 'Document not found' ||
-      (error && error.toLowerCase().includes('not found'))
-    ) { onFailed(); return; }
-    if (data?.status === 'complete') { onComplete(); return; }
-    if (data?.status === 'failed') { onFailed(data.errorMessage ?? undefined); return; }
-    attempts++;
-    if (attempts >= POLL_MAX_ATTEMPTS) { onFailed(); return; }
-    setTimeout(poll, POLL_INTERVAL_MS);
-  };
-
-  setTimeout(poll, POLL_INTERVAL_MS);
-  return () => { stopped = true; };
+function uploadToPresignedUrl(
+  url: string,
+  file: Blob,
+  mimeType: string,
+  onProgress: (pct: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', mimeType);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed: ${xhr.status}`));
+    };
+    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.send(file);
+  });
 }
 
 // ─── Processing / Failed overlay ─────────────────────────────────────────────
-function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: { state: 'processing' | 'failed'; errorMessage?: string; onRetry: () => void; onClose: () => void }) {
+function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: {
+  state: 'processing' | 'failed';
+  errorMessage?: string;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
   if (state === 'processing') {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
@@ -71,16 +66,22 @@ function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: { state: '
         </div>
         <div>
           <p className="text-[var(--text-1)] font-semibold text-sm">Processing your note…</p>
-          <p className="text-[var(--text-2)] text-xs mt-1 max-w-xs">This may take a minute. You can close this — it will appear in your library when ready.</p>
+          <p className="text-[var(--text-2)] text-xs mt-1 max-w-xs">
+            This may take a minute. You can close this — it will appear in your library when ready.
+          </p>
         </div>
-        <button onClick={onClose} className="text-xs text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors">Close</button>
+        <button onClick={onClose} className="text-xs text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors">
+          Close
+        </button>
       </div>
     );
   }
   return (
     <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
       <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
       </div>
       <div>
         <p className="text-[var(--text-1)] font-semibold">Upload failed</p>
@@ -97,7 +98,10 @@ function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: { state: '
 }
 
 // ─── Blank note form ──────────────────────────────────────────────────────────
-function BlankNoteForm({ onSuccess, onError }: { onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+function BlankNoteForm({ onSuccess, onError }: {
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [title, setTitle] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -135,10 +139,16 @@ function BlankNoteForm({ onSuccess, onError }: { onSuccess: (docId: string) => v
 }
 
 // ─── File upload form ─────────────────────────────────────────────────────────
-function FileUploadForm({ loading, onStart, onSuccess, onError }: { loading: boolean; onStart: () => void; onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+function FileUploadForm({ loading, onStart, onSuccess, onError }: {
+  loading: boolean;
+  onStart: () => void;
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (f: File) => {
@@ -153,46 +163,96 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: { loading: boo
     if (f) handleFile(f);
   };
 
+  const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
+  const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
+  const AUDIO_WARN_BYTES = 50 * 1024 * 1024;
+  const showLargeFileWarning = isAudioFile && file && file.size > AUDIO_WARN_BYTES && file.size <= AUDIO_MAX_BYTES;
+
   async function handleUpload() {
     if (!file) return;
     if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
       onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
       return;
     }
+    if (isAudioFile && file.size > AUDIO_MAX_BYTES) {
+      onError(`Audio file is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 200MB.`);
+      return;
+    }
     onStart();
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('title', title || file.name);
-    const { data, error } = await documentsApi.uploadFile(fd);
-    if (error || !data) { onError(error ?? 'Upload failed'); return; }
-    onSuccess(data.id);
+    setUploadProgress(0);
+
+    const { data: presignData, error: presignError } = await documentsApi.presign({
+      mimeType: file.type,
+      title: title || file.name,
+      fileSize: file.size,
+    });
+    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
+
+    try {
+      await uploadToPresignedUrl(presignData.uploadUrl, file, file.type, setUploadProgress);
+    } catch {
+      onError('Upload failed — please try again'); return;
+    }
+
+    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
+    if (processError) { onError(processError); return; }
+
+    onSuccess(presignData.doc.id);
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" />
-      </div>
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className="rounded-xl p-8 text-center cursor-pointer transition-colors"
-        style={{ border: `2px dashed ${dragging ? '#9747FF' : 'var(--border-md)'}`, backgroundColor: dragging ? 'var(--brand-subtle)' : 'var(--bg-page)' }}
+        style={{
+          border: `2px dashed ${dragging ? '#FF6500' : 'var(--border-md)'}`,
+          backgroundColor: dragging ? 'rgba(255,101,0,0.06)' : 'var(--bg-page)',
+        }}
       >
-        <input ref={inputRef} type="file" accept={ACCEPTED} className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPTED}
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+        />
         <div className="text-3xl mb-2">📁</div>
         {file ? (
           <p className="text-sm text-[var(--text-1)] font-medium">{file.name}</p>
         ) : (
           <>
-            <p className="text-sm text-[var(--text-1)]">Drag And Drop A PDF, Audio, DOCX, Or Text File</p>
+            <p className="text-sm text-[var(--text-1)]">Drag and drop a PDF, audio, or video file</p>
             <p className="text-xs text-[var(--text-2)] mt-1">or click to browse</p>
           </>
         )}
       </div>
+      {showLargeFileWarning && (
+        <p className="text-xs px-1" style={{ color: '#F59E0B' }}>
+          Large file ({Math.round(file!.size / 1024 / 1024)}MB) — processing may take a while.
+        </p>
+      )}
+      <div>
+        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" />
+      </div>
+      {loading && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-[var(--text-2)]">
+            <span>{uploadProgress < 100 ? 'Uploading…' : 'Finalizing…'}</span>
+            {uploadProgress < 100 && <span>{uploadProgress}%</span>}
+          </div>
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-200"
+              style={{ width: `${uploadProgress}%`, backgroundColor: '#FF6500' }}
+            />
+          </div>
+        </div>
+      )}
       <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={!file || loading}>
         {loading ? 'Uploading…' : 'Upload'}
       </Button>
@@ -201,7 +261,12 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: { loading: boo
 }
 
 // ─── Video URL form ───────────────────────────────────────────────────────────
-function VideoForm({ loading, onStart, onSuccess, onError }: { loading: boolean; onStart: () => void; onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+function VideoForm({ loading, onStart, onSuccess, onError }: {
+  loading: boolean;
+  onStart: () => void;
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
 
@@ -221,7 +286,13 @@ function VideoForm({ loading, onStart, onSuccess, onError }: { loading: boolean;
       </div>
       <div>
         <label className="block text-xs text-[var(--text-2)] mb-1">YouTube URL</label>
-        <Input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." />
+        <Input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleImport()}
+          placeholder="https://www.youtube.com/watch?v=..."
+        />
       </div>
       <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url || loading}>
         {loading ? 'Importing…' : 'Import Video'}
@@ -231,7 +302,12 @@ function VideoForm({ loading, onStart, onSuccess, onError }: { loading: boolean;
 }
 
 // ─── Webpage form ─────────────────────────────────────────────────────────────
-function WebpageForm({ loading, onStart, onSuccess, onError }: { loading: boolean; onStart: () => void; onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+function WebpageForm({ loading, onStart, onSuccess, onError }: {
+  loading: boolean;
+  onStart: () => void;
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
 
@@ -248,7 +324,9 @@ function WebpageForm({ loading, onStart, onSuccess, onError }: { loading: boolea
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs text-[var(--text-2)] mb-1">Title <span className="text-[var(--text-3)]">(optional)</span></label>
+        <label className="block text-xs text-[var(--text-2)] mb-1">
+          Title <span className="text-[var(--text-3)]">(optional)</span>
+        </label>
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Leave blank to use page title" />
       </div>
       <div>
@@ -263,7 +341,9 @@ function WebpageForm({ loading, onStart, onSuccess, onError }: { loading: boolea
         />
       </div>
       <div className="rounded-xl px-4 py-3 text-xs" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
-        <p className="text-[var(--text-2)]">Works with articles, Wikipedia, documentation, and most public pages. Paywalled or login-required pages won't import.</p>
+        <p className="text-[var(--text-2)]">
+          Works with articles, Wikipedia, documentation, and most public pages. Paywalled or login-required pages won't import.
+        </p>
       </div>
       <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url.trim() || loading}>
         {loading ? 'Importing…' : 'Import Page'}
@@ -273,12 +353,18 @@ function WebpageForm({ loading, onStart, onSuccess, onError }: { loading: boolea
 }
 
 // ─── Record audio form ────────────────────────────────────────────────────────
-function RecordForm({ loading, onStart, onSuccess, onError }: { loading: boolean; onStart: () => void; onSuccess: (docId: string) => void; onError: (msg: string) => void }) {
+function RecordForm({ loading, onStart, onSuccess, onError }: {
+  loading: boolean;
+  onStart: () => void;
+  onSuccess: (docId: string) => void;
+  onError: (msg: string) => void;
+}) {
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -300,7 +386,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: { loading: boolean
     for (let i = 0; i < count; i++) {
       const val = data[Math.floor((i / count) * data.length)] / 255;
       const h = Math.max(4, val * canvas.height);
-      ctx.fillStyle = '#9747FF';
+      ctx.fillStyle = '#EC4899';
       ctx.fillRect(i * (barW + gap), (canvas.height - h) / 2, barW, h);
     }
     animRef.current = requestAnimationFrame(drawWave);
@@ -350,39 +436,79 @@ function RecordForm({ loading, onStart, onSuccess, onError }: { loading: boolean
   async function handleUpload() {
     if (!audioBlob) return;
     onStart();
-    const fd = new FormData();
-    fd.append('audio', audioBlob, 'recording.webm');
-    fd.append('title', title || `Recording ${new Date().toLocaleString()}`);
-    const { data, error } = await documentsApi.uploadRecording(fd);
-    if (error || !data) { onError(error ?? 'Upload failed'); return; }
-    onSuccess(data.id);
+    setUploadProgress(0);
+    const recordingTitle = title || `Recording ${new Date().toLocaleString()}`;
+    const { data: presignData, error: presignError } = await documentsApi.presign({
+      mimeType: 'audio/webm',
+      title: recordingTitle,
+      isRecording: true,
+    });
+    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
+    try {
+      await uploadToPresignedUrl(presignData.uploadUrl, audioBlob, 'audio/webm', setUploadProgress);
+    } catch {
+      onError('Upload failed — please try again'); return;
+    }
+    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
+    if (processError) { onError(processError); return; }
+    onSuccess(presignData.doc.id);
   }
 
   return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Recording title" />
-      </div>
       <div className="flex flex-col items-center gap-3 py-2">
-        <canvas ref={canvasRef} width={300} height={48} className="w-full rounded-lg" style={{ backgroundColor: 'var(--bg-page)' }} />
+        <canvas
+          ref={canvasRef}
+          width={300}
+          height={48}
+          className="w-full rounded-lg"
+          style={{ backgroundColor: 'var(--bg-page)' }}
+        />
         <p className="text-2xl font-mono text-[var(--text-1)] tabular-nums">{fmt(elapsed)}</p>
         {!recording && !audioBlob && (
-          <button onClick={startRecording} className="w-16 h-16 rounded-full flex items-center justify-center transition-opacity hover:opacity-80" style={{ backgroundColor: '#ef4444' }}>
+          <button
+            onClick={startRecording}
+            className="w-16 h-16 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+            style={{ backgroundColor: '#ef4444' }}
+          >
             <span className="w-5 h-5 rounded-full bg-white" />
           </button>
         )}
         {recording && (
-          <button onClick={stopRecording} className="w-16 h-16 rounded-full flex items-center justify-center transition-opacity hover:opacity-80" style={{ backgroundColor: '#374151' }}>
+          <button
+            onClick={stopRecording}
+            className="w-16 h-16 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+            style={{ backgroundColor: '#374151' }}
+          >
             <span className="w-5 h-5 rounded bg-white" />
           </button>
         )}
         {audioBlob && audioUrl && <audio src={audioUrl} controls className="w-full" />}
       </div>
       {audioBlob && (
-        <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={loading}>
-          {loading ? 'Uploading…' : 'Upload Recording'}
-        </Button>
+        <>
+          <div>
+            <label className="block text-xs text-[var(--text-2)] mb-1">Title</label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Recording title" />
+          </div>
+          {loading && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-[var(--text-2)]">
+                <span>{uploadProgress < 100 ? 'Uploading…' : 'Finalizing…'}</span>
+                {uploadProgress < 100 && <span>{uploadProgress}%</span>}
+              </div>
+              <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-200"
+                  style={{ width: `${uploadProgress}%`, backgroundColor: '#EC4899' }}
+                />
+              </div>
+            </div>
+          )}
+          <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={loading}>
+            {loading ? 'Uploading…' : 'Upload Recording'}
+          </Button>
+        </>
       )}
     </div>
   );
@@ -394,20 +520,13 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   const [error, setError] = useState('');
   const [failedMessage, setFailedMessage] = useState<string | undefined>(undefined);
   const [checking, setChecking] = useState(true);
-  const stopPollRef = useRef<(() => void) | null>(null);
+  const stopWatchRef = useRef<(() => void) | null>(null);
   const { title, icon: Icon, color, bg } = TYPE_META[type];
   const { subscriptionStatus, loading: authLoading } = useAuth();
 
-  // Free-tier gate: check document count before showing form
   useEffect(() => {
-    if (authLoading) return; // wait for auth to finish loading
-
-    if (subscriptionStatus?.hasAccess) {
-      setChecking(false);
-      return;
-    }
-
-    // Free user or auth failed — check count; on any error just show the form
+    if (authLoading) return;
+    if (subscriptionStatus?.hasAccess) { setChecking(false); return; }
     documentsApi.getCount()
       .then(({ data }) => {
         if (data && data.count >= 1) {
@@ -421,7 +540,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, subscriptionStatus]);
 
-  useEffect(() => () => { stopPollRef.current?.(); }, []);
+  useEffect(() => () => { stopWatchRef.current?.(); }, []);
 
   function handleUploadStart() {
     setError('');
@@ -429,13 +548,19 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     analytics.uploadStarted(type);
   }
 
-  async function handleUploadSuccess(docId: string) {
+  function handleUploadSuccess(docId: string) {
     setUploadState('processing');
-    stopPollRef.current = await pollDocumentStatus(
-      docId,
-      () => { analytics.uploadCompleted(type); onSuccess(docId); },
-      (errorMessage) => { analytics.uploadFailed(type); setFailedMessage(errorMessage); setUploadState('failed'); },
-    );
+    stopWatchRef.current = watchDocumentStatus(docId, (status, errorMessage) => {
+      invalidatePrefix(`/documents/${docId}`);
+      if (status === 'complete') {
+        analytics.uploadCompleted(type);
+        onSuccess(docId);
+      } else {
+        analytics.uploadFailed(type);
+        setFailedMessage(errorMessage);
+        setUploadState('failed');
+      }
+    });
   }
 
   function handleUploadError(msg: string) {
@@ -444,8 +569,8 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   }
 
   function handleRetry() {
-    stopPollRef.current?.();
-    stopPollRef.current = null;
+    stopWatchRef.current?.();
+    stopWatchRef.current = null;
     setUploadState('idle');
     setError('');
     setFailedMessage(undefined);
@@ -459,26 +584,47 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
       style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
       onClick={(e) => e.target === e.currentTarget && !isOverlay && onClose()}
     >
-      <div className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div
+        className="w-full max-w-lg rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+      >
         {checking ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#FF6500' }} />
+            <div
+              className="w-6 h-6 rounded-full border-2 border-transparent animate-spin"
+              style={{ borderTopColor: '#FF6500' }}
+            />
           </div>
         ) : isOverlay ? (
-          <ProcessingOverlay state={uploadState as 'processing' | 'failed'} errorMessage={failedMessage} onRetry={handleRetry} onClose={onClose} />
+          <ProcessingOverlay
+            state={uploadState as 'processing' | 'failed'}
+            errorMessage={failedMessage}
+            onRetry={handleRetry}
+            onClose={onClose}
+          />
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: bg }}>
+                <span
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: bg }}
+                >
                   <Icon size={15} style={{ color }} />
                 </span>
                 <h2 className="text-base font-semibold text-[var(--text-1)]">{title}</h2>
               </div>
-              <button onClick={onClose} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xl leading-none">×</button>
+              <button
+                onClick={onClose}
+                className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xl leading-none"
+              >
+                ×
+              </button>
             </div>
 
-            {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{error}</div>}
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{error}</div>
+            )}
 
             {type === 'blank'   && <BlankNoteForm  onSuccess={(docId) => onSuccess(docId)} onError={handleUploadError} />}
             {type === 'file'    && <FileUploadForm loading={uploadState === 'uploading'} onStart={handleUploadStart} onSuccess={handleUploadSuccess} onError={handleUploadError} />}
@@ -491,4 +637,3 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     </div>
   );
 }
-
