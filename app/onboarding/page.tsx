@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { billingApi } from '@/lib/api/billing';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -231,6 +231,10 @@ function GpaSelector({
 // ─── main component ──────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  return <Suspense fallback={null}><OnboardingContent /></Suspense>;
+}
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const priceId = searchParams.get('priceId');

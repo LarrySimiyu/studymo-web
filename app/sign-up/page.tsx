@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -11,6 +11,10 @@ import googleIcon from '@/assets/google-icon.png';
 import appleIcon from '@/assets/apple-icon.png';
 
 export default function SignUpPage() {
+  return <Suspense fallback={null}><SignUpContent /></Suspense>;
+}
+
+function SignUpContent() {
   const { googleSignIn, appleSignIn, currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
