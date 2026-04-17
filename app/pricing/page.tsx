@@ -7,6 +7,7 @@ import PlanSelector from '@/components/pricing/PlanSelector';
 import PlanCard from '@/components/pricing/PlanCard';
 import { billingApi, type Plan } from '@/lib/api/billing';
 import { useAuth } from '@/hooks/useAuth';
+import { analytics } from '@/lib/analytics';
 import PricingSkeleton from '@/components/pricing/PricingSkeleton';
 
 function useCountdown(seconds: number) {
@@ -66,6 +67,7 @@ export default function PricingPage() {
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
       if (data?.url) {
+        analytics.subscriptionStarted(plan.id);
         window.location.href = data.url;
       } else {
         alert(error ?? 'Failed to start checkout. Please try again.');

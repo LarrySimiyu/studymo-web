@@ -15,6 +15,7 @@ import {
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { Button } from '@/components/ui/Button';
 import { saveOnboardingData, getOnboardingData, defaultOnboardingData } from '@/lib/onboarding';
+import { analytics } from '@/lib/analytics';
 
 // ─── constants ──────────────────────────────────────────────────────────────
 
@@ -565,10 +566,12 @@ export default function OnboardingPage() {
               className="w-full sm:max-w-xs"
               disabled={checkoutLoading}
               onClick={async () => {
+                analytics.onboardingCompleted();
                 if (priceId) {
                   setCheckoutLoading(true);
                   const { data } = await billingApi.createCheckout(priceId);
                   if (data?.url) {
+                    analytics.subscriptionStarted(priceId);
                     window.location.href = data.url;
                   } else {
                     setCheckoutLoading(false);
