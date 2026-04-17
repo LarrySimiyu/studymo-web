@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { billingApi } from '@/lib/api/billing';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   School, GraduationCap, BookOpen, Briefcase, Globe,
@@ -230,9 +231,12 @@ function GpaSelector({
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const priceId = searchParams.get('priceId');
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [data, setData] = useState(defaultOnboardingData);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     setData(getOnboardingData());
@@ -555,8 +559,27 @@ export default function OnboardingPage() {
                 Join thousands of students already studying smarter
               </p>
             </div>
-            <Button variant="brand" size="lg" className="w-full sm:max-w-xs" onClick={() => router.push('/dashboard')}>
-              Get Started
+            <Button
+              variant="brand"
+              size="lg"
+              className="w-full sm:max-w-xs"
+              disabled={checkoutLoading}
+              onClick={async () => {
+                if (priceId) {
+                  setCheckoutLoading(true);
+                  const { data } = await billingApi.createCheckout(priceId);
+                  if (data?.url) {
+                    window.location.href = data.url;
+                  } else {
+                    setCheckoutLoading(false);
+                    router.push('/dashboard');
+                  }
+                } else {
+                  router.push('/dashboard');
+                }
+              }}
+            >
+              {checkoutLoading ? 'Loading…' : 'Get Started'}
             </Button>
           </div>
         );
