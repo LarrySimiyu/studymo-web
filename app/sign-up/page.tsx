@@ -1,29 +1,60 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getAdditionalUserInfo } from 'firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
+import { billingApi } from '@/lib/api/billing';
 import googleIcon from '@/assets/google-icon.png';
 import appleIcon from '@/assets/apple-icon.png';
 
 export default function SignUpPage() {
   const { googleSignIn, appleSignIn, currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const priceId = searchParams.get('priceId');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && currentUser) router.replace('/dashboard');
-  }, [currentUser, authLoading, router]);
+    if (!authLoading && currentUser) {
+      if (priceId) {
+        billingApi.createCheckout(priceId).then(({ data }) => {
+          if (data?.url) window.location.href = data.url;
+          else router.replace('/dashboard');
+        });
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+  }, [currentUser, authLoading, router, priceId]);
+
+  async function redirectAfterAuth(isNew: boolean) {
+    if (isNew) {
+      router.push(priceId ? `/onboarding?priceId=${priceId}` : '/onboarding');
+      return;
+    }
+    if (priceId) {
+      const { data } = await billingApi.createCheckout(priceId);
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        router.push('/dashboard');
+      }
+    } else {
+      router.push('/dashboard');
+    }
+  }
 
   async function handleGoogle() {
     setError(null);
     setLoading(true);
     try {
-      await googleSignIn();
-      router.push('/onboarding');
+      const cred = await googleSignIn();
+      const isNew = getAdditionalUserInfo(cred)?.isNewUser ?? false;
+      await redirectAfterAuth(isNew);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
@@ -35,8 +66,9 @@ export default function SignUpPage() {
     setError(null);
     setLoading(true);
     try {
-      await appleSignIn();
-      router.push('/onboarding');
+      const cred = await appleSignIn();
+      const isNew = getAdditionalUserInfo(cred)?.isNewUser ?? false;
+      await redirectAfterAuth(isNew);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple sign in failed');
     } finally {
