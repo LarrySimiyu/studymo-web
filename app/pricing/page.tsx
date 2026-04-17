@@ -7,6 +7,8 @@ import PlanSelector from '@/components/pricing/PlanSelector';
 import PlanCard from '@/components/pricing/PlanCard';
 import { billingApi, type Plan } from '@/lib/api/billing';
 import { useAuth } from '@/hooks/useAuth';
+import { analytics } from '@/lib/analytics';
+import PricingSkeleton from '@/components/pricing/PricingSkeleton';
 
 function useCountdown(seconds: number) {
   const [remaining, setRemaining] = useState(seconds);
@@ -58,13 +60,14 @@ export default function PricingPage() {
   async function handleCTA() {
     if (!plan?.priceId) return;
     if (!currentUser) {
-      router.push('/sign-up');
+      router.push(`/sign-up?priceId=${plan.priceId}`);
       return;
     }
     setLoading(true);
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
       if (data?.url) {
+        analytics.subscriptionStarted(plan.id);
         window.location.href = data.url;
       } else {
         alert(error ?? 'Failed to start checkout. Please try again.');
@@ -112,19 +115,24 @@ export default function PricingPage() {
             )}
           </h1>
 
-          <PlanSelector
-            plans={plans}
-            selected={selected}
-            onSelect={setSelected}
-            yearlySavings={yearlySavings}
-          />
-
-          <PlanCard
-            plan={plan}
-            selected={selected}
-            loading={loading}
-            onCTA={handleCTA}
-          />
+          {plans.length === 0 ? (
+            <PricingSkeleton />
+          ) : (
+            <>
+              <PlanSelector
+                plans={plans}
+                selected={selected}
+                onSelect={setSelected}
+                yearlySavings={yearlySavings}
+              />
+              <PlanCard
+                plan={plan}
+                selected={selected}
+                loading={loading}
+                onCTA={handleCTA}
+              />
+            </>
+          )}
 
           <div className="flex items-center justify-center -mt-4">
             <span className="text-sm font-medium" style={{ color: '#FF6500' }}>

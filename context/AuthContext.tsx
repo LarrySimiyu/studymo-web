@@ -14,7 +14,7 @@ import {
 import { auth, appleProvider } from '@/lib/firebase';
 import { billingApi, SubscriptionStatus } from '@/lib/api/billing';
 import { getOnboardingData, clearOnboardingData } from '@/lib/onboarding';
-import { identifyUser, aliasUser, resetAnalytics, analytics } from '@/lib/analytics';
+import { identifyUser, aliasUser, resetAnalytics, analytics, setSuperProperties, updateProfile } from '@/lib/analytics';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -122,7 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchSubscriptionStatus = useCallback(async () => {
     try {
       const { data } = await billingApi.getStatus();
-      if (data) setSubscriptionStatus(data);
+      if (data) {
+        setSubscriptionStatus(data);
+        const planProps = { plan: data.plan ?? 'none', subscription_status: data.status, has_access: data.hasAccess };
+        setSuperProperties(planProps);
+        updateProfile(planProps);
+      }
     } catch {
       // ignore
     }
@@ -166,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSubscriptionStatus({ status: 'none', plan: null, isActive: false, hasAccess: false, isTrial: false, trialEnd: null, daysLeftInTrial: null, currentPeriodEnd: null, cancelAtPeriodEnd: false, daysUntilRenewal: null });
     aliasUser(cred.user.uid);
     analytics.signupCompleted('email');
-    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: name ?? undefined });
+    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: name ?? undefined }, true);
     return cred;
   };
 
@@ -180,10 +185,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isNew) {
       aliasUser(cred.user.uid);
       analytics.signupCompleted('google');
+      identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined }, true);
     } else {
       analytics.loginCompleted('google');
+      identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     }
-    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     return cred;
   };
 
@@ -197,10 +203,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isNew) {
       aliasUser(cred.user.uid);
       analytics.signupCompleted('apple');
+      identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined }, true);
     } else {
       analytics.loginCompleted('apple');
+      identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     }
-    identifyUser(cred.user.uid, { email: cred.user.email ?? undefined, name: cred.user.displayName ?? undefined });
     return cred;
   };
 
