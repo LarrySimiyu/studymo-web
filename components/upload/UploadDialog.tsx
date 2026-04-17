@@ -529,7 +529,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
       .then(({ data }) => {
         if (data && data.count >= 1) {
           onClose();
-          window.dispatchEvent(new CustomEvent('app:show-paywall'));
+          window.dispatchEvent(new CustomEvent('app:show-paywall', { detail: { trigger: 'upload_limit' } }));
         } else {
           setChecking(false);
         }

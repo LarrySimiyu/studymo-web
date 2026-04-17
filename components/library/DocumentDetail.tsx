@@ -457,6 +457,9 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
                   active={tab}
                   onChange={(t) => {
                     setTab(t);
+                    if (t === 'flashcards' && flashcards.length > 0) {
+                      analytics.flashcardsViewed(id, flashcards.length);
+                    }
                   }}
                 />
               </div>
