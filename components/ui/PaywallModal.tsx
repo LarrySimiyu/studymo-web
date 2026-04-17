@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { billingApi, type Plan } from '@/lib/api/billing';
+import { analytics } from '@/lib/analytics';
 import PlanSelector from '@/components/pricing/PlanSelector';
 import PlanCard from '@/components/pricing/PlanCard';
 
@@ -61,6 +62,7 @@ export default function PaywallModal({ onClose }: Props) {
     try {
       const { data, error } = await billingApi.createCheckout(plan.priceId);
       if (data?.url) {
+        analytics.subscriptionStarted(plan.id);
         window.location.href = data.url;
       } else {
         alert(error ?? 'Failed to start checkout. Please try again.');

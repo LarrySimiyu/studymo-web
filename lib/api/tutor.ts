@@ -87,15 +87,13 @@ export async function streamTutorChat(
     buffer = lines.pop() ?? '';
     for (const line of lines) {
       if (!line.startsWith('data: ')) continue;
-      try {
-        const data = JSON.parse(line.slice(6));
-        if (data.delta) onDelta(data.delta);
-        if (data.offer && onOffer) onOffer(data.offer);
-        if (data.resolved && onResolved) onResolved(data.resolved);
-        if (data.done) onDone();
-      } catch {
-        // ignore
-      }
+      let parsed: Record<string, unknown>;
+      try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
+      if (parsed.error) throw new Error(parsed.error as string);
+      if (parsed.delta) onDelta(parsed.delta as string);
+      if (parsed.offer && onOffer) onOffer(parsed.offer as NoteOffer);
+      if (parsed.resolved && onResolved) onResolved(parsed.resolved as { id: string; topic: string });
+      if (parsed.done) onDone();
     }
   }
 }

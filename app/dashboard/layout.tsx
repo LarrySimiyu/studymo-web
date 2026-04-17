@@ -78,7 +78,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   // Listen for paywall trigger from upload gate or nav buttons
   useEffect(() => {
-    const handler = () => { setShowPaywall(true); analytics.paywallSeen('upload_limit'); };
+    const handler = (e: Event) => {
+      setShowPaywall(true);
+      const trigger = (e as CustomEvent).detail?.trigger ?? 'feature_gate';
+      analytics.paywallSeen(trigger);
+    };
     window.addEventListener('app:show-paywall', handler);
     return () => window.removeEventListener('app:show-paywall', handler);
   }, []);

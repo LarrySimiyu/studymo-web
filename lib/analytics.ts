@@ -1,8 +1,3 @@
-/**
- * Analytics wrapper — single interface for Mixpanel + GA4.
- * All calls are no-ops if keys are not set (safe in dev without .env).
- */
-
 import mixpanel from 'mixpanel-browser';
 
 let mixpanelReady = false;
@@ -10,17 +5,33 @@ let mixpanelReady = false;
 export function initAnalytics() {
   const token = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
   if (!token) return;
-  mixpanel.init(token, { persistence: 'localStorage', ignore_dnt: true });
+  mixpanel.init(token, { persistence: 'localStorage' });
   mixpanelReady = true;
 }
 
 // ─── Identity ────────────────────────────────────────────────────────────────
 
-export function identifyUser(userId: string, traits?: Record<string, unknown>) {
-  if (mixpanelReady) {
-    mixpanel.identify(userId);
-    if (traits) mixpanel.people.set(traits);
+export function identifyUser(userId: string, traits?: Record<string, unknown>, isNew = false) {
+  if (!mixpanelReady) return;
+  mixpanel.identify(userId);
+  if (traits && Object.keys(traits).length) {
+    const profile: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(traits)) {
+      if (k === 'email') profile.$email = v;
+      else if (k === 'name') profile.$name = v;
+      else profile[k] = v;
+    }
+    mixpanel.people.set(profile);
   }
+  if (isNew) mixpanel.people.set_once({ $created: new Date().toISOString() });
+}
+
+export function setSuperProperties(props: Record<string, unknown>) {
+  if (mixpanelReady) mixpanel.register(props);
+}
+
+export function updateProfile(props: Record<string, unknown>) {
+  if (mixpanelReady) mixpanel.people.set(props);
 }
 
 export function aliasUser(userId: string) {
@@ -33,10 +44,33 @@ export function resetAnalytics() {
 
 // ─── Page views ───────────────────────────────────────────────────────────────
 
-export function trackPage(path: string) {
-  track('page_viewed', { path });
+function pageEventName(path: string): string {
+  if (path === '/') return 'landing_viewed';
+  if (path === '/dashboard') return 'dashboard_viewed';
+  if (path === '/dashboard/library') return 'library_viewed';
+  if (path.startsWith('/dashboard/library/')) return 'document_viewed';
+  if (path === '/dashboard/flashcards') return 'flashcards_page_viewed';
+  if (path === '/dashboard/quizzes') return 'quizzes_viewed';
+  if (path === '/dashboard/practice-exams') return 'practice_exams_viewed';
+  if (path.startsWith('/dashboard/practice-exams/')) return 'practice_exam_viewed';
+  if (path === '/dashboard/study-plan') return 'study_plans_viewed';
+  if (path.startsWith('/dashboard/study-plan/')) return 'study_plan_viewed';
+  if (path === '/dashboard/tasks') return 'tasks_viewed';
+  if (path === '/dashboard/tutor') return 'tutor_viewed';
+  if (path === '/dashboard/analytics') return 'analytics_viewed';
+  if (path === '/dashboard/podcasts') return 'podcasts_viewed';
+  if (path === '/dashboard/weak-topics') return 'weak_topics_viewed';
+  if (path === '/dashboard/settings/billing') return 'billing_viewed';
+  if (path === '/dashboard/settings') return 'settings_viewed';
+  if (path === '/onboarding') return 'onboarding_viewed';
+  if (path === '/sign-up') return 'sign_up_viewed';
+  if (path === '/pricing') return 'pricing_viewed';
+  return 'page_viewed';
+}
 
-  // GA4
+export function trackPage(path: string) {
+  track(pageEventName(path), { path });
+
   if (typeof window !== 'undefined' && 'gtag' in window) {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag(
       'event',
@@ -56,9 +90,6 @@ export function track(event: string, props?: Record<string, unknown>) {
 
 export const analytics = {
   // Auth
-  signupStarted: (method: 'google' | 'apple' | 'email') =>
-    track('signup_started', { method }),
-
   signupCompleted: (method: 'google' | 'apple' | 'email') =>
     track('signup_completed', { method }),
 
