@@ -46,7 +46,17 @@ function FloatingIcon({
   );
 }
 
-export default function LearningStyleSection() {
+type Props = {
+  label?: string;
+  heading?: string;
+  body?: string;
+};
+
+export default function LearningStyleSection({
+  label = 'Built around you',
+  heading = 'AI Is Better When It Understands Your Learning Style',
+  body = 'Your StudyMo tutor remembers your grade level, goals, struggles, and the exact topics you keep getting wrong, so every session feels like it was made for you.',
+}: Props = {}) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({
@@ -78,15 +88,15 @@ export default function LearningStyleSection() {
       {/* ── Center text ── */}
       <div className="relative z-10 flex flex-col items-center text-center px-5 sm:px-8 max-w-2xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Built around you
+          {label}
         </p>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">
-          AI Is Better When It Understands Your Learning Style
+        <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight">
+          {heading}
         </h2>
 
         <p className="mt-5 text-base sm:text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
-          Your StudyMo tutor remembers your grade level, goals, struggles, and the exact topics you keep getting wrong, so every session feels like it was made for you.
+          {body}
         </p>
       </div>
 

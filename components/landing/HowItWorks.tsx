@@ -9,25 +9,38 @@ const STEPS = [
     title: 'Upload Anything',
     sub: 'Links, audio, video, files.',
     img: folderImg,
-    alt: 'folder',
+    alt: 'Upload lecture slides, PDFs, YouTube links, or audio files into Studymo',
   },
   {
     number: '2.',
     title: 'Get Notes',
     sub: 'Get formatted notes and transcripts.',
     img: fileImg,
-    alt: 'file',
+    alt: 'AI-generated study notes and transcript from uploaded course material',
   },
   {
     number: '3.',
     title: 'Get to Studying',
     sub: 'AI tutor, quizzes, flashcards, podcasts, so much more.',
     img: micImg,
-    alt: 'mic',
+    alt: 'Studymo AI tutor, flashcards, quizzes, and podcast study tools',
   },
 ];
 
-export default function HowItWorks() {
+type StepOverride = { title: string; sub: string; alt?: string };
+
+type Props = {
+  steps?: [StepOverride, StepOverride, StepOverride];
+};
+
+export default function HowItWorks({ steps }: Props = {}) {
+  const resolvedSteps = STEPS.map((s, i) => ({
+    ...s,
+    title: steps?.[i]?.title ?? s.title,
+    sub: steps?.[i]?.sub ?? s.sub,
+    alt: steps?.[i]?.alt ?? s.alt,
+  }));
+
   return (
     <section className="py-20 sm:py-28 lg:py-36 px-4 sm:px-8 lg:px-16" style={{ backgroundColor: '#0A0A0A' }}>
       <div className="max-w-5xl mx-auto flex flex-col items-center gap-12 sm:gap-16">
@@ -40,14 +53,14 @@ export default function HowItWorks() {
           >
             How it works
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight">
-            Studymo keeps it simple.
+          <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight">
+            Studymo keeps it simple
           </h2>
         </div>
 
         {/* Steps */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8 w-full">
-          {STEPS.map((step) => (
+          {resolvedSteps.map((step) => (
             <div key={step.number} className="flex flex-col items-center gap-5 text-center">
               {/* Icon tile */}
               <div

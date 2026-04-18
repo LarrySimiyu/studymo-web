@@ -95,7 +95,7 @@ export default function Hero() {
         <motion.h1
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.55, delay: 0.2 }}
-          className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12] text-white"
+          className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12] text-white"
         >
           StudyMo was built for people who
           <br />
