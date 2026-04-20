@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { posts } from '@/lib/blog';
 import type { Metadata } from 'next';
+import Navbar from '@/components/landing/Navbar';
+import LandingFooter from '@/components/landing/LandingFooter';
 
 export const metadata: Metadata = {
   title: 'Blog - StudyMo',
@@ -9,22 +11,36 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   return (
-    <main className="min-h-screen" style={{ backgroundColor: '#0A0A0A' }}>
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">StudyMo Blog</h1>
-        <p className="text-base sm:text-lg mb-12" style={{ color: 'var(--text-2)' }}>
-          Study tips, AI tools breakdowns, and strategies that actually work for students.
-        </p>
+    <main className="min-h-screen relative flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
+      {/* Radial glow */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[600px] pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.18) 0%, transparent 65%)',
+        }}
+      />
 
-        <div className="flex flex-col gap-8">
+      <Navbar />
+
+      <div className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 pt-28 sm:pt-36 pb-16 sm:pb-24">
+        <div className="mb-12 sm:mb-16">
+          <h1 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+            StudyMo Blog
+          </h1>
+          <p className="text-base sm:text-lg" style={{ color: 'var(--text-2)' }}>
+            Study tips, AI tools breakdowns, and strategies that actually work for students.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group block rounded-2xl p-6 border transition-colors"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
+              className="group flex flex-col rounded-2xl p-6 border transition-colors hover:border-[rgba(255,101,0,0.3)]"
+              style={{ backgroundColor: '#141414', borderColor: 'rgba(255,255,255,0.07)' }}
             >
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <span className="text-xs" style={{ color: 'var(--text-3)' }}>
                   {new Date(post.date).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -37,18 +53,18 @@ export default function BlogPage() {
                   {post.readTime}
                 </span>
               </div>
-              <h2
-                className="text-lg sm:text-xl font-semibold text-white mb-2 group-hover:text-[#FF6500] transition-colors"
-              >
+              <h2 className="text-base sm:text-lg font-semibold text-white mb-3 group-hover:text-[#FF6500] transition-colors leading-snug">
                 {post.title}
               </h2>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+              <p className="text-sm leading-relaxed mt-auto" style={{ color: 'var(--text-2)' }}>
                 {post.description}
               </p>
             </Link>
           ))}
         </div>
       </div>
+
+      <LandingFooter />
     </main>
   );
 }

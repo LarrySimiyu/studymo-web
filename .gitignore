@@ -28,8 +28,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Keyword data
+# Keyword data and internal docs
 lib/data/
+lib/docs/
 
 # Logs
 *.log
