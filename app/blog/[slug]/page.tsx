@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { getPost, posts } from '@/lib/blog';
 import type { Metadata } from 'next';
+import Navbar from '@/components/landing/Navbar';
+import LandingFooter from '@/components/landing/LandingFooter';
+import CTABlock from '@/components/blog/CTABlock';
 
 export async function generateStaticParams() {
   return posts.map((p) => ({ slug: p.slug }));
@@ -16,15 +19,19 @@ export async function generateMetadata({
   const result = await getPost(params.slug);
   if (!result) return {};
 
+  const url = `https://studymo.app/blog/${result.meta.slug}`;
+
   return {
     title: `${result.meta.title} - StudyMo Blog`,
     description: result.meta.description,
+    alternates: { canonical: url },
     openGraph: {
       title: result.meta.title,
       description: result.meta.description,
-      url: `https://studymo.app/blog/${result.meta.slug}`,
+      url,
       type: 'article',
       publishedTime: result.meta.date,
+      modifiedTime: result.meta.lastUpdated ?? result.meta.date,
     },
     twitter: {
       card: 'summary_large_image',
@@ -40,18 +47,57 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
   const { meta, Content } = result;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: meta.title,
+    description: meta.description,
+    datePublished: meta.date,
+    dateModified: meta.lastUpdated ?? meta.date,
+    url: `https://studymo.app/blog/${meta.slug}`,
+    author: {
+      '@type': 'Organization',
+      name: 'Studymo',
+      url: 'https://studymo.app',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Studymo',
+      url: 'https://studymo.app',
+    },
+  };
+
   return (
-    <main className="min-h-screen" style={{ backgroundColor: '#0A0A0A' }}>
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <Navbar />
+
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pt-28 sm:pt-36 pb-16 sm:pb-24">
         <Link
           href="/blog"
-          className="inline-flex items-center mb-4 transition-colors"
+          className="inline-flex items-center mb-6 transition-colors"
           style={{ color: 'var(--text-3)' }}
         >
           <ChevronLeft size={18} />
+          <span className="text-sm ml-1">All posts</span>
         </Link>
 
         <div className="flex items-center gap-3 mb-4">
+          {meta.category && (
+            <>
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: '#FF6500' }}
+              >
+                {meta.category}
+              </span>
+              <span style={{ color: 'var(--text-3)' }}>·</span>
+            </>
+          )}
           <span className="text-xs" style={{ color: 'var(--text-3)' }}>
             {new Date(meta.date).toLocaleDateString('en-US', {
               year: 'numeric',
@@ -63,31 +109,29 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           <span className="text-xs" style={{ color: 'var(--text-3)' }}>{meta.readTime}</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-10 leading-tight">
+        <h1 className="font-playfair text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
           {meta.title}
         </h1>
+
+        {meta.lastUpdated && (
+          <p className="text-xs mb-10" style={{ color: 'var(--text-3)' }}>
+            Last updated{' '}
+            {new Date(meta.lastUpdated).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+        )}
 
         <div className="blog-content">
           <Content />
         </div>
 
-        <div
-          className="mt-16 rounded-2xl p-6 sm:p-8 text-center border"
-          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
-          <p className="text-lg font-semibold text-white mb-2">Ready to study smarter?</p>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>
-            Upload your first set of notes and let StudyMo do the rest.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #ff8c00)' }}
-          >
-            Try for $0
-          </Link>
-        </div>
+        <CTABlock />
       </div>
+
+      <LandingFooter />
     </main>
   );
 }

@@ -28,10 +28,10 @@ export type LandingSegment = {
 export const segments: Record<string, LandingSegment> = {
   'ai-tutor': {
     slug: 'ai-tutor',
-    keyword: 'ai tutor for students',
+    keyword: 'ai tutor',
     title: 'AI Tutor for Students | Studymo',
     metaDescription:
-      'An AI tutor that learns your course material. Upload notes, lectures, or slides and get instant answers, flashcards, and quizzes from your own content.',
+      'What is an AI tutor? Studymo is an AI tutor that learns your course material and answers from it. Get flashcards, quizzes, and 24/7 tutoring from your own notes.',
     h1: 'An AI Tutor That Knows Your Exact Material',
     subheadline:
       'Upload your notes and get a tutor that explains your content, not just generic answers.',
@@ -133,7 +133,7 @@ export const segments: Record<string, LandingSegment> = {
     keyword: 'how to study with adhd',
     title: 'Study App for ADHD Students | Studymo',
     metaDescription:
-      'Studymo helps students with ADHD study smarter with short bursts, audio learning, and an AI tutor that stays on topic. No walls of text.',
+      'How to study with ADHD without fighting your brain. Studymo uses audio learning, short quizzes, and a weak topic tracker built for how ADHD students actually focus.',
     h1: 'A Study App Built Around How Your Brain Works',
     subheadline:
       "No walls of text. No rigid schedules. Just tools that match the way you actually focus.",
@@ -232,13 +232,13 @@ export const segments: Record<string, LandingSegment> = {
 
   nursing: {
     slug: 'nursing',
-    keyword: 'study app for nursing students',
-    title: 'Study App for Nursing Students | Studymo',
+    keyword: 'nursing school notes',
+    title: 'Nursing School Notes | AI Study Tools | Studymo',
     metaDescription:
-      'Studymo helps nursing students understand clinical concepts, prep for NCLEX, and study faster with AI-generated notes, quizzes, and a 24/7 AI tutor.',
-    h1: 'Study Smarter for Nursing School',
+      'Turn your nursing school notes into flashcards, quizzes, and NCLEX practice questions automatically. Free nursing school notes tools built for nursing students.',
+    h1: 'Nursing School Notes That Study Back',
     subheadline:
-      'Upload your lectures and get an AI tutor that explains clinical reasoning, not just definitions.',
+      'Upload your lecture slides and get organized nursing school notes, flashcards, and NCLEX-style quizzes in minutes.',
     problemStatement:
       'Nursing school covers everything at once. Pharmacology, pathophysiology, care plans, clinical skills. Reading every textbook chapter is not realistic. You need to process information faster and retain it longer, especially when what you learn will eventually affect real patients.',
     midCTACopy:
@@ -315,12 +315,12 @@ export const segments: Record<string, LandingSegment> = {
           "Yes. You can upload PDFs or notes from any review program. Studymo generates study tools from whatever you bring in. It works alongside any review course you're already using.",
       },
     ],
-    badge: 'Trusted by nursing students nationwide',
-    screenshotAlt: 'Studymo study app for nursing students showing clinical notes and NCLEX practice questions',
+    badge: 'From lecture slides to nursing school notes in minutes',
+    screenshotAlt: 'Studymo nursing school notes tool showing AI-generated clinical notes and NCLEX practice questions',
     learningStyleSection: {
       label: 'Built for nursing students',
-      heading: 'Study Tools That Keep Up With Nursing School',
-      body: 'Clinical reasoning, pharmacology, pathophysiology. Upload your lectures and get tools that help you understand the content, not just memorize it.',
+      heading: 'Nursing School Notes That Do More Than Sit in a Folder',
+      body: 'Upload your lectures and get organized nursing school notes, flashcards, and quizzes — everything you need to go from content to exam-ready.',
     },
     howItWorksSteps: [
       { title: 'Upload Your Lecture Slides', sub: 'PDFs, recordings, YouTube links, or any URL.' },
@@ -335,9 +335,9 @@ export const segments: Record<string, LandingSegment> = {
   'nclex-tutor': {
     slug: 'nclex-tutor',
     keyword: 'nclex tutor',
-    title: 'NCLEX Tutor That Never Sleeps | Studymo',
+    title: 'NCLEX Tutor | AI-Powered Boards Prep | Studymo',
     metaDescription:
-      'Pass your NCLEX with an AI tutor that trains clinical reasoning. Practice exams, weak topic tracking, and explanations built from your study material.',
+      'An NCLEX tutor available 24/7. Trains clinical reasoning, not just memorization. Practice exams, weak topic tracking, and explanations from your review materials.',
     h1: 'Pass Your NCLEX on the First Try',
     subheadline:
       "An AI tutor that trains your clinical reasoning, not just your ability to recall facts.",
@@ -436,13 +436,13 @@ export const segments: Record<string, LandingSegment> = {
 
   chemistry: {
     slug: 'chemistry',
-    keyword: 'chemistry study app',
-    title: 'Chemistry Study App | Studymo',
+    keyword: 'chemistry notes',
+    title: 'Chemistry Notes | AI Study Tools | Studymo',
     metaDescription:
-      'Finally understand chemistry. Upload lecture slides or YouTube videos and get AI-generated notes, flashcards, and a tutor that explains reactions step by step.',
-    h1: 'Finally Understand Chemistry, Not Just Survive It',
+      'Turn your chemistry notes into flashcards and quizzes automatically. Covers gen chem, organic chemistry notes, AP chemistry notes, and more.',
+    h1: 'Chemistry Notes That Actually Help You Learn',
     subheadline:
-      'Upload your lecture slides and get notes, flashcards, and an AI tutor that explains the reactions.',
+      'Upload your lecture slides and get organized chemistry notes, flashcards, and an AI tutor that explains reactions step by step.',
     problemStatement:
       "Chemistry moves fast. Mechanisms stack on mechanisms. If you miss one concept, the next three stop making sense. Your textbook explains things in a way that's technically correct but practically useless for an exam. You need something that breaks it down the way you actually think.",
     midCTACopy:
@@ -519,12 +519,12 @@ export const segments: Record<string, LandingSegment> = {
           "The free tier has a limit on uploads. Paid plans increase that limit significantly. You won't hit the ceiling in a normal week of studying.",
       },
     ],
-    badge: 'From lecture slides to flashcards in minutes',
-    screenshotAlt: 'Studymo chemistry study app showing AI-generated notes and reaction mechanism flashcards',
+    badge: 'Gen chem, orgo, and AP chemistry notes in one place',
+    screenshotAlt: 'Studymo chemistry notes tool showing AI-generated notes and reaction mechanism flashcards',
     learningStyleSection: {
       label: 'Built around your chemistry course',
-      heading: 'Stop Surviving Chemistry. Start Understanding It.',
-      body: 'Upload your professor\'s slides and get study tools built from your actual course — not a generic chemistry deck someone else made.',
+      heading: 'Chemistry Notes for Every Course Level',
+      body: 'Gen chem, organic chemistry, AP chemistry — upload your lecture slides and get notes, flashcards, and quizzes built from your actual material.',
     },
     howItWorksSteps: [
       { title: 'Upload Your Lecture or Slides', sub: 'PDF, YouTube URL, audio recording, or slide deck.' },
@@ -743,10 +743,10 @@ export const segments: Record<string, LandingSegment> = {
   finals: {
     slug: 'finals',
     keyword: 'how to study for finals',
-    title: 'Survive Finals with AI Study Help | Studymo',
+    title: 'How to Study for Finals | Studymo',
     metaDescription:
-      'Stop cramming. Upload your notes and get flashcards, practice exams, and an AI tutor for every subject in minutes. Built for finals week.',
-    h1: 'Get Through Finals Without Pulling an All-Nighter',
+      'Stop cramming and start targeting what you don\'t know. Studymo builds your finals study plan, generates practice exams, and tracks your weak topics automatically.',
+    h1: 'Study for Finals the Way That Actually Works',
     subheadline:
       'Upload everything you need to know and get a study plan, flashcards, and an AI tutor in minutes.',
     problemStatement:
@@ -825,12 +825,12 @@ export const segments: Record<string, LandingSegment> = {
           "Yes. Two days is enough time to generate flashcards, run a practice exam, and identify your top five weak areas. That's more actionable than re-reading notes for two days straight.",
       },
     ],
-    badge: 'Turn a semester of notes into exam-ready tools',
-    screenshotAlt: 'Studymo finals study app showing flashcards, practice exam, and weak topic list for exam prep',
+    badge: 'Stop cramming. Start studying smarter.',
+    screenshotAlt: 'Studymo finals study app showing flashcards, practice exam, and weak topic list for finals week',
     learningStyleSection: {
       label: 'Built for finals week',
-      heading: 'Everything You Need for Finals in One Place',
-      body: 'Upload a semester of content and get organized flashcards, practice exams, and a weak topic list — so you know exactly what to fix before each test.',
+      heading: 'How to Study for Finals Without Reviewing Everything',
+      body: 'Upload your notes and Studymo identifies your gaps, builds your study plan, and generates practice exams — so you spend time on what matters.',
     },
     howItWorksSteps: [
       { title: 'Upload Everything at Once', sub: 'All your notes, slides, and recordings for every class.' },
@@ -844,10 +844,10 @@ export const segments: Record<string, LandingSegment> = {
 
   tutoring: {
     slug: 'tutoring',
-    keyword: 'online tutoring',
+    keyword: 'ai tutoring',
     title: 'AI Tutoring That Knows Your Course | Studymo',
     metaDescription:
-      'Get clear explanations of your course material any time, at a fraction of tutoring costs. Upload your notes and get an AI tutor built from your content.',
+      'Affordable AI tutoring available 24/7. Upload your course material and get an AI tutor that explains your content — at a fraction of private tutoring costs.',
     h1: 'Better Than a Tutor for Most of What You Need',
     subheadline:
       'Get clear explanations of your exact course material, available any time, at a fraction of the cost.',
@@ -946,10 +946,10 @@ export const segments: Record<string, LandingSegment> = {
 
   'quizlet-alternative': {
     slug: 'quizlet-alternative',
-    keyword: 'quizlet alternative',
-    title: 'Quizlet Alternative with AI Tutoring | Studymo',
+    keyword: 'quizlet alternative ai',
+    title: 'Quizlet Alternative with AI Tutor | Studymo',
     metaDescription:
-      'Studymo does everything Quizlet does, plus AI-generated notes, an AI tutor, practice exams, and weak topic tracking. No manual card creation.',
+      'The Quizlet alternative with a built-in AI tutor. Auto-generated flashcards, practice exams, and weak topic tracking — no manual card creation.',
     h1: 'More Than Flashcards',
     subheadline:
       'Quizlet makes you study the material. Studymo helps you actually understand it.',
@@ -1063,12 +1063,12 @@ export const segments: Record<string, LandingSegment> = {
           "Notes can be shared with a link. Flashcard sharing across accounts is on the roadmap.",
       },
     ],
-    badge: 'Everything Quizlet does, and everything it doesn\'t',
-    screenshotAlt: 'Studymo Quizlet alternative showing AI-generated flashcards, quizzes, and tutor from uploaded notes',
+    badge: 'The Quizlet alternative with a real AI tutor',
+    screenshotAlt: 'Studymo Quizlet alternative AI showing auto-generated flashcards, AI tutor, and practice exams from uploaded notes',
     learningStyleSection: {
       label: 'Beyond flashcards',
-      heading: 'Flashcards Are Step One. This Is the Rest.',
-      body: 'Auto-generated flashcards from your uploads, plus a tutor, practice exams, and weak topic tracking — everything Quizlet can\'t do.',
+      heading: 'The Quizlet Alternative That Can Actually Tutor You',
+      body: 'Auto-generated flashcards from your uploads, plus an AI tutor that explains what the card doesn\'t, practice exams, and weak topic tracking.',
     },
     howItWorksSteps: [
       { title: 'Upload Your Source Material', sub: 'PDFs, slides, recordings, or any URL — no manual card creation.' },
@@ -1218,13 +1218,13 @@ export const segments: Record<string, LandingSegment> = {
 
   'chatgpt-vs-studymo': {
     slug: 'chatgpt-vs-studymo',
-    keyword: 'chatgpt for studying',
-    title: 'ChatGPT vs Studymo for Students | Studymo',
+    keyword: 'how to use chatgpt for studying',
+    title: 'ChatGPT for Studying vs Studymo | Studymo',
     metaDescription:
-      'ChatGPT gives general answers. Studymo knows your course material and builds flashcards, quizzes, and a study plan from it. Here is the difference.',
-    h1: 'ChatGPT Is Useful. This Is Built for Studying.',
+      'Using ChatGPT for studying works — until it doesn\'t know your syllabus. Studymo knows your course material and builds flashcards, quizzes, and practice exams from it.',
+    h1: 'ChatGPT for Studying Is a Start. This Goes Further.',
     subheadline:
-      'ChatGPT gives general answers. Studymo learns your course material and builds tools from it.',
+      'ChatGPT prompts for studying help. Studymo goes further — it knows your course material and builds tools from it.',
     problemStatement:
       "ChatGPT is useful for explaining concepts. But it doesn't know your textbook, your professor's slides, or what's on your specific exam. You end up re-explaining your material every session. Studymo already knows your material because you uploaded it once.",
     midCTACopy:
@@ -1335,12 +1335,12 @@ export const segments: Record<string, LandingSegment> = {
           "It works well for most subjects where studying involves reading and conceptual understanding. It's particularly useful for sciences, social sciences, history, law, and nursing. Math works for concept review; less so for step-by-step problem solving.",
       },
     ],
-    badge: 'Built for exams, not general questions',
-    screenshotAlt: 'Studymo vs ChatGPT for studying — AI tutor that knows your course material and generates flashcards and exams',
+    badge: 'Better than ChatGPT prompts for studying',
+    screenshotAlt: 'Studymo vs ChatGPT for studying — AI that knows your course material and generates flashcards and practice exams',
     learningStyleSection: {
       label: 'Built for your exam, not the internet',
-      heading: 'ChatGPT Answers Questions. This Prepares You for Exams.',
-      body: 'Upload your material once and get flashcards, quizzes, and a tutor that already knows your content — no re-explaining every session.',
+      heading: 'ChatGPT for Studying Gets You Halfway There',
+      body: 'Good ChatGPT prompts for studying help explain concepts. Studymo goes further — it knows your material, builds your flashcards, and tracks what you get wrong.',
     },
     howItWorksSteps: [
       { title: 'Upload Your Course Material Once', sub: 'PDFs, slides, YouTube lectures, or audio recordings.' },
