@@ -1,4 +1,5 @@
 import { track } from '@/lib/analytics';
+import { gaCtaClick } from '@/lib/analytics/ga';
 
 export const SIGNUP_URL = '/sign-up';
 
@@ -29,22 +30,5 @@ export function buildCTAHref(utmParams: UTMParams, campaign: string): string {
 
 export function trackCTAClick(segment: string, position: 'hero' | 'mid' | 'bottom'): void {
   track('landing_cta_click', { segment, position });
-
-  if (typeof window !== 'undefined' && 'gtag' in window) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'cta_click', {
-      page_segment: segment,
-      button_position: position,
-    });
-  }
-}
-
-export function trackLandingView(segment: string): void {
-  track('landing_page_viewed', { segment });
-
-  if (typeof window !== 'undefined' && 'gtag' in window) {
-    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'page_view', {
-      page_title: `${segment} landing`,
-      page_location: typeof window !== 'undefined' ? window.location.href : '',
-    });
-  }
+  gaCtaClick(segment, position);
 }

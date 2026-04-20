@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { getAdditionalUserInfo } from 'firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { billingApi } from '@/lib/api/billing';
+import { gaSignUpCompleted } from '@/lib/analytics/ga';
 import googleIcon from '@/assets/google-icon.png';
 import appleIcon from '@/assets/apple-icon.png';
 
@@ -35,8 +36,9 @@ function SignUpContent() {
     }
   }, [currentUser, authLoading, router, priceId]);
 
-  async function redirectAfterAuth(isNew: boolean) {
+  async function redirectAfterAuth(isNew: boolean, method: 'google' | 'apple') {
     if (isNew) {
+      gaSignUpCompleted(method);
       router.push(priceId ? `/onboarding?priceId=${priceId}` : '/onboarding');
       return;
     }
@@ -58,7 +60,7 @@ function SignUpContent() {
     try {
       const cred = await googleSignIn();
       const isNew = getAdditionalUserInfo(cred)?.isNewUser ?? false;
-      await redirectAfterAuth(isNew);
+      await redirectAfterAuth(isNew, 'google');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign in failed');
     } finally {
@@ -72,7 +74,7 @@ function SignUpContent() {
     try {
       const cred = await appleSignIn();
       const isNew = getAdditionalUserInfo(cred)?.isNewUser ?? false;
-      await redirectAfterAuth(isNew);
+      await redirectAfterAuth(isNew, 'apple');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple sign in failed');
     } finally {

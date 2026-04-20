@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
+import { gaSignInCompleted } from '@/lib/analytics/ga';
 import googleIcon from '@/assets/google-icon.png';
 import appleIcon from '@/assets/apple-icon.png';
 
@@ -23,6 +24,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       await googleSignIn();
+      gaSignInCompleted('google');
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign in failed');
@@ -36,6 +38,7 @@ export default function SignInPage() {
     setLoading(true);
     try {
       await appleSignIn();
+      gaSignInCompleted('apple');
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Apple sign in failed');

@@ -136,7 +136,7 @@ export default function Hero() {
             className="px-12 py-4 rounded-full text-base font-bold text-white transition-transform hover:scale-105 w-full sm:w-auto text-center"
             style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
-            Try For $0
+            Start Free
           </Link>
         </motion.div>
 
