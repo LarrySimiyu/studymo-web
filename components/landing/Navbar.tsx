@@ -67,7 +67,7 @@ export default function Navbar() {
             Login
           </Link>
           <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
-            Try For $0
+            Start Free
           </Link>
         </div>
       </div>

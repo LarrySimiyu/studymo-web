@@ -71,11 +71,17 @@ function pageEventName(path: string): string {
 export function trackPage(path: string) {
   track(pageEventName(path), { path });
 
+  const gaParams: Record<string, string> = { page_path: path };
+  if (path.startsWith('/landing/')) {
+    const segment = path.split('/')[2];
+    if (segment) gaParams.page_segment = segment;
+  }
+
   if (typeof window !== 'undefined' && 'gtag' in window) {
     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag(
       'event',
       'page_view',
-      { page_path: path }
+      gaParams
     );
   }
 }
