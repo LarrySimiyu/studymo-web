@@ -1,27 +1,30 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import chatScreenshot from '@/assets/chat-screenshot.png';
 
 const CYCLING_WORDS = [
-  'lose notes.',
-  'have midterms.',
-  "can't focus.",
-  'need a tutor.',
-  'need planning.',
-  'learn differently.',
+  'Math',
+  'Chemistry',
+  'History',
+  'Biology',
+  'Law',
+  'Economics',
+  'EVERYTHING',
 ];
-const TYPE_SPEED = 45;
-const DELETE_SPEED = 25;
-const HOLD_MS = 2000;
+const TYPE_SPEED = 28;
+const DELETE_SPEED = 16;
+const HOLD_MS = 900;
 
 function useTypewriter(words: string[]) {
   const [displayed, setDisplayed] = useState('');
   const [wordIndex, setWordIndex] = useState(0);
-  const [phase, setPhase] = useState<'typing' | 'holding' | 'deleting'>('typing');
+  const [phase, setPhase] = useState<'typing' | 'holding' | 'deleting' | 'done'>('typing');
+
+  const isLast = wordIndex === words.length - 1;
 
   useEffect(() => {
     const word = words[wordIndex];
@@ -30,6 +33,8 @@ function useTypewriter(words: string[]) {
       if (displayed.length < word.length) {
         const t = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), TYPE_SPEED);
         return () => clearTimeout(t);
+      } else if (isLast) {
+        setPhase('done');
       } else {
         const t = setTimeout(() => setPhase('holding'), HOLD_MS);
         return () => clearTimeout(t);
@@ -46,13 +51,13 @@ function useTypewriter(words: string[]) {
         const t = setTimeout(() => setDisplayed(d => d.slice(0, -1)), DELETE_SPEED);
         return () => clearTimeout(t);
       } else {
-        setWordIndex(i => (i + 1) % words.length);
+        setWordIndex(i => i + 1);
         setPhase('typing');
       }
     }
-  }, [displayed, phase, wordIndex, words]);
+  }, [displayed, phase, wordIndex, words, isLast]);
 
-  return displayed;
+  return { text: displayed, done: phase === 'done' };
 }
 
 const fadeUp = {
@@ -61,7 +66,7 @@ const fadeUp = {
 };
 
 export default function Hero() {
-  const typed = useTypewriter(CYCLING_WORDS);
+  const { text: typed, done } = useTypewriter(CYCLING_WORDS);
 
   return (
     <section
@@ -87,7 +92,7 @@ export default function Hero() {
           style={{ backgroundColor: 'rgba(255,101,0,0.1)', border: '1px solid rgba(255,101,0,0.25)', color: '#FF6500' }}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="#FF6500" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          AI-powered studying, built for real students
+          Your notes, turned into a full study system
           <svg width="11" height="11" viewBox="0 0 24 24" fill="#FF6500" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         </motion.div>
 
@@ -97,15 +102,17 @@ export default function Hero() {
           transition={{ duration: 0.55, delay: 0.2 }}
           className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12] text-white"
         >
-          StudyMo was built for people who
-          <br />
+          Your personal{' '}
           <span className="relative inline-block" style={{ color: '#FF6500' }}>
             {typed}
-            <span
-              className="inline-block w-[2px] h-[0.85em] align-middle ml-0.5 animate-pulse"
-              style={{ backgroundColor: '#FF6500', verticalAlign: 'middle' }}
-            />
+            {!done && (
+              <span
+                className="inline-block w-[2px] h-[0.85em] align-middle ml-0.5 animate-pulse"
+                style={{ backgroundColor: '#FF6500', verticalAlign: 'middle' }}
+              />
+            )}
           </span>
+          {' '}tutor
         </motion.h1>
 
         {/* Subtext */}
@@ -115,7 +122,7 @@ export default function Hero() {
           className="mt-6 text-sm sm:text-base md:text-lg leading-relaxed max-w-xs sm:max-w-sm md:max-w-md mx-auto"
           style={{ color: 'rgba(255,255,255,0.6)' }}
         >
-          Upload your notes. Get flashcards, quizzes, and an AI tutor. Finally understand what you&apos;re studying.
+          Upload your lecture slides, PDFs, or recordings. Get an AI tutor, flashcards, and quizzes built around your course material and your learning style.
         </motion.p>
 
         {/* CTA */}
