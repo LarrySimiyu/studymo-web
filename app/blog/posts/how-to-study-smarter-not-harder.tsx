@@ -8,42 +8,36 @@ export default function Post() {
   return (
     <div>
       <p>
-        Studying smarter means spending your time on methods that build retention: active recall,
-        spaced repetition, and focusing on what you don't know yet. It doesn't mean studying less.
-        It means replacing techniques that feel productive but don't stick with ones that do.
+        Most students study the same way they always have, even when it stops working. Re-read
+        the notes, maybe make flashcards the night before, hope something sticks. The problem
+        usually isn't effort. It's the method.
       </p>
 
       <QuickAnswer answer="Stop re-reading and start testing yourself. Spread your study sessions across multiple days with gaps in between. That spacing is what moves information into long-term memory. Spend most of your time on topics you're weak on, not the ones you're comfortable with. Use practice tests under realistic conditions before the real exam. Protect your sleep. Memory consolidation happens during sleep, not during extra study hours." />
 
       <h2>Why does studying harder often not work?</h2>
       <p>
-        Most students put in hours without thinking about the quality of the method. Re-reading
-        feels productive because it's familiar. But research consistently shows it's one of the
-        weakest ways to build long-term memory.
+        Re-reading feels like studying. You're looking at the material, you recognize the
+        concepts, it feels familiar. But familiar and retrievable are different things, and
+        exams test the second one. You can't just pick the option that looks right. You have
+        to pull the answer from nothing.
       </p>
       <p>
-        The issue is recognition vs. recall. When you re-read material, it feels familiar, which
-        your brain interprets as knowing it. But recognition and recall are different skills.
-        Exams test recall: producing the right answer from scratch, not identifying it when you
-        see it.
-      </p>
-      <p>
-        The same hours spent doing practice questions, testing yourself with flashcards, or
-        explaining concepts from memory produce far better results. That's the core of studying
-        smarter.
+        That's the gap most students don't notice until after the test. The material felt like
+        they knew it. They just couldn't produce it when it counted.
       </p>
 
       <h2>What's the difference between active and passive studying?</h2>
       <p>
-        Passive studying: re-reading notes, highlighting, watching videos, copying content.
-        Active studying: answering questions, explaining concepts from memory, solving problems
-        without looking at your notes.
+        Passive studying is anything where your brain is mostly a passenger: re-reading,
+        highlighting, watching recordings, copying notes. Active studying requires it to
+        produce something: an answer, an explanation, a solution without looking at your notes.
       </p>
       <p>
-        Passive methods feel easier because they are. There's no mental strain in re-reading.
-        But that strain is exactly what builds memory. Every time you retrieve a piece of
-        information, you strengthen the neural pathway to it. Passive review doesn't trigger
-        that retrieval process.
+        The frustrating part is that passive methods feel more comfortable. There's no strain
+        in re-reading. But that strain is actually the mechanism. Every time you successfully
+        pull something from memory, that pathway gets a little stronger. Passive review skips
+        that step entirely.
       </p>
 
       <PullQuote>
@@ -53,30 +47,27 @@ export default function Post() {
 
       <h2>How does spaced repetition help you retain information?</h2>
       <p>
-        Spaced repetition means reviewing material at increasing intervals over time. Study
-        something today, review it tomorrow, then in three days, then a week later. Each review
-        session reinforces the memory right before it would fade.
+        Instead of reviewing everything in one long session, you spread it out. Study something
+        today, come back to it in a few days, then again a week later. Each time you return
+        to it just before it fades, the memory gets reinforced and lasts longer.
       </p>
       <p>
-        In practice: don't do all your studying in one session. Spread it across days. If you
-        use flashcards, mix in older material alongside new cards. The goal is to keep returning
-        to things before you forget them, not to cram everything the night before.
-      </p>
-      <p>
-        This is why students who start studying two weeks before an exam consistently outperform
-        students who study for the same number of hours but crammed them into two days.
+        In practice, this mostly just means don't cram. Students who spread the same number
+        of study hours across two weeks consistently outperform students who pack those hours
+        into the last two days. It's not really a study tip. It's how memory consolidation
+        works.
       </p>
 
       <h2>How do you know what to focus on?</h2>
       <p>
-        Track what you get wrong. Most students have no system for this. They finish a practice
-        quiz, check the answers, and move on without recording which concepts they missed.
+        Most students finish a practice quiz, check the answers, and move on. No record of
+        which concepts they're actually missing, so they keep reviewing everything instead of
+        the things that need work.
       </p>
       <p>
-        Studymo automatically tracks your weak topics across every quiz and practice exam you
-        take. You can see exactly which concepts you're getting wrong most often and build your
-        next study session around those, instead of defaulting to the material you're already
-        comfortable with. That alone closes the gap faster than anything else.
+        Studymo tracks your weak topics every time you take a quiz. You end up with a real
+        list of what you're getting wrong, not what you think you might be weak on. It's a
+        small thing, but it changes how you prep for an exam more than almost anything else.
       </p>
 
       <FeatureCard
@@ -87,15 +78,14 @@ export default function Post() {
 
       <h2>How do you study smarter when you're short on time?</h2>
       <p>
-        Triage. Identify the highest-priority topics: the ones most likely to appear on the
-        exam and that you feel least confident about. Go deep on those only. Covering a
-        little of everything when you're pressed for time is almost always worse than covering
-        a few things well.
+        Pick the 3-4 topics most likely to appear on the exam and that you feel least confident
+        about. That's the whole plan. When time is short, covering a little of everything is
+        almost always worse than covering a few things well.
       </p>
       <p>
-        Do one practice set per topic. Check your answers. Understand why each wrong answer
-        was wrong. That's it. You'll retain more from 90 focused minutes than from 4 scattered
-        ones.
+        One practice set per topic. Review what you got wrong. Understand why each one was
+        wrong. If you can do that honestly, you're done. Ninety focused minutes like that will
+        do more than four hours of anxious re-reading.
       </p>
 
       <CTABlock
@@ -106,23 +96,23 @@ export default function Post() {
       <FAQ items={[
         {
           question: "What does it mean to study smarter not harder?",
-          answer: "It means using methods proven to build long-term retention, like active recall, spaced repetition, and practice testing. Not passive ones like re-reading. The goal is more retained knowledge per hour, not fewer hours overall."
+          answer: "It means using methods that actually build memory instead of ones that feel productive. Active recall, spaced repetition, practice testing. Not re-reading the same page four times. The goal is more retained knowledge per hour, not fewer hours."
         },
         {
           question: "How many hours a day should a student study?",
-          answer: "Quality matters more than quantity. Two focused hours using active recall will outperform five hours of passive re-reading. Most students see good results with 2-4 focused hours per day during high-study periods."
+          answer: "Honestly, quality matters more than the number. Two focused hours of active recall will outperform five hours of passive re-reading most of the time. During heavy study periods, 2-4 focused hours per day is a reasonable range."
         },
         {
           question: "What is the most effective study technique?",
-          answer: "Practice testing is the most consistently effective method across subjects and levels. Taking a test on the material, before you feel fully ready, builds recall better than any other technique."
+          answer: "Practice testing. Taking a test on the material before you feel fully ready builds recall better than anything else. It's uncomfortable, which is part of why it works."
         },
         {
           question: "Does highlighting help you study?",
-          answer: "Mostly no. Highlighting while reading is a passive activity. It gives the illusion of engaging with material without actually testing your memory. It can help you locate information later, but it doesn't build retention on its own."
+          answer: "Not really. It gives the feeling of engaging with material without actually testing whether you can recall it. It can help you find things later, but it doesn't build the kind of memory that holds up on an exam."
         },
         {
           question: "How do you retain information better while studying?",
-          answer: "Test yourself instead of re-reading. Space your sessions across days. Review material you've already learned before starting new content. Sleep enough. Memory consolidation requires it."
+          answer: "Test yourself instead of re-reading. Space your sessions across days. Sleep enough. Your brain consolidates memory during sleep, not during the extra hour of studying you're sacrificing for it."
         }
       ]} />
     </div>
