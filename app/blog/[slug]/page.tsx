@@ -86,28 +86,16 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           <span className="text-sm ml-1">All posts</span>
         </Link>
 
-        <div className="flex items-center gap-3 mb-4">
-          {meta.category && (
-            <>
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: '#FF6500' }}
-              >
-                {meta.category}
-              </span>
-              <span style={{ color: 'var(--text-3)' }}>·</span>
-            </>
-          )}
-          <span className="text-xs" style={{ color: 'var(--text-3)' }}>
-            {new Date(meta.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </span>
-          <span style={{ color: 'var(--text-3)' }}>·</span>
-          <span className="text-xs" style={{ color: 'var(--text-3)' }}>{meta.readTime}</span>
-        </div>
+        {meta.category && (
+          <div className="mb-4">
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: '#FF6500' }}
+            >
+              {meta.category}
+            </span>
+          </div>
+        )}
 
         <h1 className="font-playfair text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
           {meta.title}
