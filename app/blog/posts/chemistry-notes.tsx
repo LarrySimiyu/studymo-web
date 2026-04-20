@@ -8,13 +8,13 @@ export default function Post() {
   return (
     <div>
       <p>
-        Good chemistry notes focus on what you need to solve problems and pass exams — reaction
+        Good chemistry notes focus on what you need to solve problems and pass exams: reaction
         mechanisms, key equations, and concept definitions in plain language. Most students take
         notes that are either too long, too disorganized, or too close to a word-for-word
         transcript of the lecture. None of those help when you're reviewing.
       </p>
 
-      <QuickAnswer answer="Organize chemistry notes by concept, not by lecture date. For each concept, capture: the definition, the key equation or reaction, a worked example, and any exceptions. Use consistent shorthand. Aim for one page per major topic — if it's longer, you're probably capturing too much. Review within 24 hours of the lecture while details are still fresh." />
+      <QuickAnswer answer="Organize chemistry notes by concept, not by lecture date. For each concept, capture: the definition, the key equation or reaction, a worked example, and any exceptions. Use consistent shorthand. Aim for one page per major topic. If it's longer, you're probably capturing too much. Review within 24 hours of the lecture while details are still fresh." />
 
       <h2>How should you take notes in chemistry class?</h2>
       <p>
@@ -24,7 +24,7 @@ export default function Post() {
       <p>
         Focus on three things: the concept being taught, the key equation or mechanism, and any
         worked examples the professor walks through step by step. Those examples show you how
-        to apply the concept — they're more useful than the definition alone.
+        to apply the concept. They're more useful than the definition alone.
       </p>
       <p>
         After class, rewrite or reorganize your raw notes while the lecture is still fresh.
@@ -37,7 +37,7 @@ export default function Post() {
       <p>
         A structured layout works better than prose for chemistry. For each reaction or concept,
         capture: the name, the equation or mechanism, the conditions it requires, and a worked
-        example. That format makes review fast — you can scan for what you need instead of
+        example. That format makes review fast. You can scan for what you need instead of
         reading through paragraphs.
       </p>
       <p>
@@ -55,18 +55,18 @@ export default function Post() {
       <h2>How do you take AP chemistry notes?</h2>
       <p>
         AP chemistry covers a lot of ground across 9 units, so organization matters more here
-        than in most courses. Keep a separate section per unit — electrochemistry, kinetics,
-        equilibrium — and use the structured format above within each.
+        than in most courses. Keep a separate section per unit: electrochemistry, kinetics,
+        and equilibrium. Use the structured format above within each.
       </p>
       <p>
         For foundational concepts like AP chemistry unit 1, make sure your notes include the
         key formulas with units, the conceptual explanation behind each formula, and at least
-        one worked problem per formula. That combination — what it is, why it works, and how
-        to use it — is what you need for the AP exam.
+        one worked problem per formula. That combination (what it is, why it works, and how
+        to use it) is what you need for the AP exam.
       </p>
       <p>
         AP chemistry free response questions require you to explain reasoning, not just calculate.
-        Your notes should reflect that — capture the "why" behind each concept, not just
+        Your notes should reflect that. Capture the why behind each concept, not just
         the formula.
       </p>
 
@@ -77,14 +77,14 @@ export default function Post() {
         the mechanism step by step.
       </p>
       <p>
-        Build a reaction map as you progress through the course — a visual guide showing how
+        Build a reaction map as you progress through the course, a visual guide showing how
         functional groups connect through different reaction types. Most students who struggle
         with orgo are missing this big-picture view of how reactions relate to each other.
       </p>
 
       <FeatureCard
         title="AI Note Generation from Lecture Files"
-        description="Upload your chemistry lecture slides or PDFs and Studymo generates organized notes structured by concept — key equations, definitions, and worked examples pulled out and formatted for review."
+        description="Upload your chemistry lecture slides or PDFs and Studymo generates organized notes structured by concept: key equations, definitions, and worked examples pulled out and formatted for review."
         href="/sign-up"
       />
 
@@ -96,8 +96,8 @@ export default function Post() {
       </p>
       <p>
         Use them as a supplement, not a substitute. If a concept in your own notes isn't
-        clicking, finding an alternative explanation from another source helps. But your primary
-        notes should come from your actual course materials — lectures, textbook chapters your
+        clicking, finding an alternative explanation from another source helps. Your primary
+        notes should come from your actual course materials: lectures, textbook chapters your
         professor assigned, and past exams from your specific class.
       </p>
 
@@ -109,7 +109,7 @@ export default function Post() {
       <FAQ items={[
         {
           question: "What should chemistry notes include?",
-          answer: "For each concept: a clear definition, the relevant equation or reaction, the conditions it requires, a worked example, and any common exceptions. Keep it concise — if a concept takes more than a page, break it into sub-topics."
+          answer: "For each concept: a clear definition, the relevant equation or reaction, the conditions it requires, a worked example, and any common exceptions. Keep it concise. If a concept takes more than a page, break it into sub-topics."
         },
         {
           question: "How do you take good notes in organic chemistry?",
@@ -125,7 +125,7 @@ export default function Post() {
         },
         {
           question: "Where can I find AP chemistry notes?",
-          answer: "Your own notes from lectures and the textbook are the most reliable source. College Board publishes the AP Chemistry CED (Course and Exam Description) which outlines every concept that can be tested — use that to check your notes are complete."
+          answer: "Your own notes from lectures and the textbook are the most reliable source. College Board publishes the AP Chemistry CED (Course and Exam Description) which outlines every concept that can be tested. Use that to check your notes are complete."
         }
       ]} />
     </div>

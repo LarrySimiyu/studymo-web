@@ -8,17 +8,17 @@ export default function Post() {
   return (
     <div>
       <p>
-        When you're tired, your brain has reduced capacity to encode new information — so
+        When you're tired, your brain has reduced capacity to encode new information, so
         studying the same way you would when rested usually backfires. The better approach is
         to match what you're doing to your actual energy level rather than pushing through
         with methods that require full focus.
       </p>
 
-      <QuickAnswer answer="Don't try to learn brand-new material when you're tired — your brain won't retain it reliably. Review things you've already studied instead. Use audio-based learning so you're not fighting to keep your eyes focused on a page. If you're genuinely exhausted, a 20-minute nap will help more than forcing another hour of low-quality studying. And if you have any flexibility at all, sleep and study in the morning." />
+      <QuickAnswer answer="Don't try to learn brand-new material when you're tired. Your brain won't retain it reliably. Review things you've already studied instead. Use audio-based learning so you're not fighting to keep your eyes focused on a page. If you're genuinely exhausted, a 20-minute nap will help more than forcing another hour of low-quality studying. And if you have any flexibility at all, sleep and study in the morning." />
 
       <h2>Is it better to study when tired or sleep and study in the morning?</h2>
       <p>
-        Sleep wins almost every time. Memory consolidation happens during sleep — what you
+        Sleep wins almost every time. Memory consolidation happens during sleep. What you
         studied earlier in the day gets processed and stored. Cutting that short to squeeze
         in more review usually costs more than you gain.
       </p>
@@ -41,7 +41,7 @@ export default function Post() {
       </p>
       <p>
         Audio review is especially effective when tired. You don't have to hold your visual
-        focus on a page — you can listen while resting or moving around. Studymo lets you
+        focus on a page. You can listen while resting or moving around. Studymo lets you
         convert your notes into a podcast-style audio lecture. For reviewing familiar material
         when your energy is low, listening works far better than staring at text you're
         not absorbing.
@@ -82,19 +82,19 @@ export default function Post() {
 
       <FeatureCard
         title="Podcast Mode"
-        description="Turn any set of notes or uploaded lecture into an audio lesson. Review material while resting, commuting, or doing something low-effort — without needing to stare at a screen."
+        description="Turn any set of notes or uploaded lecture into an audio lesson. Review material while resting, commuting, or doing something low-effort, without needing to stare at a screen."
         href="/sign-up"
       />
 
       <CTABlock
-        headline="Make every study session count — even the tired ones"
+        headline="Make every study session count, even the tired ones"
         body="Studymo's audio lectures let you review your notes without staring at a screen. Listen while you rest, commute, or do something low-effort."
       />
 
       <FAQ items={[
         {
           question: "Is it bad to study when tired?",
-          answer: "Not always bad — but it's significantly less effective for learning new material. Your brain can't encode new information as well when fatigued. Reviewing familiar material while tired is more useful than trying to learn something new."
+          answer: "Not always bad, but it's significantly less effective for learning new material. Your brain can't encode new information as well when fatigued. Reviewing familiar material while tired is more useful than trying to learn something new."
         },
         {
           question: "Does studying before bed help you remember?",
@@ -102,7 +102,7 @@ export default function Post() {
         },
         {
           question: "Should you take a nap before studying?",
-          answer: "A 20-minute nap can meaningfully improve focus and retention for the session that follows. Keep it to 20-30 minutes — longer naps can leave you groggier and harder to wake from."
+          answer: "A 20-minute nap can meaningfully improve focus and retention for the session that follows. Keep it to 20-30 minutes. Longer naps can leave you groggier and harder to wake from."
         },
         {
           question: "How do you get energy to study?",

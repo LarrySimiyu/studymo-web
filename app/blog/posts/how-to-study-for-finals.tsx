@@ -13,13 +13,13 @@ export default function Post() {
         material they already understand while their real weak spots go untouched until exam day.
       </p>
 
-      <QuickAnswer answer="Start at least a week out. List every topic the exam covers and sort by how confident you feel — study the weakest areas first, not last. Use practice tests under timed conditions. Space your sessions across multiple days instead of one marathon. Get 7-8 hours of sleep before the exam. Sleep is when memory consolidation happens, and skipping it costs more than an extra hour of reviewing does." />
+      <QuickAnswer answer="Start at least a week out. List every topic the exam covers and sort by how confident you feel. Study the weakest areas first, not last. Use practice tests under timed conditions. Space your sessions across multiple days instead of one marathon. Get 7-8 hours of sleep before the exam. Sleep is when memory consolidation happens, and skipping it costs more than an extra hour of reviewing does." />
 
       <h2>How far in advance should you start studying for finals?</h2>
       <p>
-        A week is the minimum. Two weeks gives you room to use spaced repetition — reviewing
-        material across multiple sessions with gaps between them. That spacing is what makes
-        things stick long enough to survive an exam.
+        A week is the minimum. Two weeks gives you room to use spaced repetition, which means
+        reviewing material across multiple sessions with gaps between them. That spacing is what
+        makes things stick long enough to survive an exam.
       </p>
       <p>
         If you start three days out, you're cramming. Cramming produces short-term recognition,
@@ -54,19 +54,19 @@ export default function Post() {
       </p>
       <p>
         If your professor posted a study guide, treat every item on it as guaranteed to appear.
-        Go through it and honestly rate your confidence on each one — high, medium, or low. Study
+        Go through it and honestly rate your confidence on each one: high, medium, or low. Study
         the low-confidence items first.
       </p>
       <p>
         Studymo can build a day-by-day study plan from your uploaded notes, organized around
         your weak topics and how many days you have left. That structure removes the decision
-        fatigue of figuring out what to review each session — which is often what leads students
+        fatigue of figuring out what to review each session. That's often what leads students
         to default to re-reading familiar material.
       </p>
 
       <FeatureCard
         title="Study Plan + Weak Topic Tracking"
-        description="Upload your notes before finals and Studymo builds a study schedule around the topics you're most likely to get wrong — not the ones you already know."
+        description="Upload your notes before finals and Studymo builds a study schedule around the topics you're most likely to get wrong, not the ones you already know."
         href="/sign-up"
       />
 
@@ -81,14 +81,14 @@ export default function Post() {
         so you can cover the material faster if you're organized.
       </p>
       <p>
-        For how to study for math finals specifically — work problems, not notes. Reading about
+        For how to study for math finals specifically: work problems, not notes. Reading about
         a math concept does almost nothing. Doing 10 practice problems per concept does a lot.
       </p>
 
       <h2>What if you only have one day left?</h2>
       <p>
-        Don't try to cover everything. Pick the 5-6 most important topics — the ones most likely
-        to appear and that you feel least confident about — and focus entirely on those.
+        Don't try to cover everything. Pick the 5-6 most important topics, the ones most likely
+        to appear and that you feel least confident about, and focus entirely on those.
       </p>
       <p>
         Do one practice set per topic. Focus on understanding, not memorizing. Eat something real,
@@ -98,7 +98,7 @@ export default function Post() {
 
       <CTABlock
         headline="Build your finals study plan in minutes"
-        body="Upload your notes and Studymo maps out what to review each day — organized around your weakest topics so you're not guessing where to spend your time."
+        body="Upload your notes and Studymo maps out what to review each day, organized around your weakest topics so you're not guessing where to spend your time."
       />
 
       <FAQ items={[
@@ -108,11 +108,11 @@ export default function Post() {
         },
         {
           question: "Is it better to study the night before a final?",
-          answer: "Light review is fine. A full study session the night before usually hurts — you sacrifice sleep, which impairs memory recall. Do a brief review of key concepts, then prioritize sleep."
+          answer: "Light review is fine. A full study session the night before usually hurts. You sacrifice sleep, which impairs memory recall. Do a brief review of key concepts, then prioritize sleep."
         },
         {
           question: "How do you get motivated to study for finals?",
-          answer: "Start with a small, specific task — not 'study chemistry' but 'do 10 practice problems on equilibrium.' Starting is usually harder than continuing. Remove your phone from the room before you sit down."
+          answer: "Start with a small, specific task, not 'study chemistry' but 'do 10 practice problems on equilibrium.' Starting is usually harder than continuing. Remove your phone from the room before you sit down."
         },
         {
           question: "How do you deal with finals anxiety?",

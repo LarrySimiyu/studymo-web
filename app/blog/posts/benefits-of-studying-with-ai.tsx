@@ -4,7 +4,7 @@ import Callout from '@/components/blog/Callout';
 export default function Post() {
   return (
     <div>
-      <QuickAnswer answer="Studying with AI works because it forces active recall, adapts to what you do not know, and builds tools from your actual material — not generic content." />
+      <QuickAnswer answer="Studying with AI works because it forces active recall, adapts to what you do not know, and builds tools from your actual material, not generic content." />
 
       <p>
         If you have ever re-read the same chapter four times and still blanked on the exam, you
@@ -30,7 +30,7 @@ export default function Post() {
       </p>
 
       <Callout type="tip">
-        Testing yourself on material — even before you feel ready — is one of the most effective
+        Testing yourself on material, even before you feel ready, is one of the most effective
         study strategies. It forces your brain to retrieve information, which strengthens memory far
         more than re-reading does.
       </Callout>
@@ -97,7 +97,7 @@ export default function Post() {
       <h2>Is studying with AI worth it?</h2>
       <p>
         If you are a student trying to keep up with a heavy course load, using AI to study is not
-        just worth it — it is the most direct way to get more out of the time you already have.
+        just worth it. It is the most direct way to get more out of the time you already have.
         The time you save building study materials, combined with better tools for actually
         learning the content, adds up to a real difference in how prepared you feel going into
         exams.
