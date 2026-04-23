@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import chatScreenshot from '@/assets/chat-screenshot.png';
+import chatScreenshot from '@/assets/dashboard-screenshot.png';
 
 const CYCLING_WORDS = [
-  'Math',
-  'Chemistry',
-  'History',
-  'Biology',
-  'Law',
-  'Economics',
-  'EVERYTHING',
+  'chem',
+  'math',
+  'history',
+  'bio',
+  'law',
+  'econ',
+  'life',
 ];
 const TYPE_SPEED = 28;
 const DELETE_SPEED = 16;
@@ -33,8 +33,6 @@ function useTypewriter(words: string[]) {
       if (displayed.length < word.length) {
         const t = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), TYPE_SPEED);
         return () => clearTimeout(t);
-      } else if (isLast) {
-        setPhase('done');
       } else {
         const t = setTimeout(() => setPhase('holding'), HOLD_MS);
         return () => clearTimeout(t);
@@ -50,6 +48,8 @@ function useTypewriter(words: string[]) {
       if (displayed.length > 0) {
         const t = setTimeout(() => setDisplayed(d => d.slice(0, -1)), DELETE_SPEED);
         return () => clearTimeout(t);
+      } else if (isLast) {
+        setPhase('done');
       } else {
         setWordIndex(i => i + 1);
         setPhase('typing');
@@ -70,39 +70,28 @@ export default function Hero() {
 
   return (
     <section
-      className="relative flex flex-col items-center overflow-hidden"
-      style={{ backgroundColor: '#0A0A0A', minHeight: '100vh' }}
+      className="relative flex flex-col items-center min-h-[50vh] sm:min-h-screen"
+      style={{ backgroundColor: 'var(--bg-page)' }}
     >
       {/* Radial glow behind heading */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[900px] pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.22) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.14) 0%, transparent 65%)',
         }}
       />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-5 sm:px-8 pt-28 sm:pt-40 pb-0 max-w-6xl mx-auto w-full">
-
-        {/* Badge */}
-        <motion.div
-          variants={fadeUp} initial="hidden" animate="show"
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-medium tracking-wide"
-          style={{ backgroundColor: 'rgba(255,101,0,0.1)', border: '1px solid rgba(255,101,0,0.25)', color: '#FF6500' }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="#FF6500" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          Your notes, turned into a full study system
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="#FF6500" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        </motion.div>
+      <div className="relative z-10 flex flex-col items-center text-center px-2 sm:px-8 pt-28 sm:pt-40 pb-24 w-full max-w-7xl mx-auto">
 
         {/* Heading */}
         <motion.h1
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.55, delay: 0.2 }}
-          className="font-playfair text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.12] text-white"
+          className="font-playfair text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.08]"
+          style={{ color: 'var(--text-1)' }}
         >
-          Your personal{' '}
+          Your{done ? ' ' : ' '}
           <span className="relative inline-block" style={{ color: '#FF6500' }}>
             {typed}
             {!done && (
@@ -112,17 +101,18 @@ export default function Hero() {
               />
             )}
           </span>
-          {' '}tutor
+          {typed ? ' ' : ''}Notes<br />
+          <span className="italic" style={{ color: '#FF6500' }}>Supercharged</span>
         </motion.h1>
 
         {/* Subtext */}
         <motion.p
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.55, delay: 0.35 }}
-          className="mt-6 text-sm sm:text-base md:text-lg leading-relaxed max-w-xs sm:max-w-sm md:max-w-md mx-auto"
-          style={{ color: 'rgba(255,255,255,0.6)' }}
+          className="mt-6 text-base sm:text-lg md:text-xl leading-relaxed max-w-lg sm:max-w-xl md:max-w-2xl mx-auto font-bold"
+          style={{ color: 'var(--text-2)' }}
         >
-          Upload your lecture slides, PDFs, or recordings. Get an AI tutor, flashcards, and quizzes built around your course material and your learning style.
+          Get notes, flashcards, quizzes, and an AI Tutor that understands your learning style.
         </motion.p>
 
         {/* CTA */}
@@ -133,7 +123,7 @@ export default function Hero() {
         >
           <Link
             href="/sign-up"
-            className="px-12 py-4 rounded-full text-base font-bold text-white transition-transform hover:scale-105 w-full sm:w-auto text-center"
+            className="px-12 py-3 rounded-full text-lg sm:text-base font-bold text-white transition-transform hover:scale-105 w-full sm:w-auto text-center"
             style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
             Start Free
@@ -146,14 +136,8 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.65 }}
           className="relative w-full mt-20"
         >
-          {/* Fade mask so image bleeds out naturally */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-56 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to bottom, transparent, #0A0A0A)' }}
-          />
-
-          {/* Border beam wrapper — p-[1.5px] leaves the gradient visible as a border */}
-          <div className="border-beam-wrap rounded-2xl p-[1.5px] shadow-2xl">
+          {/* Border beam wrapper */}
+          <div className="border-beam-wrap rounded-2xl p-[1.5px]" style={{ boxShadow: '0 25px 60px rgba(255,101,0,0.25), 0 8px 24px rgba(255,101,0,0.15)' }}>
             <div className="rounded-[14px] overflow-hidden">
               <Image
                 src={chatScreenshot}

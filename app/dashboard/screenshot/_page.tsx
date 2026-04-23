@@ -80,7 +80,7 @@ function StaticSidebar() {
       {/* Nav */}
       <nav className="flex-1 px-1.5 py-2 overflow-y-auto space-y-1">
         {/* Home */}
-        <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-white">
+        <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium text-[var(--text-2)]">
           <House size={16} className="shrink-0" />
           <span>Home</span>
         </div>
@@ -96,9 +96,9 @@ function StaticSidebar() {
 
         {/* Notes section */}
         <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1">
-          <FolderIcon size={14} className="text-white" />
-          <span className="flex-1 text-sm font-semibold text-white">Notes</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-white">
+          <FolderIcon size={14} className="text-[var(--text-2)]" />
+          <span className="flex-1 text-sm font-semibold text-[var(--text-1)]">Notes</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[var(--text-3)]">
             <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
@@ -127,18 +127,18 @@ function StaticSidebar() {
 
         {/* Study Materials */}
         <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1">
-          <Library size={14} className="text-white" />
-          <span className="flex-1 text-sm font-semibold text-white">Study Materials</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-white" style={{ transform: 'rotate(-90deg)' }}>
+          <Library size={14} className="text-[var(--text-2)]" />
+          <span className="flex-1 text-sm font-semibold text-[var(--text-1)]">Study Materials</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[var(--text-3)]" style={{ transform: 'rotate(-90deg)' }}>
             <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
 
         {/* Tools */}
         <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1">
-          <Wrench size={14} className="text-white" />
-          <span className="flex-1 text-sm font-semibold text-white">Tools</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-white" style={{ transform: 'rotate(-90deg)' }}>
+          <Wrench size={14} className="text-[var(--text-2)]" />
+          <span className="flex-1 text-sm font-semibold text-[var(--text-1)]">Tools</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="text-[var(--text-3)]" style={{ transform: 'rotate(-90deg)' }}>
             <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
@@ -339,7 +339,7 @@ function StaticRightPanel() {
 
 export default function DashboardScreenshotPage() {
   return (
-    <div className="fixed inset-0 z-[9999] flex overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+    <div className="light fixed inset-0 z-[9999] flex overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
 
       {/* Sidebar */}
       <StaticSidebar />

@@ -21,18 +21,18 @@ export default function SchoolsMarquee() {
   const items = [...SCHOOLS, ...SCHOOLS];
 
   return (
-    <section className="py-12 sm:py-16" style={{ backgroundColor: '#0A0A0A' }}>
-      <p className="text-center text-xs font-semibold uppercase tracking-widest mb-10" style={{ color: 'rgba(255,255,255,0.25)' }}>
-        Loved by students at
+    <section className="py-12 sm:py-16" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <p className="text-center text-xs font-semibold tracking-wide mb-10" style={{ color: '#FF6500' }}>
+        Loved by professionals and students from
       </p>
 
       <div className="relative overflow-hidden max-w-4xl mx-auto">
         {/* Left fade */}
         <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to right, #0A0A0A, transparent)' }} />
+          style={{ background: 'linear-gradient(to right, var(--bg-page), transparent)' }} />
         {/* Right fade */}
         <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 z-10 pointer-events-none"
-          style={{ background: 'linear-gradient(to left, #0A0A0A, transparent)' }} />
+          style={{ background: 'linear-gradient(to left, var(--bg-page), transparent)' }} />
 
         <div className="marquee-track flex items-end gap-10 sm:gap-16 w-max">
           {items.map((school, i) => (
@@ -43,9 +43,9 @@ export default function SchoolsMarquee() {
                 width={64}
                 height={64}
                 className="object-contain sm:w-20 sm:h-20"
-                style={{ filter: 'brightness(0) invert(1)', opacity: 0.3 }}
+                style={{ filter: 'brightness(0)', opacity: 0.45 }}
               />
-              <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <span className="text-[10px] sm:text-xs font-medium whitespace-nowrap text-center" style={{ color: 'var(--text-3)' }}>
                 {school.name}
               </span>
             </div>
