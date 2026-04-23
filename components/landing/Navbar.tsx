@@ -22,9 +22,9 @@ export default function Navbar() {
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: scrolled ? 'rgba(10,10,10,0.85)' : 'transparent',
+        backgroundColor: scrolled ? 'var(--bg-page)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+        borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -38,18 +38,18 @@ export default function Navbar() {
           <Link
             href="/pricing"
             className="text-sm font-medium transition-colors"
-            style={{ color: 'rgba(255,255,255,0.6)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+            style={{ color: 'var(--text-2)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
           >
             Pricing
           </Link>
           <Link
             href="/blog"
             className="text-sm font-medium transition-colors"
-            style={{ color: 'rgba(255,255,255,0.6)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+            style={{ color: 'var(--text-2)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
           >
             Blog
           </Link>
@@ -60,9 +60,9 @@ export default function Navbar() {
           <Link
             href="/sign-in"
             className="text-sm font-medium transition-colors"
-            style={{ color: 'rgba(255,255,255,0.6)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+            style={{ color: 'var(--text-2)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
           >
             Login
           </Link>

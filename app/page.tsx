@@ -37,7 +37,7 @@ export default function LandingPage() {
   };
 
   return (
-    <main style={{ backgroundColor: '#0A0A0A' }}>
+    <main className="light" style={{ backgroundColor: 'var(--bg-page)' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -46,8 +46,8 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <SchoolsMarquee />
-      <LearningStyleSection />
       <HowItWorks />
+      <LearningStyleSection />
       <LandingFooter />
     </main>
   );
