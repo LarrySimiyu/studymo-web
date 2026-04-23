@@ -7,21 +7,21 @@ const STEPS = [
   {
     number: '1.',
     title: 'Upload Anything',
-    sub: 'Links, audio, video, files.',
+    sub: 'PDFs, links, audio, video, files',
     img: folderImg,
     alt: 'Upload lecture slides, PDFs, YouTube links, or audio files into Studymo',
   },
   {
     number: '2.',
     title: 'Get Notes',
-    sub: 'Get formatted notes and transcripts.',
+    sub: 'Get formatted notes and transcripts',
     img: fileImg,
     alt: 'AI-generated study notes and transcript from uploaded course material',
   },
   {
     number: '3.',
     title: 'Get to Studying',
-    sub: 'AI tutor, quizzes, flashcards, podcasts, so much more.',
+    sub: 'AI tutor, quizzes, flashcards, podcasts, so much more',
     img: micImg,
     alt: 'Studymo AI tutor, flashcards, quizzes, and podcast study tools',
   },
@@ -42,44 +42,45 @@ export default function HowItWorks({ steps }: Props = {}) {
   }));
 
   return (
-    <section className="py-20 sm:py-28 lg:py-36 px-4 sm:px-8 lg:px-16" style={{ backgroundColor: '#0A0A0A' }}>
+    <section className="py-20 sm:py-28 lg:py-36 px-4 sm:px-8 lg:px-16" style={{ backgroundColor: 'var(--bg-page)' }}>
       <div className="max-w-5xl mx-auto flex flex-col items-center gap-12 sm:gap-16">
 
         {/* Label + heading */}
         <div className="flex flex-col items-center gap-4 text-center">
           <span
-            className="text-xs sm:text-sm font-medium px-4 py-1.5 rounded-full"
-            style={{ backgroundColor: '#1A1A1A', color: '#9CA3AF', border: '1px solid #2A2A2A' }}
+            className="text-xs sm:text-sm font-bold tracking-widest uppercase"
+            style={{ color: '#FF6500' }}
           >
             How it works
           </span>
-          <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight">
-            Studymo keeps it simple
+          <h2 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight" style={{ color: 'var(--text-1)' }}>
+            Keep It Simple
           </h2>
         </div>
 
         {/* Steps */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-8 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 w-full">
           {resolvedSteps.map((step) => (
-            <div key={step.number} className="flex flex-col items-center gap-5 text-center">
-              {/* Icon tile */}
-              <div
-                className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-2xl sm:rounded-3xl flex items-center justify-center"
-                style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
-              >
+            <div
+              key={step.number}
+              className="flex flex-col rounded-2xl overflow-hidden"
+              style={{ backgroundColor: 'var(--bg-card)' }}
+            >
+              {/* Image area */}
+              <div className="flex items-center justify-center p-8 sm:p-10">
                 <Image
                   src={step.img}
                   alt={step.alt}
-                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 object-contain"
+                  className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 object-contain"
                 />
               </div>
 
-              {/* Text */}
-              <div className="flex flex-col gap-1.5">
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                  {step.number} {step.title}
+              {/* Description */}
+              <div className="px-6 pb-6 flex flex-col gap-1.5 text-center">
+                <p className="text-base sm:text-lg lg:text-xl font-bold" style={{ color: 'var(--text-1)' }}>
+                  {step.title}
                 </p>
-                <p className="text-sm sm:text-base leading-relaxed" style={{ color: '#6B7280' }}>
+                <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--text-2)' }}>
                   {step.sub}
                 </p>
               </div>
