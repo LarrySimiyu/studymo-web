@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import chatScreenshot from '@/assets/dashboard-screenshot.png';
+import { Layers, ListChecks, Headphones, type LucideIcon } from 'lucide-react';
+import AiPromptBox from '@/components/ui/AiPromptBox';
+
+const SUGGESTIONS: { icon: LucideIcon; title: string; blurb: string; prompt: string }[] = [
+  { icon: Layers, title: 'Make Flashcards', blurb: 'Turn any lecture or notes into a study-ready deck.', prompt: 'Make flashcards from my notes' },
+  { icon: ListChecks, title: 'Create Practice Quiz', blurb: 'Test yourself with AI-generated questions.', prompt: 'Create a practice quiz from my material' },
+  { icon: Headphones, title: 'Generate Podcast', blurb: 'Listen to your notes as a spoken lecture.', prompt: 'Generate a podcast from my notes' },
+];
 
 const CYCLING_WORDS = [
   'chem',
@@ -67,17 +74,22 @@ const fadeUp = {
 
 export default function Hero() {
   const { text: typed, done } = useTypewriter(CYCLING_WORDS);
+  const router = useRouter();
+
+  const handlePrompt = (value: string) => {
+    router.push(`/sign-up?prompt=${encodeURIComponent(value)}`);
+  };
 
   return (
     <section
       className="relative flex flex-col items-center min-h-[50vh] sm:min-h-screen"
       style={{ backgroundColor: 'var(--bg-page)' }}
     >
-      {/* Radial glow behind heading */}
+      {/* Radial glow centered in hero */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[900px] pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] max-w-[1800px] h-[1100px] pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.14) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(255,101,0,0.22) 0%, rgba(255,101,0,0.08) 38%, transparent 68%)',
         }}
       />
 
@@ -130,47 +142,34 @@ export default function Hero() {
           </Link>
         </motion.div>
 
-        {/* Mockup */}
+        {/* AI chat field */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="show"
           transition={{ duration: 0.7, delay: 0.65 }}
-          className="relative w-full mt-20"
+          className="relative w-full max-w-3xl mt-16 sm:mt-20"
         >
-          {/* Border beam wrapper */}
-          <div className="border-beam-wrap rounded-2xl p-[1.5px]" style={{ boxShadow: '0 25px 60px rgba(255,101,0,0.25), 0 8px 24px rgba(255,101,0,0.15)' }}>
-            <div className="rounded-[14px] overflow-hidden">
-              <Image
-                src={chatScreenshot}
-                alt="Studymo app screenshot"
-                className="w-full h-auto block"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-5 text-left">
+            {SUGGESTIONS.map(({ icon: Icon, title, blurb, prompt }) => (
+              <button
+                key={title}
+                type="button"
+                onClick={() => handlePrompt(prompt)}
+                className="group flex flex-col items-start text-left rounded-2xl p-4 sm:p-5 transition-colors hover:[background-color:var(--bg-hover)]"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+              >
+                <Icon size={22} className="mb-3 transition-colors [color:var(--text-3)] group-hover:[color:#FF6500]" />
+                <p className="text-sm sm:text-base font-bold" style={{ color: 'var(--text-1)' }}>{title}</p>
+                <p className="mt-1 text-xs sm:text-sm leading-snug" style={{ color: 'var(--text-3)' }}>{blurb}</p>
+              </button>
+            ))}
           </div>
+          <AiPromptBox
+            placeholder="Start your first session"
+            modes={[]}
+            onSubmit={handlePrompt}
+            footer="Studymo turns your prompt into notes, flashcards, and quizzes."
+          />
         </motion.div>
-
-        <style dangerouslySetInnerHTML={{ __html: `
-          @property --beam-angle {
-            syntax: '<angle>';
-            initial-value: 0deg;
-            inherits: false;
-          }
-          @keyframes beam-spin {
-            to { --beam-angle: 360deg; }
-          }
-          .border-beam-wrap {
-            background: conic-gradient(
-              from var(--beam-angle),
-              transparent 0%,
-              transparent 72%,
-              rgba(255, 101, 0, 0.04) 78%,
-              rgba(255, 101, 0, 0.25) 86%,
-              rgba(255, 101, 0, 0.75) 93%,
-              #FF6500 98%,
-              transparent 100%
-            );
-            animation: beam-spin 10s linear infinite;
-          }
-        ` }} />
 
       </div>
     </section>
