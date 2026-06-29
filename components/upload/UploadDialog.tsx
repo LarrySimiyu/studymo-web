@@ -8,6 +8,8 @@ import { analytics } from '@/lib/analytics';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { uploadDocumentFile } from '@/lib/upload/uploadDocument';
+import { validateUploadFile, ACCEPTED_UPLOAD } from '@/lib/upload/fileValidation';
 
 export type UploadType = 'blank' | 'file' | 'record' | 'video' | 'webpage';
 
@@ -19,8 +21,6 @@ interface Props {
 
 type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
 
-const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
-
 const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; color: string; bg: string }> = {
   blank:   { title: 'New Note',        icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
   file:    { title: 'Upload File',     icon: Upload,  color: '#FF6500', bg: 'rgba(255,101,0,0.12)'  },
@@ -28,28 +28,6 @@ const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; co
   video:   { title: 'YouTube URL',     icon: Youtube, color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
   webpage: { title: 'Import Website',  icon: Globe,   color: '#14B8A6', bg: 'rgba(20,184,166,0.12)' },
 };
-
-function uploadToPresignedUrl(
-  url: string,
-  file: Blob,
-  mimeType: string,
-  onProgress: (pct: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', mimeType);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`Upload failed: ${xhr.status}`));
-    };
-    xhr.onerror = () => reject(new Error('Upload failed'));
-    xhr.send(file);
-  });
-}
 
 // ─── Processing / Failed overlay ─────────────────────────────────────────────
 function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: {
@@ -163,39 +141,22 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
     if (f) handleFile(f);
   };
 
-  const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
-  const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
-
   async function handleUpload() {
     if (!file) return;
-    if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
-      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
-      return;
-    }
-    if (isAudioFile && file.size > AUDIO_MAX_BYTES) {
-      onError(`Audio file is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 200MB.`);
-      return;
-    }
+    const validationError = validateUploadFile(file);
+    if (validationError) { onError(validationError); return; }
+
     onStart();
     setUploadProgress(0);
 
-    const { data: presignData, error: presignError } = await documentsApi.presign({
+    const { docId, error } = await uploadDocumentFile(file, {
       mimeType: file.type,
       title: title || file.name,
-      fileSize: file.size,
+      onProgress: setUploadProgress,
     });
-    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
+    if (error || !docId) { onError(error ?? 'Upload failed'); return; }
 
-    try {
-      await uploadToPresignedUrl(presignData.uploadUrl, file, file.type, setUploadProgress);
-    } catch {
-      onError('Upload failed — please try again'); return;
-    }
-
-    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
-    if (processError) { onError(processError); return; }
-
-    onSuccess(presignData.doc.id);
+    onSuccess(docId);
   }
 
   return (
@@ -214,7 +175,7 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
         <input
           ref={inputRef}
           type="file"
-          accept={ACCEPTED}
+          accept={ACCEPTED_UPLOAD}
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
@@ -436,20 +397,14 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
     onStart();
     setUploadProgress(0);
     const recordingTitle = title || `Recording ${new Date().toLocaleString()}`;
-    const { data: presignData, error: presignError } = await documentsApi.presign({
+    const { docId, error } = await uploadDocumentFile(audioBlob, {
       mimeType: 'audio/webm',
       title: recordingTitle,
       isRecording: true,
+      onProgress: setUploadProgress,
     });
-    if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
-    try {
-      await uploadToPresignedUrl(presignData.uploadUrl, audioBlob, 'audio/webm', setUploadProgress);
-    } catch {
-      onError('Upload failed — please try again'); return;
-    }
-    const { error: processError } = await documentsApi.triggerProcess(presignData.doc.id);
-    if (processError) { onError(processError); return; }
-    onSuccess(presignData.doc.id);
+    if (error || !docId) { onError(error ?? 'Upload failed'); return; }
+    onSuccess(docId);
   }
 
   return (

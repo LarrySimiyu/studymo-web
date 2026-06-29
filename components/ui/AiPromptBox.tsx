@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
-import { Paperclip, Globe, Lightbulb, Sparkles, ArrowUp, type LucideIcon } from 'lucide-react';
+import { Paperclip, Globe, Lightbulb, Sparkles, ArrowUp, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ACCEPTED_UPLOAD, validateUploadFile } from '@/lib/upload/fileValidation';
 
 export type PromptMode = {
   id: string;
@@ -22,7 +23,7 @@ type Props = {
   footer?: ReactNode;
   autoFocus?: boolean;
   className?: string;
-  onSubmit?: (value: string, activeModes: string[]) => void;
+  onSubmit?: (value: string, activeModes: string[], file?: File) => void;
 };
 
 export default function AiPromptBox({
@@ -35,7 +36,10 @@ export default function AiPromptBox({
 }: Props) {
   const [value, setValue] = useState('');
   const [active, setActive] = useState<string[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const toggleMode = (id: string) =>
     setActive(prev => (prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]));
@@ -45,9 +49,16 @@ export default function AiPromptBox({
     el.style.height = `${Math.min(el.scrollHeight, 220)}px`;
   };
 
+  const handleAttach = (f: File) => {
+    const error = validateUploadFile(f);
+    if (error) { setFileError(error); setFile(null); return; }
+    setFileError('');
+    setFile(f);
+  };
+
   const submit = () => {
-    if (!value.trim()) return;
-    onSubmit?.(value.trim(), active);
+    if (!value.trim() && !file) return;
+    onSubmit?.(value.trim(), active, file ?? undefined);
   };
 
   return (
@@ -83,9 +94,39 @@ export default function AiPromptBox({
           />
         </div>
 
+        {file && (
+          <div
+            className="mt-3 flex items-center gap-2 w-fit max-w-full rounded-xl px-3 py-2"
+            style={{ backgroundColor: 'var(--bg-hover)', border: '1px solid var(--border-md)' }}
+          >
+            <Paperclip size={15} className="shrink-0" style={{ color: '#FF6500' }} />
+            <span className="text-sm truncate" style={{ color: 'var(--text-1)' }}>{file.name}</span>
+            <button
+              type="button"
+              aria-label="Remove file"
+              onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ''; }}
+              className="shrink-0 rounded-full p-0.5 transition-colors hover:[background-color:var(--bg-card)]"
+              style={{ color: 'var(--text-2)' }}
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
+
+        {fileError && (
+          <p className="mt-2 text-sm" style={{ color: '#EF4444' }}>{fileError}</p>
+        )}
+
         <div className="mt-4 sm:mt-5 flex items-center gap-2">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
-            <IconButton label="Attach">
+            <input
+              ref={fileRef}
+              type="file"
+              accept={ACCEPTED_UPLOAD}
+              className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleAttach(f); }}
+            />
+            <IconButton label="Attach" onClick={() => fileRef.current?.click()}>
               <Paperclip size={19} />
             </IconButton>
             {modes.map(m => {
@@ -114,7 +155,7 @@ export default function AiPromptBox({
             <button
               type="button"
               onClick={submit}
-              disabled={!value.trim()}
+              disabled={!value.trim() && !file}
               aria-label="Send"
               className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white transition-opacity disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
@@ -155,11 +196,12 @@ export default function AiPromptBox({
   );
 }
 
-function IconButton({ label, children }: { label: string; children: ReactNode }) {
+function IconButton({ label, children, onClick }: { label: string; children: ReactNode; onClick?: () => void }) {
   return (
     <button
       type="button"
       aria-label={label}
+      onClick={onClick}
       className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-full transition-colors hover:[background-color:var(--bg-hover)]"
       style={{ color: 'var(--text-2)' }}
     >
