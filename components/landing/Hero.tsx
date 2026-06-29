@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Layers, ListChecks, Headphones, type LucideIcon } from 'lucide-react';
 import AiPromptBox from '@/components/ui/AiPromptBox';
+import { savePendingUpload } from '@/lib/upload/pendingUpload';
 
 const SUGGESTIONS: { icon: LucideIcon; title: string; blurb: string; prompt: string }[] = [
   { icon: Layers, title: 'Make Flashcards', blurb: 'Turn any lecture or notes into a study-ready deck.', prompt: 'Make flashcards from my notes' },
@@ -76,8 +77,14 @@ export default function Hero() {
   const { text: typed, done } = useTypewriter(CYCLING_WORDS);
   const router = useRouter();
 
-  const handlePrompt = (value: string) => {
-    router.push(`/sign-up?prompt=${encodeURIComponent(value)}`);
+  const handlePrompt = async (value: string, _modes?: string[], file?: File) => {
+    // Logged-out: stash any attached file so it survives the sign-up → onboarding
+    // redirects, then upload it once the user lands authenticated in the dashboard.
+    if (file) {
+      await savePendingUpload({ file, title: file.name.replace(/\.[^.]+$/, '') });
+    }
+    const qs = value ? `?prompt=${encodeURIComponent(value)}` : '';
+    router.push(`/sign-up${qs}`);
   };
 
   return (
