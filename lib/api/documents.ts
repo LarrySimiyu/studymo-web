@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 import { auth } from '@/lib/firebase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export interface DocumentTag {
   documentId: string;
@@ -141,12 +141,26 @@ export const quizzesApi = {
 
 // SSE watcher — opens a stream and calls onStatus when the doc reaches complete or failed.
 // Returns a cancel function. Falls back gracefully if the connection drops.
+const WATCH_TIMEOUT_MS = 5 * 60 * 1000;
+
 export function watchDocumentStatus(
   docId: string,
   onStatus: (status: 'complete' | 'failed', errorMessage?: string) => void,
+  onTimeout?: () => void,
 ): () => void {
   let cancelled = false;
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
+  const stop = () => {
+    cancelled = true;
+    reader?.cancel().catch(() => {});
+  };
+
+  // Only arm the watchdog when the caller wants timeout handling (e.g. the upload dialog's
+  // blocking spinner). The library page passes none and keeps watching in the background.
+  const timer = onTimeout
+    ? setTimeout(() => { if (!cancelled) { stop(); onTimeout?.(); } }, WATCH_TIMEOUT_MS)
+    : null;
 
   const start = async () => {
     try {
@@ -175,6 +189,7 @@ export function watchDocumentStatus(
           try {
             const data = JSON.parse(line.slice(6)) as { status: string; errorMessage?: string };
             if (data.status === 'complete' || data.status === 'failed') {
+              if (timer) clearTimeout(timer);
               onStatus(data.status, data.errorMessage);
             }
           } catch {
@@ -190,8 +205,8 @@ export function watchDocumentStatus(
   start();
 
   return () => {
-    cancelled = true;
-    reader?.cancel().catch(() => {});
+    if (timer) clearTimeout(timer);
+    stop();
   };
 }
 

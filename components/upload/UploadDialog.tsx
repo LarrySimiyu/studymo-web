@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { PenLine, Upload, Mic, Youtube, Globe } from 'lucide-react';
+import { PenLine, Upload, Mic, Youtube, Globe, Clock } from 'lucide-react';
 import { documentsApi, notesApi, watchDocumentStatus } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
+import { getPdfPageCount } from '@/lib/pdf';
 import { analytics } from '@/lib/analytics';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -17,9 +18,26 @@ interface Props {
   onSuccess: (documentId?: string) => void;
 }
 
-type UploadState = 'idle' | 'uploading' | 'processing' | 'failed';
+type UploadState = 'idle' | 'uploading' | 'processing' | 'stillProcessing' | 'failed';
 
 const ACCEPTED = '.pdf,.mp3,.mp4,.wav,.m4a,.webm';
+
+const MB = 1024 * 1024;
+const MAX_PDF_MB = 32;
+const MAX_AUDIO_MB = 200;
+const MAX_PDF_PAGES = 100;
+
+function fileSizeError(f: Blob): string | null {
+  const sizeMB = Math.round(f.size / MB);
+  if (f.type === 'application/pdf' && f.size > MAX_PDF_MB * MB) {
+    return `PDF is too large (${sizeMB}MB). Maximum allowed size is ${MAX_PDF_MB}MB.`;
+  }
+  const isAudio = f.type.startsWith('audio/') || f.type === 'video/mp4';
+  if (isAudio && f.size > MAX_AUDIO_MB * MB) {
+    return `Audio/video file is too large (${sizeMB}MB). Maximum allowed size is ${MAX_AUDIO_MB}MB.`;
+  }
+  return null;
+}
 
 const TYPE_META: Record<UploadType, { title: string; icon: React.ElementType; color: string; bg: string }> = {
   blank:   { title: 'New Note',        icon: PenLine, color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
@@ -53,21 +71,28 @@ function uploadToPresignedUrl(
 
 // ─── Processing / Failed overlay ─────────────────────────────────────────────
 function ProcessingOverlay({ state, errorMessage, onRetry, onClose }: {
-  state: 'processing' | 'failed';
+  state: 'processing' | 'stillProcessing' | 'failed';
   errorMessage?: string;
   onRetry: () => void;
   onClose: () => void;
 }) {
-  if (state === 'processing') {
+  if (state === 'processing' || state === 'stillProcessing') {
+    const stillProcessing = state === 'stillProcessing';
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4 text-center">
-        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-transparent" style={{ borderTopColor: '#FF6500', borderRightColor: '#FF6500' }} />
+        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: stillProcessing ? 'rgba(245,158,11,0.12)' : 'rgba(255,101,0,0.12)' }}>
+          {stillProcessing ? (
+            <Clock size={22} style={{ color: '#F59E0B' }} />
+          ) : (
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-transparent" style={{ borderTopColor: '#FF6500', borderRightColor: '#FF6500' }} />
+          )}
         </div>
         <div>
-          <p className="text-[var(--text-1)] font-semibold text-sm">Processing your note…</p>
+          <p className="text-[var(--text-1)] font-semibold text-sm">{stillProcessing ? 'Still processing…' : 'Processing your note…'}</p>
           <p className="text-[var(--text-2)] text-xs mt-1 max-w-xs">
-            This may take a minute. You can close this — it will appear in your library when ready.
+            {stillProcessing
+              ? 'This is taking longer than usual. You can close this — your note will appear in your library when it’s ready.'
+              : 'This may take a minute. You can close this — it will appear in your library when ready.'}
           </p>
         </div>
         <button onClick={onClose} className="text-xs text-[var(--text-3)] hover:text-[var(--text-2)] transition-colors">
@@ -146,6 +171,8 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
   onError: (msg: string) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
+  const [sizeError, setSizeError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const [title, setTitle] = useState('');
   const [dragging, setDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -153,6 +180,7 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
 
   const handleFile = (f: File) => {
     setFile(f);
+    setSizeError(fileSizeError(f));
     setTitle(prev => prev || f.name.replace(/\.[^.]+$/, ''));
   };
 
@@ -163,18 +191,18 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
     if (f) handleFile(f);
   };
 
-  const isAudioFile = file ? file.type.startsWith('audio/') || file.type === 'video/mp4' : false;
-  const AUDIO_MAX_BYTES = 200 * 1024 * 1024;
-
   async function handleUpload() {
     if (!file) return;
-    if (file.type === 'application/pdf' && file.size > 40 * 1024 * 1024) {
-      onError(`PDF is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 40MB.`);
-      return;
-    }
-    if (isAudioFile && file.size > AUDIO_MAX_BYTES) {
-      onError(`Audio file is too large (${Math.round(file.size / 1024 / 1024)}MB). Maximum allowed size is 200MB.`);
-      return;
+    const err = fileSizeError(file);
+    if (err) { setSizeError(err); onError(err); return; }
+    if (file.type === 'application/pdf') {
+      setChecking(true);
+      const pages = await getPdfPageCount(file).catch(() => null);
+      setChecking(false);
+      if (pages !== null && pages > MAX_PDF_PAGES) {
+        const msg = `PDF has too many pages (${pages}). Maximum is ${MAX_PDF_PAGES} pages.`;
+        setSizeError(msg); onError(msg); return;
+      }
     }
     onStart();
     setUploadProgress(0);
@@ -225,12 +253,15 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
           <>
             <p className="text-sm text-[var(--text-1)]">Drag and drop a PDF, audio, or video file</p>
             <p className="text-xs text-[var(--text-2)] mt-1">or click to browse</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-3)' }}>
+              PDF up to {MAX_PDF_MB}MB · audio/video up to {MAX_AUDIO_MB}MB
+            </p>
           </>
         )}
       </div>
       {file && (
-        <p className="text-xs px-1" style={{ color: 'var(--text-3)' }}>
-          Size: {Math.round(file.size / 1024 / 1024)}MB
+        <p className="text-xs px-1" style={{ color: sizeError ? '#EF4444' : 'var(--text-3)' }}>
+          {sizeError ?? `Size: ${Math.round(file.size / 1024 / 1024)}MB`}
         </p>
       )}
       <div>
@@ -251,8 +282,8 @@ function FileUploadForm({ loading, onStart, onSuccess, onError }: {
           </div>
         </div>
       )}
-      <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={!file || loading}>
-        {loading ? 'Uploading…' : 'Upload'}
+      <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={!file || loading || checking || !!sizeError}>
+        {checking ? 'Checking…' : loading ? 'Uploading…' : 'Upload'}
       </Button>
     </div>
   );
@@ -360,6 +391,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [sizeError, setSizeError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState('');
   const [title, setTitle] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -408,6 +440,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
     mr.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
       setAudioBlob(blob);
+      setSizeError(fileSizeError(blob));
       setAudioUrl(URL.createObjectURL(blob));
       cancelAnimationFrame(animRef.current);
       stream.getTracks().forEach((t) => t.stop());
@@ -433,6 +466,8 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
 
   async function handleUpload() {
     if (!audioBlob) return;
+    const err = fileSizeError(audioBlob);
+    if (err) { setSizeError(err); onError(err); return; }
     onStart();
     setUploadProgress(0);
     const recordingTitle = title || `Recording ${new Date().toLocaleString()}`;
@@ -440,6 +475,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
       mimeType: 'audio/webm',
       title: recordingTitle,
       isRecording: true,
+      fileSize: audioBlob.size,
     });
     if (presignError || !presignData) { onError(presignError ?? 'Upload failed'); return; }
     try {
@@ -503,7 +539,10 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
               </div>
             </div>
           )}
-          <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={loading}>
+          {sizeError && (
+            <p className="text-xs px-1" style={{ color: '#EF4444' }}>{sizeError}</p>
+          )}
+          <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={loading || !!sizeError}>
             {loading ? 'Uploading…' : 'Upload Recording'}
           </Button>
         </>
@@ -548,17 +587,21 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
 
   function handleUploadSuccess(docId: string) {
     setUploadState('processing');
-    stopWatchRef.current = watchDocumentStatus(docId, (status, errorMessage) => {
-      invalidatePrefix(`/documents/${docId}`);
-      if (status === 'complete') {
-        analytics.uploadCompleted(type);
-        onSuccess(docId);
-      } else {
-        analytics.uploadFailed(type);
-        setFailedMessage(errorMessage);
-        setUploadState('failed');
-      }
-    });
+    stopWatchRef.current = watchDocumentStatus(
+      docId,
+      (status, errorMessage) => {
+        invalidatePrefix(`/documents/${docId}`);
+        if (status === 'complete') {
+          analytics.uploadCompleted(type);
+          onSuccess(docId);
+        } else {
+          analytics.uploadFailed(type);
+          setFailedMessage(errorMessage);
+          setUploadState('failed');
+        }
+      },
+      () => setUploadState('stillProcessing'),
+    );
   }
 
   function handleUploadError(msg: string) {
@@ -574,7 +617,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
     setFailedMessage(undefined);
   }
 
-  const isOverlay = uploadState === 'processing' || uploadState === 'failed';
+  const isOverlay = uploadState === 'processing' || uploadState === 'stillProcessing' || uploadState === 'failed';
 
   return (
     <div
@@ -595,7 +638,7 @@ export default function UploadDialog({ type, onClose, onSuccess }: Props) {
           </div>
         ) : isOverlay ? (
           <ProcessingOverlay
-            state={uploadState as 'processing' | 'failed'}
+            state={uploadState as 'processing' | 'stillProcessing' | 'failed'}
             errorMessage={failedMessage}
             onRetry={handleRetry}
             onClose={onClose}

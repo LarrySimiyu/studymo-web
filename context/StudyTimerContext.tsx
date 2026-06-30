@@ -11,7 +11,7 @@ import React, {
 import { studySessionsApi, StudySession, SessionTaskEntry } from '@/lib/api/tasks';
 import { auth } from '@/lib/firebase';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 type TimerMode = 'pomodoro' | 'timeblock';
 type TimerStatus = 'idle' | 'running' | 'paused' | 'break';

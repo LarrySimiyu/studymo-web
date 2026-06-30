@@ -31,7 +31,7 @@ export interface TutorSession extends TutorSessionSummary {
   weakTopicCount: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export const tutorApi = {
   createSession: (data: { noteIds?: string[]; mode: 'helper' | 'tutor' | 'eli5' | 'casual' | 'strict' | 'teach_back' }) =>
