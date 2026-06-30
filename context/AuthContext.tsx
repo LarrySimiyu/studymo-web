@@ -16,7 +16,7 @@ import { billingApi, SubscriptionStatus } from '@/lib/api/billing';
 import { getOnboardingData, clearOnboardingData } from '@/lib/onboarding';
 import { identifyUser, aliasUser, resetAnalytics, analytics, setSuperProperties, updateProfile } from '@/lib/analytics';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 interface DbUser {
   id: string;

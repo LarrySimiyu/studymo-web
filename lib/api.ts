@@ -1,7 +1,7 @@
 import { auth } from './firebase';
 import { cacheGet, cacheSet, invalidatePrefix } from './apiCache';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 type ApiResponse<T> = {
   data: T | null;

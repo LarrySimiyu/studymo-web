@@ -25,7 +25,7 @@ export const PODCAST_VOICES = [
   { id: 'shimmer', name: 'Shimmer', description: 'Clear and professional',     gender: 'Female'  },
 ] as const;
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export const podcastsApi = {
   create: (data: { documentId: string; lengthMins: 5 | 10 | 15; voice: string }) =>
