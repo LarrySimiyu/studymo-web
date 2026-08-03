@@ -82,7 +82,7 @@ export default function PricingPage() {
   }
 
   return (
-    <div style={{ backgroundColor: '#0A0A0A', minHeight: '100vh' }}>
+    <div className="light" style={{ backgroundColor: 'var(--bg-page)', minHeight: '100vh' }}>
       <Navbar />
 
       {/* Exact same content as PaywallModal, just without the modal wrapper */}
@@ -91,7 +91,7 @@ export default function PricingPage() {
 
           <div className="h-7 flex items-center justify-center">
             {selected === 'yearly' && (
-              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-2)' }}>
                 <span>Your free trial is reserved for:</span>
                 <span className="font-bold tabular-nums" style={{ color: '#FF6500' }}>{countdown}</span>
               </div>
@@ -100,7 +100,7 @@ export default function PricingPage() {
 
           <h1
             className="font-extrabold tracking-tight w-full"
-            style={{ color: '#fff', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.15 }}
+            style={{ color: 'var(--text-1)', fontSize: 'clamp(1.75rem, 5vw, 2.25rem)', lineHeight: 1.15 }}
           >
             {plan?.trialDays ? (
               <>

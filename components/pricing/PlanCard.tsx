@@ -32,8 +32,8 @@ export default function PlanCard({ plan, selected, loading, onCTA }: Props) {
           <Star
             size={32}
             style={{
-              color: selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : '#fff',
-              fill:  selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : '#fff',
+              color: selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : 'var(--text-1)',
+              fill:  selected === 'yearly' ? '#22C55E' : selected === 'monthly' ? '#FF6500' : 'var(--text-1)',
             }}
           />
         </div>

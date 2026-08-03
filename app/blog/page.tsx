@@ -11,12 +11,12 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   return (
-    <main className="min-h-screen relative flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
+    <main className="light min-h-screen relative flex flex-col" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Radial glow */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[600px] pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.18) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(255,101,0,0.10) 0%, transparent 65%)',
         }}
       />
 
@@ -24,7 +24,10 @@ export default function BlogPage() {
 
       <div className="relative z-10 flex-1 max-w-6xl mx-auto w-full px-4 sm:px-8 pt-28 sm:pt-36 pb-16 sm:pb-24">
         <div className="mb-12 sm:mb-16">
-          <h1 className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+          <h1
+            className="font-playfair text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+            style={{ color: 'var(--text-1)' }}
+          >
             StudyMo Blog
           </h1>
           <p className="text-base sm:text-lg" style={{ color: 'var(--text-2)' }}>
@@ -38,7 +41,7 @@ export default function BlogPage() {
               key={post.slug}
               href={`/blog/${post.slug}`}
               className="group flex flex-col rounded-2xl p-6 border transition-colors hover:border-[rgba(255,101,0,0.3)]"
-              style={{ backgroundColor: '#141414', borderColor: 'rgba(255,255,255,0.07)' }}
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
             >
               <div className="flex items-center gap-3 mb-4">
                 <span className="text-xs" style={{ color: 'var(--text-3)' }}>
@@ -53,7 +56,7 @@ export default function BlogPage() {
                   {post.readTime}
                 </span>
               </div>
-              <h2 className="text-base sm:text-lg font-semibold text-white mb-3 group-hover:text-[#FF6500] transition-colors leading-snug">
+              <h2 className="text-base sm:text-lg font-semibold text-[color:var(--text-1)] mb-3 group-hover:text-[#FF6500] transition-colors leading-snug">
                 {post.title}
               </h2>
               <p className="text-sm leading-relaxed mt-auto" style={{ color: 'var(--text-2)' }}>
