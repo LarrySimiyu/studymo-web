@@ -10,8 +10,8 @@ import { savePendingUpload } from '@/lib/upload/pendingUpload';
 
 const SUGGESTIONS: { icon: LucideIcon; title: string; prompt: string }[] = [
   { icon: Layers, title: 'Make Flashcards', prompt: 'Make flashcards from my notes' },
-  { icon: ListChecks, title: 'Create Practice Quiz', prompt: 'Create a practice quiz from my material' },
-  { icon: Headphones, title: 'Generate Podcast', prompt: 'Generate a podcast from my notes' },
+  { icon: ListChecks, title: 'Create Practice Quizzes', prompt: 'Create a practice quiz from my material' },
+  { icon: Headphones, title: 'Generate Podcasts', prompt: 'Generate a podcast from my notes' },
 ];
 
 const CYCLING_WORDS = [
@@ -155,17 +155,17 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.65 }}
           className="relative w-full max-w-3xl mt-16 sm:mt-20"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-3 sm:mb-4">
             {SUGGESTIONS.map(({ icon: Icon, title, prompt }) => (
               <button
                 key={title}
                 type="button"
                 onClick={() => handlePrompt(prompt)}
-                className="group flex items-center justify-center gap-2 rounded-full px-4 py-2.5 transition-colors hover:[background-color:var(--bg-hover)]"
+                className="group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-colors hover:[background-color:var(--bg-hover)]"
                 style={{ backgroundColor: 'var(--bg-card)' }}
               >
-                <Icon size={16} className="shrink-0 transition-colors [color:var(--text-3)] group-hover:[color:#FF6500]" />
-                <span className="text-[13px] sm:text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-1)' }}>{title}</span>
+                <Icon size={14} className="shrink-0" style={{ color: 'var(--text-1)' }} />
+                <span className="text-[13px] font-medium whitespace-nowrap" style={{ color: 'var(--text-1)' }}>{title}</span>
               </button>
             ))}
           </div>
