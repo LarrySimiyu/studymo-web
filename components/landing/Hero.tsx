@@ -8,10 +8,10 @@ import { Layers, ListChecks, Headphones, type LucideIcon } from 'lucide-react';
 import AiPromptBox from '@/components/ui/AiPromptBox';
 import { savePendingUpload } from '@/lib/upload/pendingUpload';
 
-const SUGGESTIONS: { icon: LucideIcon; title: string; blurb: string; prompt: string }[] = [
-  { icon: Layers, title: 'Make Flashcards', blurb: 'Turn any lecture or notes into a study-ready deck.', prompt: 'Make flashcards from my notes' },
-  { icon: ListChecks, title: 'Create Practice Quiz', blurb: 'Test yourself with AI-generated questions.', prompt: 'Create a practice quiz from my material' },
-  { icon: Headphones, title: 'Generate Podcast', blurb: 'Listen to your notes as a spoken lecture.', prompt: 'Generate a podcast from my notes' },
+const SUGGESTIONS: { icon: LucideIcon; title: string; prompt: string }[] = [
+  { icon: Layers, title: 'Make Flashcards', prompt: 'Make flashcards from my notes' },
+  { icon: ListChecks, title: 'Create Practice Quiz', prompt: 'Create a practice quiz from my material' },
+  { icon: Headphones, title: 'Generate Podcast', prompt: 'Generate a podcast from my notes' },
 ];
 
 const CYCLING_WORDS = [
@@ -155,18 +155,17 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.65 }}
           className="relative w-full max-w-3xl mt-16 sm:mt-20"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-5 text-left">
-            {SUGGESTIONS.map(({ icon: Icon, title, blurb, prompt }) => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 mb-3 sm:mb-4">
+            {SUGGESTIONS.map(({ icon: Icon, title, prompt }) => (
               <button
                 key={title}
                 type="button"
                 onClick={() => handlePrompt(prompt)}
-                className="group flex flex-col items-start text-left rounded-2xl p-4 sm:p-5 transition-colors hover:[background-color:var(--bg-hover)]"
+                className="group flex items-center justify-center gap-2 rounded-full px-4 py-2.5 transition-colors hover:[background-color:var(--bg-hover)]"
                 style={{ backgroundColor: 'var(--bg-card)' }}
               >
-                <Icon size={22} className="mb-3 transition-colors [color:var(--text-3)] group-hover:[color:#FF6500]" />
-                <p className="text-sm sm:text-base font-bold" style={{ color: 'var(--text-1)' }}>{title}</p>
-                <p className="mt-1 text-xs sm:text-sm leading-snug" style={{ color: 'var(--text-3)' }}>{blurb}</p>
+                <Icon size={16} className="shrink-0 transition-colors [color:var(--text-3)] group-hover:[color:#FF6500]" />
+                <span className="text-[13px] sm:text-sm font-semibold whitespace-nowrap" style={{ color: 'var(--text-1)' }}>{title}</span>
               </button>
             ))}
           </div>
@@ -174,7 +173,6 @@ export default function Hero() {
             placeholder="Start your first session"
             modes={[]}
             onSubmit={handlePrompt}
-            footer="Studymo turns your prompt into notes, flashcards, and quizzes."
           />
         </motion.div>
 

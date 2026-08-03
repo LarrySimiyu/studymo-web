@@ -24,7 +24,7 @@ export default function Navbar() {
       style={{
         backgroundColor: scrolled ? 'var(--bg-page)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
+        borderBottom: scrolled ? '0.5px solid var(--border)' : '0.5px solid transparent',
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -36,15 +36,6 @@ export default function Navbar() {
         {/* Center nav links */}
         <div className="hidden sm:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
           <Link
-            href="/pricing"
-            className="text-sm font-medium transition-colors"
-            style={{ color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-          >
-            Pricing
-          </Link>
-          <Link
             href="/blog"
             className="text-sm font-medium transition-colors"
             style={{ color: 'var(--text-2)' }}
@@ -52,6 +43,15 @@ export default function Navbar() {
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
           >
             Blog
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-sm font-medium transition-colors"
+            style={{ color: 'var(--text-2)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
+          >
+            Pricing
           </Link>
         </div>
 
