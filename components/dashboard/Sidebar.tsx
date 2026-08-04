@@ -166,7 +166,6 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
-        <NavLink href="/dashboard" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard', true)} collapsed={collapsed} />
         <Link
           href="/dashboard/tutor"
           title={collapsed ? 'AI Tutor' : undefined}
@@ -181,6 +180,7 @@ function SidebarContent({
           <Star size={16} className="shrink-0" fill="white" />
           {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
         </Link>
+        <NavLink href="/dashboard/home" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard/home', true)} collapsed={collapsed} />
 
         {/* ── NOTES ── */}
         <SectionHeader label="Notes" icon={FolderIcon} collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />

@@ -46,7 +46,7 @@ export function resetAnalytics() {
 
 function pageEventName(path: string): string {
   if (path === '/') return 'landing_viewed';
-  if (path === '/dashboard') return 'dashboard_viewed';
+  if (path === '/dashboard' || path === '/dashboard/home') return 'dashboard_viewed';
   if (path === '/dashboard/library') return 'library_viewed';
   if (path.startsWith('/dashboard/library/')) return 'document_viewed';
   if (path === '/dashboard/flashcards') return 'flashcards_page_viewed';
