@@ -119,7 +119,7 @@ function DashboardContent() {
       {welcomeToast && (
         <div
           className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-sm font-medium text-white"
-          style={{ backgroundColor: '#9747FF', maxWidth: '340px' }}
+          style={{ backgroundColor: 'var(--brand)', maxWidth: '340px' }}
         >
           <span>🎉</span>
           <span>Welcome to Studymo Pro! Let&apos;s start studying.</span>

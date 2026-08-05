@@ -4,13 +4,18 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { House, Star, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Menu, Zap, LucideIcon, Sun, Moon } from 'lucide-react';
+import { House, Plus, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Zap, Sun, Moon, PanelLeft } from 'lucide-react';
 import { useTheme } from '@/components/ui/ThemeProvider';
 import { useAuth } from '@/hooks/useAuth';
+import { useNewChat } from '@/hooks/useNewChat';
 import { cn } from '@/lib/utils';
 import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
 import { documentsApi } from '@/lib/api/documents';
 import { podcastsApi } from '@/lib/api/podcasts';
+import { flattenFolders } from '@/components/library/libraryUtils';
+import { CountBadge, SectionHeader, NavLink, sectionMotion, SectionKey } from './SidebarNavPrimitives';
+import SidebarChatHistory from './SidebarChatHistory';
+import SidebarRail from './SidebarRail';
 
 interface Counts {
   notes: number;
@@ -20,99 +25,22 @@ interface Counts {
   podcasts: number;
 }
 
-function flattenFolders(folders: Folder[], depth = 0): (Folder & { depth: number })[] {
-  const result: (Folder & { depth: number })[] = [];
-  for (const f of folders) {
-    result.push({ ...f, depth });
-    if (f.children?.length) result.push(...flattenFolders(f.children, depth + 1));
-  }
-  return result;
-}
-
-function CountBadge({ n }: { n: number | undefined }) {
-  if (!n) return null;
-  return (
-    <span className="ml-auto shrink-0 text-[10px] font-medium leading-5 min-w-[18px] text-center text-[var(--text-3)] group-hover:text-[var(--text-1)] group-[.active]:text-[var(--text-1)]">
-      {n}
-    </span>
-  );
-}
-
-function Divider() {
-  return <div className="mx-2 my-1.5" style={{ height: 1, backgroundColor: 'var(--border)' }} />;
-}
-
-function SectionHeader({
-  label, icon: Icon, collapsed, open, onToggle,
-}: { label: string; icon?: LucideIcon; collapsed: boolean; open: boolean; onToggle: () => void }) {
-  if (collapsed) {
-    return Icon ? (
-      <button onClick={onToggle} className="group w-full flex justify-center py-1.5">
-        <Icon size={16} className="text-[var(--text-1)] transition-colors" />
-      </button>
-    ) : null;
-  }
-  return (
-    <button onClick={onToggle} className="group w-full flex items-center gap-1.5 px-2.5 pt-2 pb-1">
-      {Icon && <Icon size={14} className="text-[var(--text-1)] transition-colors" />}
-      <span className="flex-1 text-left text-sm font-semibold text-[var(--text-1)] transition-colors">
-        {label}
-      </span>
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-        className="text-[var(--text-1)] transition-colors"
-        style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-        <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
-  );
-}
-
-function NavLink({ href, icon, label, count, isActive, collapsed, small }: {
-  href: string; icon: React.ReactNode; label: string; count?: number; isActive: boolean; collapsed: boolean; small?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      title={collapsed ? label : undefined}
-      className={cn(
-        'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-colors',
-        small ? 'text-xs' : 'text-sm',
-        collapsed ? 'justify-center' : '',
-        isActive
-          ? 'active text-[var(--text-1)] bg-[var(--bg-hover)]'
-          : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'
-      )}
-    >
-      <span className="leading-none shrink-0 flex items-center">{icon}</span>
-      {!collapsed && (
-        <>
-          <span className="truncate flex-1">{label}</span>
-          <CountBadge n={count} />
-        </>
-      )}
-    </Link>
-  );
-}
-
 interface SidebarContentProps {
-  collapsed: boolean;
   pathname: string;
   selectedFolder: string;
   isLibraryActive: boolean;
   folders: Folder[];
   counts: Partial<Counts>;
   unfiledCount: number;
-  sectionOpen: { notes: boolean; study: boolean; tools: boolean };
-  toggleSection: (key: 'notes' | 'study' | 'tools') => void;
+  sectionOpen: Record<SectionKey, boolean>;
+  toggleSection: (key: SectionKey) => void;
   toggleCollapsed?: () => void;
-  showCollapseBtn?: boolean;
   displayName: string;
   initials: string;
   subscriptionStatus: { hasAccess: boolean } | null;
 }
 
 function SidebarContent({
-  collapsed,
   pathname,
   selectedFolder,
   isLibraryActive,
@@ -122,13 +50,13 @@ function SidebarContent({
   sectionOpen,
   toggleSection,
   toggleCollapsed,
-  showCollapseBtn,
   displayName,
   initials,
   subscriptionStatus,
 }: SidebarContentProps) {
   const flat = flattenFolders(folders);
   const { theme, toggle } = useTheme();
+  const { startNewChat, creating } = useNewChat();
 
   function isActive(href: string, exact = false) {
     return exact ? pathname === href : pathname.startsWith(href);
@@ -147,162 +75,133 @@ function SidebarContent({
     <>
       {/* Logo + collapse */}
       <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
-        {!collapsed && (
-          <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>StudyMo</span>
-        )}
-        {showCollapseBtn && isLibraryActive && (
+        <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>StudyMo</span>
+        {toggleCollapsed && (
           <button
             onClick={toggleCollapsed}
-            className={cn('flex items-center justify-center w-6 h-6 rounded-md transition-colors hover:bg-[var(--bg-hover)]', collapsed && 'mx-auto')}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
           >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
-              style={{ color: 'var(--text-3)', transform: collapsed ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-              <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <PanelLeft size={16} strokeWidth={1.75} style={{ color: 'var(--text-3)' }} />
           </button>
         )}
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
-        <Link
-          href="/dashboard/tutor"
-          title={collapsed ? 'AI Tutor' : undefined}
-          className={cn(
-            'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-bold text-sm text-white transition-all duration-200 hover:scale-[1.03] hover:brightness-125 active:scale-100',
-            collapsed ? 'justify-center' : '',
-          )}
-          style={{ background: isActive('/dashboard/tutor')
-            ? 'linear-gradient(135deg, #FF6500, #FF9A3C)'
-            : 'linear-gradient(135deg, rgba(255,101,0,0.7), rgba(255,154,60,0.7))' }}
+        <button
+          onClick={startNewChat}
+          disabled={creating}
+          className="group w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-bold text-sm text-white transition-all duration-200 hover:scale-[1.03] hover:brightness-125 active:scale-100 disabled:opacity-60 disabled:hover:scale-100"
+          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
         >
-          <Star size={16} className="shrink-0" fill="white" />
-          {!collapsed && <span className="truncate flex-1">AI Tutor</span>}
-        </Link>
-        <NavLink href="/dashboard/home" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard/home', true)} collapsed={collapsed} />
+          {creating
+            ? <span className="w-4 h-4 shrink-0 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Plus size={16} className="shrink-0" strokeWidth={2.5} />}
+          <span className="truncate flex-1 text-left">New Chat</span>
+        </button>
+        <NavLink href="/dashboard/home" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard/home', true)} />
 
         {/* ── NOTES ── */}
-        <SectionHeader label="Notes" icon={FolderIcon} collapsed={collapsed} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
+        <SectionHeader label="Notes" icon={FolderIcon} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
 
         <AnimatePresence initial={false}>
           {sectionOpen.notes && (
-            <motion.div
-              key="notes-section"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="overflow-hidden space-y-1"
-            >
-              {!collapsed && (
-                <div className="ml-4 space-y-0.5 overflow-hidden">
+            <motion.div key="notes-section" {...sectionMotion} className="overflow-hidden space-y-1">
+              <div className="ml-4 space-y-0.5 overflow-hidden">
+                <Link
+                  href="/dashboard/library"
+                  className={cn(
+                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                    isLibraryActive && selectedFolder === 'all'
+                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                      : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                  )}
+                >
+                  <span className="truncate flex-1">All Notes</span>
+                  <CountBadge n={counts.notes} />
+                </Link>
+                <Link
+                  href={folderHref('none')}
+                  className={cn(
+                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
+                    isFolderActive('none')
+                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                      : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                  )}
+                >
+                  <span className="truncate flex-1">No Collection</span>
+                  <CountBadge n={unfiledCount} />
+                </Link>
+
+                {flat.map((f) => (
                   <Link
-                    href="/dashboard/library"
+                    key={f.id}
+                    href={folderHref(f.id)}
                     className={cn(
-                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
-                      isLibraryActive && selectedFolder === 'all'
-                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
+                      'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
+                      isFolderActive(f.id)
+                        ? 'text-[var(--brand)] bg-[var(--bg-hover)]'
                         : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
                     )}
+                    style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                   >
-                    <span className="truncate flex-1">All Notes</span>
-                    <CountBadge n={counts.notes} />
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
+                    <span className="truncate flex-1">{f.name}</span>
+                    <CountBadge n={f._count?.documents} />
                   </Link>
-                  <Link
-                    href={folderHref('none')}
-                    className={cn(
-                      'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
-                      isFolderActive('none')
-                        ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
-                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
-                    )}
-                  >
-                    <span className="truncate flex-1">No Collection</span>
-                    <CountBadge n={unfiledCount} />
-                  </Link>
+                ))}
 
-                  {flat.map((f) => (
-                    <Link
-                      key={f.id}
-                      href={folderHref(f.id)}
-                      className={cn(
-                        'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
-                        isFolderActive(f.id)
-                          ? 'text-[var(--brand)] bg-[var(--bg-hover)]'
-                          : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
-                      )}
-                      style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
-                    >
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
-                      <span className="truncate flex-1">{f.name}</span>
-                      <CountBadge n={f._count?.documents} />
-                    </Link>
-                  ))}
-
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
-                  >
-                    <span className="text-xs opacity-60">+</span>
-                    <span>New Collection</span>
-                  </button>
-                </div>
-              )}
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
+                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
+                >
+                  <span className="text-xs opacity-60">+</span>
+                  <span>New Collection</span>
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* ── STUDY MATERIALS ── */}
-        <SectionHeader label="Study Materials" icon={Library} collapsed={collapsed} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
+        <SectionHeader label="Study Materials" icon={Library} open={sectionOpen.study} onToggle={() => toggleSection('study')} />
 
         <AnimatePresence initial={false}>
           {sectionOpen.study && (
-            <motion.div
-              key="study-section"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
-            >
-              <NavLink href="/dashboard/flashcards" icon={<Layers size={14} />} label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/quizzes" icon={<Heart size={14} />} label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/practice-exams" icon={<ClipboardList size={14} />} label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/podcasts" icon={<Mic size={14} />} label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} collapsed={collapsed} small />
+            <motion.div key="study-section" {...sectionMotion} className="overflow-hidden space-y-0.5 ml-4">
+              <NavLink href="/dashboard/flashcards" icon={<Layers size={14} />} label="Flashcards" count={counts.flashcardDecks} isActive={isActive('/dashboard/flashcards')} small />
+              <NavLink href="/dashboard/quizzes" icon={<Heart size={14} />} label="Quizzes" count={counts.quizDecks} isActive={isActive('/dashboard/quizzes')} small />
+              <NavLink href="/dashboard/practice-exams" icon={<ClipboardList size={14} />} label="Practice Exams" count={counts.exams} isActive={isActive('/dashboard/practice-exams')} small />
+              <NavLink href="/dashboard/podcasts" icon={<Mic size={14} />} label="Podcasts" count={counts.podcasts} isActive={isActive('/dashboard/podcasts')} small />
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* ── TOOLS ── */}
-        <SectionHeader label="Tools" icon={Wrench} collapsed={collapsed} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
+        <SectionHeader label="Tools" icon={Wrench} open={sectionOpen.tools} onToggle={() => toggleSection('tools')} />
 
         <AnimatePresence initial={false}>
           {sectionOpen.tools && (
-            <motion.div
-              key="tools-section"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className={cn('overflow-hidden space-y-0.5', !collapsed && 'ml-4')}
-            >
-              <NavLink href="/dashboard/study-plan" icon={<CalendarDays size={14} />} label="Study Plan" isActive={isActive('/dashboard/study-plan')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} collapsed={collapsed} small />
-              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} collapsed={collapsed} small />
+            <motion.div key="tools-section" {...sectionMotion} className="overflow-hidden space-y-0.5 ml-4">
+              <NavLink href="/dashboard/study-plan" icon={<CalendarDays size={14} />} label="Study Plan" isActive={isActive('/dashboard/study-plan')} small />
+              <NavLink href="/dashboard/tasks" icon={<CheckSquare size={14} />} label="Tasks" isActive={isActive('/dashboard/tasks')} small />
+              <NavLink href="/dashboard/weak-topics" icon={<TriangleAlert size={14} />} label="Weak Topics" isActive={isActive('/dashboard/weak-topics')} small />
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ── RECENTS ── */}
+        <SidebarChatHistory
+          open={sectionOpen.chats}
+          onToggle={() => toggleSection('chats')}
+        />
       </nav>
 
       {/* Theme toggle */}
       <div className="px-1.5 pb-1">
-        <div
-          className={cn(
-            'flex items-center gap-2 px-2.5 py-2',
-            collapsed ? 'justify-center' : ''
-          )}
-        >
+        <div className="flex items-center gap-2 px-2.5 py-2">
           <button
             onClick={toggle}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -324,70 +223,42 @@ function SidebarContent({
                 : <Sun size={11} className="text-[#FF6500]" />}
             </span>
           </button>
-          {!collapsed && (
-            <span className="text-xs" style={{ color: 'var(--text-2)' }}>
-              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            </span>
-          )}
+          <span className="text-xs" style={{ color: 'var(--text-2)' }}>
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </span>
         </div>
       </div>
 
       {/* Get Unlimited banner (free users only) */}
       {!subscriptionStatus?.hasAccess && (
         <div className="px-1.5 pb-1">
-          {!collapsed ? (
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-            >
-              <Zap size={14} className="text-white shrink-0" />
-              <span className="text-xs font-semibold text-white">Get Unlimited</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
-              title="Get Unlimited"
-              className="w-full flex items-center justify-center py-2 rounded-xl transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-            >
-              <Zap size={14} className="text-white" />
-            </button>
-          )}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+          >
+            <Zap size={14} className="text-white shrink-0" />
+            <span className="text-xs font-semibold text-white">Get Unlimited</span>
+          </button>
         </div>
       )}
 
       {/* User footer */}
       <div className="px-1.5 pb-2 pt-1">
-        {!collapsed ? (
-          <Link
-            href="/dashboard/settings"
-            className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+        >
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
+            style={{ backgroundColor: 'var(--brand)' }}
           >
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
-              style={{ backgroundColor: 'var(--brand)' }}
-            >
-              {initials}
-            </div>
-            <p className="text-xs font-medium truncate flex-1 min-w-0" style={{ color: 'var(--text-1)' }}>
-              {displayName}
-            </p>
-          </Link>
-        ) : (
-          <Link
-            href="/dashboard/settings"
-            title="Settings"
-            className="w-full flex items-center justify-center py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-          >
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
-              style={{ backgroundColor: 'var(--brand)' }}
-            >
-              {initials}
-            </div>
-          </Link>
-        )}
+            {initials}
+          </div>
+          <p className="text-xs font-medium truncate flex-1 min-w-0" style={{ color: 'var(--text-1)' }}>
+            {displayName}
+          </p>
+        </Link>
       </div>
     </>
   );
@@ -401,7 +272,7 @@ export default function Sidebar() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [counts, setCounts] = useState<Partial<Counts>>({});
   const [unfiledCount, setUnfiledCount] = useState(0);
-  const [sectionOpen, setSectionOpen] = useState({ notes: true, study: false, tools: false });
+  const [sectionOpen, setSectionOpen] = useState<Record<SectionKey, boolean>>({ notes: true, study: false, tools: false, chats: true });
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('sidebar-collapsed') === 'true';
     return false;
@@ -422,13 +293,18 @@ export default function Sidebar() {
   const isLibraryActive = pathname.startsWith('/dashboard/library');
   const selectedFolder = searchParams.get('folder') ?? 'all';
 
-  function toggleCollapsed() {
-    const next = !collapsed;
+  function setCollapsedPersisted(next: boolean) {
     setCollapsed(next);
     localStorage.setItem('sidebar-collapsed', String(next));
   }
 
-  function toggleSection(key: keyof typeof sectionOpen) {
+  // Rail section icons expand the sidebar straight into that section.
+  function expandTo(section?: SectionKey) {
+    setCollapsedPersisted(false);
+    if (section) setSectionOpen(s => ({ ...s, [section]: true }));
+  }
+
+  function toggleSection(key: SectionKey) {
     setSectionOpen(s => ({ ...s, [key]: !s[key] }));
   }
 
@@ -456,10 +332,7 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    if (!isLibraryActive) {
-      setCollapsed(false);
-      return;
-    }
+    if (!isLibraryActive) return;
     foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
   }, [isLibraryActive]);
 
@@ -533,11 +406,7 @@ export default function Sidebar() {
               onMouseEnter={handleOverlayEnter}
               onMouseLeave={handleOverlayLeave}
             >
-              <SidebarContent
-                {...sharedProps}
-                collapsed={false}
-                showCollapseBtn={false}
-              />
+              <SidebarContent {...sharedProps} />
             </motion.div>
           </>
         )}
@@ -545,18 +414,24 @@ export default function Sidebar() {
     );
   }
 
-  // ── Large screen: regular collapsible sidebar ────────────────────────
+  // ── Large screen: icon rail or full panel ────────────────────────────
+  if (collapsed) {
+    return (
+      <SidebarRail
+        pathname={pathname}
+        initials={initials}
+        hasAccess={!!subscriptionStatus?.hasAccess}
+        onExpand={expandTo}
+      />
+    );
+  }
+
   return (
     <aside
-      className="shrink-0 flex flex-col transition-all duration-200 my-3 ml-3 rounded-2xl overflow-hidden"
-      style={{ width: collapsed ? 60 : 330, backgroundColor: 'var(--bg-card)' }}
+      className="shrink-0 w-[330px] flex flex-col my-3 ml-3 rounded-2xl overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-card)' }}
     >
-      <SidebarContent
-        {...sharedProps}
-        collapsed={collapsed}
-        toggleCollapsed={toggleCollapsed}
-        showCollapseBtn={true}
-      />
+      <SidebarContent {...sharedProps} toggleCollapsed={() => setCollapsedPersisted(true)} />
     </aside>
   );
 }

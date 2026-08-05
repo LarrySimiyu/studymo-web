@@ -27,7 +27,7 @@ export default function FolderModal({ folder, onClose, onSave }: Props) {
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && name.trim() && onSave(name.trim(), color)}
           placeholder="Collection name"
-          className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[#9747FF]/50 mb-3"
+          className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[var(--brand)]/50 mb-3"
           style={{ backgroundColor: 'var(--bg-input)' }}
         />
         <div className="flex gap-2 mb-4">
@@ -47,7 +47,7 @@ export default function FolderModal({ folder, onClose, onSave }: Props) {
           <button
             onClick={() => name.trim() && onSave(name.trim(), color)}
             disabled={!name.trim()}
-            className="flex-1 py-2 rounded-lg bg-[#9747FF] text-white text-sm disabled:opacity-40"
+            className="flex-1 py-2 rounded-lg bg-[var(--brand)] text-white text-sm disabled:opacity-40"
           >
             {folder ? 'Save' : 'Create'}
           </button>

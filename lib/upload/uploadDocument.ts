@@ -46,6 +46,10 @@ export async function uploadDocumentFile(
   try {
     await uploadToPresignedUrl(presignData.uploadUrl, file, mimeType, onProgress ?? (() => {}));
   } catch {
+    // The doc row is created by /presign before any bytes exist. If the PUT never
+    // lands, that row is orphaned at `processing` pointing at a key that was never
+    // written — so clear it rather than leave a ghost in the library.
+    await documentsApi.delete(presignData.doc.id).catch(() => {});
     return { error: 'Upload failed — please try again' };
   }
 

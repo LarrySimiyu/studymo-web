@@ -173,7 +173,7 @@ export default function AiPromptBox({
         </div>
       )}
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar{display:none}
         .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
         @property --beam-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
@@ -191,7 +191,7 @@ export default function AiPromptBox({
           );
           animation: ai-beam-spin 10s linear infinite;
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

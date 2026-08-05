@@ -53,7 +53,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ─── Progress bar ───────────────────────────────────────────────────────────
 
-function ProgressBar({ pct, color = '#9747FF', height = 6 }: { pct: number; color?: string; height?: number }) {
+function ProgressBar({ pct, color = 'var(--brand)', height = 6 }: { pct: number; color?: string; height?: number }) {
   return (
     <div className="rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-input)', height }}>
       <div
@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: '#4B5563' }} />
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: 'var(--text-3)' }} />
                     <span className="text-sm text-[var(--text-2)]">Untagged</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-[var(--text-2)]">
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
                     <span className="w-8 text-right">{timeBySubject!.untagged.percentage}%</span>
                   </div>
                 </div>
-                <ProgressBar pct={timeBySubject!.untagged.percentage} color="#4B5563" height={5} />
+                <ProgressBar pct={timeBySubject!.untagged.percentage} color="var(--text-3)" height={5} />
               </div>
             )}
           </div>
@@ -267,14 +267,14 @@ export default function AnalyticsPage() {
                     className="w-full rounded-lg transition-all duration-500"
                     style={{
                       height: barH,
-                      backgroundColor: isCurrent ? '#9747FF' : 'var(--bg-input)',
-                      border: isCurrent ? '1px solid #9747FF' : '1px solid var(--border-md)',
+                      backgroundColor: isCurrent ? 'var(--brand)' : 'var(--bg-input)',
+                      border: isCurrent ? '1px solid var(--brand)' : '1px solid var(--border-md)',
                       minHeight: 4,
                     }}
                   />
                   {/* Stats */}
                   <div className="text-center">
-                    <p className="text-xs font-medium" style={{ color: isCurrent ? '#9747FF' : 'var(--text-3)' }}>
+                    <p className="text-xs font-medium" style={{ color: isCurrent ? 'var(--brand)' : 'var(--text-3)' }}>
                       {fmtMins(week.totalMins)}
                     </p>
                     <p className="text-xs text-[var(--text-3)]">{week.sessionCount} sess.</p>
@@ -317,7 +317,7 @@ export default function AnalyticsPage() {
               key={t}
               onClick={() => setWeakTab(t)}
               className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-              style={weakTab === t ? { backgroundColor: '#9747FF', color: 'white' } : { color: '#9CA3AF' }}
+              style={weakTab === t ? { backgroundColor: 'var(--brand)', color: 'white' } : { color: 'var(--text-2)' }}
             >
               {t === 'needs' ? 'Needs Review' : 'Resolved'}
             </button>
@@ -483,12 +483,12 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4B5563' }} />
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--text-3)' }} />
                       <span className="text-xs text-[var(--text-2)]">Untagged</span>
                     </div>
                     <span className="text-xs text-[var(--text-2)]">{timeBySubject.untagged.tasksCompleted} done</span>
                   </div>
-                  <ProgressBar pct={50} color="#4B5563" height={4} />
+                  <ProgressBar pct={50} color="var(--text-3)" height={4} />
                 </div>
               )}
             </div>

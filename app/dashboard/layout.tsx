@@ -9,6 +9,7 @@ import TopNav from '@/components/dashboard/TopNav';
 // import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
 import { LibraryProvider } from '@/context/LibraryContext';
+import { TutorSessionsProvider } from '@/context/TutorSessionsContext';
 import PaywallModal from '@/components/ui/PaywallModal';
 import PendingUploadHandler from '@/components/dashboard/PendingUploadHandler';
 import { analytics } from '@/lib/analytics';
@@ -23,7 +24,7 @@ import { ThemeProvider } from '@/components/ui/ThemeProvider';
 //       <button
 //         onClick={openAssistant}
 //         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-//         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
+//         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: 'var(--brand)' }}
 //       >
 //         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
 //           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -149,7 +150,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (loading || refreshing) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--brand)' }} />
         {refreshing && <p className="text-sm text-gray-500">Activating your subscription…</p>}
       </div>
     );
@@ -158,20 +159,22 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (!currentUser) return null;
 
   return (
-    <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
-      <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <TopNav />
-        <PastDueBanner />
-        <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
-          <LibraryProvider>{children}</LibraryProvider>
-        </main>
+    <TutorSessionsProvider>
+      <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <TopNav />
+          <PastDueBanner />
+          <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+            <LibraryProvider>{children}</LibraryProvider>
+          </main>
+        </div>
+
+        {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+
+        <PendingUploadHandler />
       </div>
-
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
-
-      <PendingUploadHandler />
-    </div>
+    </TutorSessionsProvider>
   );
 }
 

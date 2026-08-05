@@ -431,7 +431,7 @@ function RecordForm({ loading, onStart, onSuccess, onError }: {
           <button
             onClick={stopRecording}
             className="w-16 h-16 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-            style={{ backgroundColor: '#374151' }}
+            style={{ backgroundColor: 'var(--text-2)' }}
           >
             <span className="w-5 h-5 rounded bg-white" />
           </button>

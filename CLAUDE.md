@@ -154,7 +154,7 @@ Collected once after signup. All steps are required except GPA (high school / un
 | **Tutor Sessions** | `lib/api/tutor.ts` | Full message history, loaded note IDs, mode |
 
 ### What AI Content Generation Currently Uses
-- **Notes / Flashcards / Quizzes**: document title + raw content only. No user profile context.
+- **Notes / Flashcards / Quizzes**: document title + raw content only (up to 200k chars). No user profile context. PDFs generate from their extracted text, not the file itself, except for scanned PDFs with no text layer.
 - **Practice Exams**: document titles + notes/transcripts. No user profile context.
 - **Study Plans**: document content + user profile (grade level, learning style, hoursPerWeek, struggles) + unresolved weak topics for selected documents.
 - **Tutor chat**: full user profile, up to 15 loaded notes, unresolved weak topics, active study plan context (today's topics, days until test).
@@ -171,7 +171,7 @@ Collected once after signup. All steps are required except GPA (high school / un
 Users upload PDFs, audio files, YouTube URLs, website URLs, or create blank notes. Each document goes through async AI processing (notes, flashcards, quiz generated server-side). Tags are auto-assigned from a fixed subject list during processing.
 
 - **List view**: `app/dashboard/library/page.tsx` — folder tree on left, document grid on right. Upload triggered via a dropdown that opens `UploadDialog` with the appropriate `type`.
-- **Upload modal**: `components/upload/UploadDialog.tsx` — handles all 5 upload types (`blank`, `file`, `record`, `video`, `webpage`) in one component. Polls `GET /documents/:id` until status is `complete` or `failed`.
+- **Upload modal**: `components/upload/UploadDialog.tsx` — handles all 5 upload types (`blank`, `file`, `record`, `video`, `webpage`) in one component. Waits on `watchDocumentStatus`, which reads the SSE stream at `GET /documents/:id/status-stream` with a 10s polling backstop — the stream alone can die without ever delivering an event, which leaves the dialog spinning until a reload.
 - **Document detail**: `components/library/DocumentDetail.tsx` — the main viewer. Has 6 tabs (Notes, Flashcards, Quiz, Podcast, Weak Topics, Transcript). Each tab shows an empty state with a generate button if content hasn't been created yet.
 - **API**: `lib/api/documents.ts` — `documentsApi`, `notesApi`, `flashcardsApi`, `quizzesApi`
 
