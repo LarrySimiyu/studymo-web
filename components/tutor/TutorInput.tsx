@@ -1,7 +1,9 @@
 'use client';
 
-import { useRef } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowUp, FileText, Lightbulb, Plus, X } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export interface ContextNote { id: string; title: string }
 
@@ -12,105 +14,117 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   contextNotes: ContextNote[];
-  onAddContext: () => void;
+  onAddContext?: () => void;
+  contextPillClassName?: string;
   onRemoveContext: (id: string) => void;
   revealAnswer: boolean;
   onToggleReveal: () => void;
   inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
+const MAX_HEIGHT = 200;
+const MULTILINE_AT = 44;
+
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 export default function TutorInput({
   value, onChange, onSend, disabled, placeholder,
-  contextNotes, onAddContext, onRemoveContext,
+  contextNotes, onAddContext, contextPillClassName, onRemoveContext,
   revealAnswer, onToggleReveal, inputRef: externalRef,
 }: Props) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const ref = externalRef ?? internalRef;
+  const [multiline, setMultiline] = useState(false);
+
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const next = Math.min(el.scrollHeight, MAX_HEIGHT);
+    el.style.height = `${next}px`;
+    setMultiline(next > MULTILINE_AT);
+  }, [value, ref]);
 
   return (
     <div>
-      {/* Context chips */}
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-        <button
-          onClick={onAddContext}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors hover:opacity-80"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', color: 'var(--text-2)' }}
+        <Button
+          variant="pill"
+          size="pill"
+          onClick={onToggleReveal}
+          title="Get the direct answer with your next message"
+          aria-pressed={revealAnswer}
+          className={cn(
+            revealAnswer &&
+              'bg-[var(--brand-subtle)] border-[var(--brand-border)] text-[var(--brand-ink)] hover:bg-[var(--brand-subtle)] hover:text-[var(--brand-ink)]'
+          )}
         >
-          <span className="font-medium">+</span>
-          Add context
-        </button>
+          <Lightbulb size={12} />
+          Just tell me
+        </Button>
+
+        {onAddContext && (
+          <Button variant="pill" size="pill" onClick={onAddContext} className={contextPillClassName}>
+            <Plus size={12} />
+            Add context
+          </Button>
+        )}
+
         {contextNotes.map(n => (
           <span
             key={n.id}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', color: 'var(--text-1)' }}
+            className={cn(
+              buttonVariants({ variant: 'pill', size: 'pill' }),
+              'text-[var(--text-1)] hover:bg-[var(--bg-card)] pr-2'
+            )}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0" style={{ color: 'var(--text-3)' }}>
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
+            <FileText size={12} className="shrink-0" style={{ color: 'var(--text-3)' }} />
             <span className="max-w-[140px] truncate">{n.title}</span>
             <button
               onClick={() => onRemoveContext(n.id)}
-              className="leading-none hover:text-[var(--text-1)] transition-colors ml-0.5"
+              aria-label={`Remove ${n.title}`}
+              className="shrink-0 rounded-full p-0.5 transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
               style={{ color: 'var(--text-3)' }}
             >
-              ×
+              <X size={12} />
             </button>
           </span>
         ))}
       </div>
 
-      {/* Input box */}
       <div
-        className="rounded-xl transition-shadow"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)' }}
+        className={cn(
+          'flex gap-2 p-2 pl-4 rounded-2xl border bg-[var(--bg-card)] border-[var(--border)]',
+          'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_16px_-4px_rgba(0,0,0,0.08)]',
+          'transition-[border-color,box-shadow] duration-150',
+          'focus-within:border-[var(--brand-border)]',
+          'focus-within:shadow-[0_0_0_3px_var(--brand-subtle),0_6px_16px_-4px_rgba(0,0,0,0.08)]',
+          multiline ? 'items-end' : 'items-center'
+        )}
       >
         <textarea
           ref={ref}
           value={value}
+          rows={1}
           onChange={e => onChange(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
           }}
-          onInput={e => {
-            const el = e.target as HTMLTextAreaElement;
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-          }}
           disabled={disabled}
           placeholder={placeholder ?? 'Ask your tutor…'}
-          rows={3}
-          className="w-full bg-transparent outline-none resize-none text-sm text-[var(--text-1)] placeholder-[var(--text-3)] leading-relaxed disabled:opacity-50 px-4 pt-3 pb-2"
-          style={{ minHeight: 72, maxHeight: 160 }}
+          className="flex-1 min-w-0 bg-transparent outline-none resize-none py-1.5 text-sm leading-relaxed text-[var(--text-1)] placeholder-[var(--text-3)] disabled:opacity-50"
+          style={{ maxHeight: MAX_HEIGHT }}
         />
 
-        {/* Bottom toolbar */}
-        <div className="flex items-center justify-between px-3 pb-2.5">
-          <button
-            onClick={onToggleReveal}
-            title="Get the direct answer with your next message"
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs transition-all hover:opacity-80"
-            style={revealAnswer
-              ? { backgroundColor: '#F59E0B20', border: '1px solid #F59E0B60', color: '#F59E0B' }
-              : { color: 'var(--text-3)' }
-            }
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-            </svg>
-            {revealAnswer && <span>Just tell me</span>}
-          </button>
-
-          <button
-            onClick={onSend}
-            disabled={!value.trim() || disabled}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            <ArrowUp size={15} color="white" strokeWidth={2.5} />
-          </button>
-        </div>
+        <button
+          onClick={onSend}
+          disabled={!value.trim() || disabled}
+          aria-label="Send"
+          className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
+          style={{ backgroundColor: 'var(--brand)' }}
+        >
+          <ArrowUp size={16} color="white" strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   );

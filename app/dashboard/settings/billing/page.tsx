@@ -23,9 +23,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   active:     { label: 'Active',           color: '#22C55E', bg: 'rgba(34,197,94,0.12)'   },
   trialing:   { label: 'Free Trial',       color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)'  },
   past_due:   { label: 'Past Due',         color: '#EF4444', bg: 'rgba(239,68,68,0.12)'   },
-  canceled:   { label: 'Canceled',         color: '#9CA3AF', bg: 'rgba(107,114,128,0.12)' },
+  canceled:   { label: 'Canceled',         color: 'var(--text-2)', bg: 'var(--bg-input)' },
   incomplete: { label: 'Incomplete',       color: '#F59E0B', bg: 'rgba(245,158,11,0.12)'  },
-  none:       { label: 'No Subscription',  color: '#9CA3AF', bg: 'rgba(107,114,128,0.12)' },
+  none:       { label: 'No Subscription',  color: 'var(--text-2)', bg: 'var(--bg-input)' },
 };
 
 function StatusBadge({ status }: { status: string }) {

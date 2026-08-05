@@ -18,7 +18,7 @@ function ActionCard({ action, onExecute }: { action: Record<string, unknown>; on
     <button
       onClick={onExecute}
       className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs mt-1 transition-colors hover:opacity-80"
-      style={{ backgroundColor: '#9747FF15', border: '1px solid #9747FF40', color: '#9747FF' }}
+      style={{ backgroundColor: 'var(--brand-subtle)', border: '1px solid var(--brand-border)', color: 'var(--brand-ink)' }}
     >
       {label}
       <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
@@ -75,11 +75,11 @@ export default function AssistantPanel() {
     return (
       <div className="fixed bottom-6 left-6 z-40">
         <div className="relative">
-          <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ backgroundColor: '#9747FF' }} />
+          <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ backgroundColor: 'var(--brand)' }} />
           <button
             onClick={openAssistant}
             className="relative w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
             title="Ask Studymo anything (⌘K)"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -97,28 +97,29 @@ export default function AssistantPanel() {
       style={{
         width: 400,
         height: 520,
-        backgroundColor: '#111111',
-        border: '1px solid #2A2A2A',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-pop)',
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid #2A2A2A' }}>
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="2" style={{ stroke: 'var(--brand)' }}>
             <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
           </svg>
-          <span className="text-sm font-semibold text-white">Studymo Assistant</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>Studymo Assistant</span>
         </div>
         <div className="flex items-center gap-2">
           {/* Tutoring Mode toggle */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs" style={{ color: isTutoringMode ? '#9747FF' : '#6B7280' }}>
+            <span className="text-xs" style={{ color: isTutoringMode ? 'var(--brand-ink)' : 'var(--text-3)' }}>
               {isTutoringMode ? 'Tutoring 🎓' : 'Tutoring'}
             </span>
             <button
               onClick={toggleTutoringMode}
               className="w-8 h-4 rounded-full relative transition-colors"
-              style={{ backgroundColor: isTutoringMode ? '#9747FF' : '#2A2A2A' }}
+              style={{ backgroundColor: isTutoringMode ? 'var(--brand)' : 'var(--border-md)' }}
               title="Toggle tutoring mode — I'll guide you to answers instead of giving them directly"
             >
               <div
@@ -130,7 +131,8 @@ export default function AssistantPanel() {
           {/* New session */}
           <button
             onClick={clearSession}
-            className="text-gray-500 hover:text-gray-300 transition-colors p-1"
+            className="transition-colors p-1 hover:opacity-70"
+            style={{ color: 'var(--text-3)' }}
             title="New conversation"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -139,7 +141,7 @@ export default function AssistantPanel() {
             </svg>
           </button>
           {/* Close */}
-          <button onClick={closeAssistant} className="text-gray-500 hover:text-white transition-colors p-1">
+          <button onClick={closeAssistant} className="transition-colors p-1 hover:opacity-70" style={{ color: 'var(--text-3)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -149,7 +151,7 @@ export default function AssistantPanel() {
 
       {/* Tutoring mode banner */}
       {isTutoringMode && (
-        <div className="px-4 py-2 text-xs shrink-0" style={{ backgroundColor: '#9747FF15', borderBottom: '1px solid #9747FF30', color: '#9747FF' }}>
+        <div className="px-4 py-2 text-xs shrink-0" style={{ backgroundColor: 'var(--brand-subtle)', borderBottom: '1px solid var(--brand-border)', color: 'var(--brand-ink)' }}>
           🎓 Tutoring mode active — I'll guide you, not give you answers
         </div>
       )}
@@ -158,7 +160,7 @@ export default function AssistantPanel() {
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex flex-col gap-4">
-            <div className="text-sm text-gray-300">
+            <div className="text-sm" style={{ color: 'var(--text-2)' }}>
               Hi {firstName}! 👋 I'm your Studymo assistant. Ask me anything about your studies, or try:
             </div>
             <div className="flex flex-col gap-2">
@@ -167,7 +169,7 @@ export default function AssistantPanel() {
                   key={chip}
                   onClick={() => sendMessage(chip)}
                   className="text-left text-xs px-3 py-2 rounded-lg transition-colors hover:opacity-90"
-                  style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9CA3AF' }}
+                  style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
                 >
                   {chip}
                 </button>
@@ -180,16 +182,17 @@ export default function AssistantPanel() {
               <div className="max-w-[85%]">
                 {msg.role === 'assistant' && (
                   <div className="flex items-start gap-2">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9747FF" strokeWidth="2" className="mt-1 shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" strokeWidth="2" className="mt-1 shrink-0" style={{ stroke: 'var(--brand)' }}>
                       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                     </svg>
                     <div>
                       <div
-                        className="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap"
+                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        style={{ color: 'var(--text-1)' }}
                       >
                         {msg.content}
                         {msg.isStreaming && (
-                          <span className="inline-block w-1 h-3 ml-0.5 rounded-sm animate-pulse" style={{ backgroundColor: '#9747FF' }} />
+                          <span className="inline-block w-1 h-3 ml-0.5 rounded-sm animate-pulse" style={{ backgroundColor: 'var(--brand)' }} />
                         )}
                       </div>
                       {msg.action && !msg.isStreaming && (
@@ -204,7 +207,7 @@ export default function AssistantPanel() {
                 {msg.role === 'user' && (
                   <div
                     className="text-sm leading-relaxed text-white px-3 py-2 rounded-xl"
-                    style={{ backgroundColor: '#9747FF' }}
+                    style={{ backgroundColor: 'var(--brand)' }}
                   >
                     {msg.content}
                   </div>
@@ -216,9 +219,9 @@ export default function AssistantPanel() {
         {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="flex justify-start">
             <div className="flex items-center gap-1.5 px-3 py-2">
-              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#9747FF', animationDelay: '0ms' }} />
-              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#9747FF', animationDelay: '150ms' }} />
-              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: '#9747FF', animationDelay: '300ms' }} />
+              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--brand)', animationDelay: '0ms' }} />
+              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--brand)', animationDelay: '150ms' }} />
+              <div className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--brand)', animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -226,7 +229,7 @@ export default function AssistantPanel() {
       </div>
 
       {/* Input */}
-      <div className="p-3 shrink-0" style={{ borderTop: '1px solid #2A2A2A' }}>
+      <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -236,14 +239,14 @@ export default function AssistantPanel() {
             onKeyDown={handleKeyDown}
             placeholder="Ask me anything…"
             disabled={isLoading}
-            className="flex-1 px-3 py-2 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none disabled:opacity-50"
-            style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A' }}
+            className="flex-1 px-3 py-2 rounded-lg text-sm focus:outline-none disabled:opacity-50"
+            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-opacity disabled:opacity-40"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />

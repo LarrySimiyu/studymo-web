@@ -28,7 +28,7 @@ export default function NoteHeader({
   const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showCreateTagModal, setShowCreateTagModal] = useState(false);
   const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('#9747FF');
+  const [newTagColor, setNewTagColor] = useState('var(--brand)');
   const dotsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,6 +77,22 @@ export default function NoteHeader({
                 className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl py-1 min-w-[140px]"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
               >
+                {doc.fileUrl && (
+                  <button
+                    onClick={async () => {
+                      setShowDotsMenu(false);
+                      const { data } = await documentsApi.getFileUrl(id);
+                      if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
+                    style={{ color: 'var(--text-1)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    View original
+                  </button>
+                )}
                 <button
                   onClick={() => { setShowDotsMenu(false); onDeleteConfirm(); }}
                   className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
@@ -117,9 +133,9 @@ export default function NoteHeader({
           <span
             key={dt.tagId}
             className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full cursor-pointer group"
-            style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '22', color: dt.tag.color ?? '#9747FF' }}
+            style={{ backgroundColor: (dt.tag.color ?? 'var(--brand)') + '22', color: dt.tag.color ?? 'var(--brand)' }}
           >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dt.tag.color ?? '#9747FF' }} />
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dt.tag.color ?? 'var(--brand)' }} />
             {dt.tag.name}
             <button
               className="opacity-0 group-hover:opacity-60 hover:!opacity-100 ml-0.5 leading-none"
@@ -157,7 +173,7 @@ export default function NoteHeader({
               }}
             />
             <div className="flex items-center gap-2 flex-wrap">
-              {['#9747FF','#FF6B6B','#4ECDC4','#45B7D1','#F59E0B','#22C55E','#EC4899','#64748B'].map(c => (
+              {['var(--brand)','#FF6B6B','#4ECDC4','#45B7D1','#F59E0B','#22C55E','#EC4899','#64748B'].map(c => (
                 <button key={c} onClick={() => setNewTagColor(c)}
                   className="w-5 h-5 rounded-full transition-transform hover:scale-110"
                   style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
@@ -177,7 +193,7 @@ export default function NoteHeader({
                   setShowCreateTagModal(false); setNewTagName('');
                 }}
                 className="flex-1 py-2 rounded-lg text-xs text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#9747FF' }}
+                style={{ backgroundColor: 'var(--brand)' }}
               >
                 Create
               </button>

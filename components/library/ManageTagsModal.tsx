@@ -61,7 +61,7 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
             <button
               onClick={create}
               disabled={saving || !newName.trim()}
-              className="px-3 py-1 bg-[#9747FF] text-white text-xs rounded-lg disabled:opacity-40"
+              className="px-3 py-1 bg-[var(--brand)] text-white text-xs rounded-lg disabled:opacity-40"
             >
               Add
             </button>
@@ -70,7 +70,7 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {tags.map(t => (
             <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color ?? '#9747FF' }} />
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color ?? 'var(--brand)' }} />
               <span className="flex-1 text-sm text-[var(--text-2)]">{t.name}</span>
               <button
                 onClick={async () => { await docTagsApi.delete(t.id); load(); onChange(); }}

@@ -232,7 +232,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
                           height: CELL,
                           borderRadius: 2,
                           backgroundColor: LEVEL_COLORS[level],
-                          border: isToday ? `1.5px solid #9747FF` : '1px solid transparent',
+                          border: isToday ? `1.5px solid var(--brand)` : '1px solid transparent',
                           opacity: isFuture ? 0.3 : 1,
                         }}
                       />
@@ -261,7 +261,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
               className="text-xs font-medium px-2 py-1 rounded-md text-left transition-colors"
               style={
                 y === selectedYear
-                  ? { backgroundColor: '#9747FF', color: 'white' }
+                  ? { backgroundColor: 'var(--brand)', color: 'white' }
                   : { color: 'var(--text-2)', backgroundColor: 'transparent' }
               }
             >

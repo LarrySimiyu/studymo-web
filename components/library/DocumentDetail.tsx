@@ -9,6 +9,7 @@ import FlashcardsTab from '@/components/library/FlashcardsTab';
 import QuizTab from '@/components/library/QuizTab';
 import PodcastTab from '@/components/library/PodcastTab';
 import WeakTopicsTab from '@/components/library/WeakTopicsTab';
+import DocumentStatusState from '@/components/library/DocumentStatusState';
 import TutorPanel from '@/components/library/TutorPanel';
 import SlidingTabs from '@/components/ui/SlidingTabs';
 
@@ -444,6 +445,12 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
               </div>
             </div>
           )}
+
+          <DocumentStatusState
+            status={doc.status}
+            errorMessage={doc.errorMessage}
+            onDelete={() => setShowDeleteConfirm(true)}
+          />
 
           {doc.status === 'complete' && (
             <>

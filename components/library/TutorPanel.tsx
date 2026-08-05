@@ -11,6 +11,7 @@ import {
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
+import { useTutorSessions } from '@/context/TutorSessionsContext';
 import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdown';
 import { useAuth } from '@/hooks/useAuth';
 import TutorInput from '@/components/tutor/TutorInput';
@@ -38,6 +39,7 @@ function nextId() { return `local-${++msgIdCounter}`; }
 
 export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, onInitialMessageConsumed }: Props) {
   const { currentUser } = useAuth();
+  const { refetch: refetchSessions } = useTutorSessions();
   const [session, setSession] = useState<TutorSession | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState('');
@@ -77,7 +79,12 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           if (data) { setSession(data); setMessages(data.messages ?? []); onSessionCreated(data.id); }
         } else {
           const { data } = await tutorApi.createSession({ noteIds: [noteId], mode: 'tutor' });
-          if (data) { setSession(data); setMessages(data.messages ?? []); onSessionCreated(data.id); }
+          if (data) {
+            setSession(data);
+            setMessages(data.messages ?? []);
+            onSessionCreated(data.id);
+            refetchSessions();
+          }
         }
       }
       setLoading(false);

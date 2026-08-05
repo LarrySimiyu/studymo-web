@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { Document } from '@/lib/api/documents';
 import { Folder } from '@/lib/api/organization';
 import { timeAgo, flattenFolders } from './libraryUtils';
@@ -65,7 +66,7 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
                       className="w-full text-left px-3 py-1.5 text-body-sm text-[var(--text-2)] hover:bg-black/5 flex items-center gap-2"
                       onClick={e => { e.stopPropagation(); onMoveToFolder(doc.id, f.id); setShowMenu(false); }}
                     >
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? '#9747FF' }} />
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
                       {f.name}
                     </button>
                   ))}
@@ -94,13 +95,22 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
             </div>
           )}
 
+          {doc.status === 'failed' && (
+            <div className="flex items-start gap-1 mt-1" title={doc.errorMessage ?? undefined}>
+              <AlertCircle size={11} className="shrink-0 mt-[2px]" style={{ color: 'var(--danger-ink)' }} />
+              <span className="text-xs leading-snug line-clamp-2" style={{ color: 'var(--danger-ink)' }}>
+                {doc.errorMessage ?? 'Processing failed'}
+              </span>
+            </div>
+          )}
+
           {docTags.length > 0 && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {docTags.slice(0, 3).map(dt => (
                 <span
                   key={dt.tagId}
                   className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: (dt.tag.color ?? '#9747FF') + '25', color: dt.tag.color ?? '#9747FF' }}
+                  style={{ backgroundColor: (dt.tag.color ?? 'var(--brand)') + '25', color: dt.tag.color ?? 'var(--brand)' }}
                 >
                   {dt.tag.name}
                 </span>

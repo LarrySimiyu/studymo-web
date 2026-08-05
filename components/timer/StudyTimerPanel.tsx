@@ -115,7 +115,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               key={m}
               onClick={() => setMode(m)}
               className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors capitalize"
-              style={mode === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
+              style={mode === m ? { backgroundColor: 'var(--brand)', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
             >
               {m === 'pomodoro' ? '🍅 Pomodoro' : '⏱ Time Block'}
             </button>
@@ -133,7 +133,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                     key={m}
                     onClick={() => setWorkMins(m)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={workMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
+                    style={workMins === m ? { backgroundColor: 'var(--brand)', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
                   >
                     {m}m
                   </button>
@@ -148,7 +148,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                     key={m}
                     onClick={() => setBreakMins(m)}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={breakMins === m ? { backgroundColor: '#9747FF', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
+                    style={breakMins === m ? { backgroundColor: 'var(--brand)', color: '#fff' } : { backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
                   >
                     {m}m
                   </button>
@@ -163,7 +163,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
           <p className="text-xs text-[var(--text-2)] mb-2 flex items-center justify-between">
             <span>Select tasks</span>
             {mode === 'timeblock' && selectedIds.size > 0 && (
-              <span className="text-purple-400">Total: {fmtMins(totalEstimated)}</span>
+              <span style={{ color: 'var(--brand-ink)' }}>Total: {fmtMins(totalEstimated)}</span>
             )}
           </p>
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -182,7 +182,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                     setSelectedIds(next);
                   }}
                   className="rounded"
-                  style={{ accentColor: '#9747FF' }}
+                  style={{ accentColor: 'var(--brand)' }}
                 />
                 {task.tags[0]?.tag && (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.tags[0]?.tag.color }} />
@@ -200,7 +200,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
                         prev.map((t) => t.id === task.id ? { ...t, estimatedMins: mins } : t)
                       );
                     }}
-                    className="text-xs shrink-0 bg-transparent border border-black/10 rounded px-1.5 py-0.5 text-[var(--text-2)] hover:border-[#9747FF]/50 hover:text-[var(--text-1)] focus:outline-none focus:border-[#9747FF] cursor-pointer transition-colors"
+                    className="text-xs shrink-0 bg-transparent border border-[var(--border-md)] rounded px-1.5 py-0.5 text-[var(--text-2)] hover:border-[var(--brand)] hover:text-[var(--text-1)] focus:outline-none focus:border-[var(--brand)] cursor-pointer transition-colors"
                   >
                     {[5, 10, 15, 20, 25, 30, 45, 60, 90, 120].map((m) => (
                       <option key={m} value={m} style={{ backgroundColor: 'var(--bg-card)' }}>
@@ -227,7 +227,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
               onClick={handleCreateTask}
               disabled={creatingTask || !newTaskTitle.trim()}
               className="px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-40"
-              style={{ backgroundColor: '#9747FF' }}
+              style={{ backgroundColor: 'var(--brand)' }}
             >
               +
             </button>
@@ -242,7 +242,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
           onClick={handleStart}
           disabled={loading}
           className="w-full py-2.5 rounded-lg text-white font-medium text-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
+          style={{ backgroundColor: 'var(--brand)' }}
         >
           {loading ? 'Starting…' : 'Start Session'}
         </button>
@@ -284,7 +284,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
               <circle cx="64" cy="64" r={radius} fill="none" stroke="var(--border)" strokeWidth="8" />
               <circle
                 cx="64" cy="64" r={radius} fill="none"
-                stroke={currentInterval === 'work' ? '#9747FF' : '#60a5fa'}
+                stroke={currentInterval === 'work' ? 'var(--brand)' : '#60a5fa'}
                 strokeWidth="8"
                 strokeDasharray={`${strokeDash} ${circumference}`}
                 strokeLinecap="round"
@@ -300,7 +300,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
           <button
             onClick={isRunning ? pauseTimer : resumeTimer}
             className="mt-3 px-6 py-2 rounded-lg text-white text-sm font-medium hover:opacity-80 transition-opacity"
-            style={{ backgroundColor: isRunning ? '#374151' : '#9747FF' }}
+            style={{ backgroundColor: isRunning ? 'var(--text-2)' : 'var(--brand)' }}
           >
             {isRunning ? '⏸ Pause' : '▶ Resume'}
           </button>
@@ -366,7 +366,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
                 setAdding(false);
               }}
               className="px-3 py-1.5 rounded-lg text-xs text-white disabled:opacity-40"
-              style={{ backgroundColor: '#9747FF' }}
+              style={{ backgroundColor: 'var(--brand)' }}
             >
               {saving ? '…' : '+'}
             </button>
@@ -409,7 +409,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
           <button
             onClick={isRunning ? pauseTimer : resumeTimer}
             className="mt-3 px-6 py-2 rounded-lg text-white text-sm font-medium hover:opacity-80 transition-opacity"
-            style={{ backgroundColor: isRunning ? '#374151' : '#9747FF' }}
+            style={{ backgroundColor: isRunning ? 'var(--text-2)' : 'var(--brand)' }}
           >
             {isRunning ? '⏸ Pause' : '▶ Resume'}
           </button>
@@ -428,7 +428,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                 className="p-3 rounded-xl cursor-pointer transition-all"
                 style={{
                   backgroundColor: isActive ? 'var(--brand-subtle)' : 'var(--bg-input)',
-                  border: `1px solid ${isActive ? '#9747FF' : 'var(--border-md)'}`,
+                  border: `1px solid ${isActive ? 'var(--brand)' : 'var(--border-md)'}`,
                   opacity: entry.completed ? 0.5 : 1,
                 }}
               >
@@ -446,7 +446,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                   <span className={`text-sm flex-1 truncate font-medium ${entry.completed ? 'line-through text-[var(--text-2)]' : 'text-[var(--text-1)]'}`}>
                     {entry.task.title}
                   </span>
-                  <span className="text-xs font-mono shrink-0" style={{ color: isActive ? '#9747FF' : 'var(--text-3)' }}>
+                  <span className="text-xs font-mono shrink-0" style={{ color: isActive ? 'var(--brand)' : 'var(--text-3)' }}>
                     {fmt(taskRemaining)}
                   </span>
                 </div>
@@ -456,7 +456,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${Math.min(100, (entry.elapsedMins / entry.task.estimatedMins) * 100)}%`,
-                        backgroundColor: '#9747FF',
+                        backgroundColor: 'var(--brand)',
                       }}
                     />
                   </div>
@@ -496,7 +496,7 @@ function EndConfirmModal({
           <button
             onClick={onConfirm}
             className="flex-1 py-2.5 rounded-lg text-white font-medium text-sm hover:opacity-90"
-            style={{ backgroundColor: '#9747FF' }}
+            style={{ backgroundColor: 'var(--brand)' }}
           >
             Save & End
           </button>

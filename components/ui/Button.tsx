@@ -10,6 +10,8 @@ const buttonVariants = cva(
       variant: {
         // Primary CTA — orange gradient
         brand: 'bg-brand-gradient text-white hover:opacity-90',
+        // Outlined chip — toolbar actions, context chips, toggles
+        pill: 'border bg-[var(--bg-card)] border-[var(--border-md)] text-[var(--text-2)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]',
         // Shadcn defaults — kept for compatibility
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
@@ -25,6 +27,7 @@ const buttonVariants = cva(
         lg:      'h-11 px-6 text-base font-bold rounded-2xl',
         icon:    'h-9 w-9 rounded-2xl',
         'icon-sm': 'h-7 w-7 rounded-xl',
+        pill:    'h-7 px-2.5 gap-1 text-xs font-medium rounded-full',
       },
     },
     defaultVariants: {

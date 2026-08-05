@@ -80,7 +80,7 @@ export default function SharedNotePage() {
         <Link
           href="/sign-up"
           className="px-4 py-1.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#9747FF' }}
+          style={{ backgroundColor: '#FF6500' }}
         >
           Sign up free
         </Link>
@@ -89,7 +89,7 @@ export default function SharedNotePage() {
       <div className="max-w-3xl mx-auto px-4 py-10">
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#FF6500' }} />
           </div>
         ) : notFound ? (
           <div className="text-center py-20">
@@ -111,14 +111,14 @@ export default function SharedNotePage() {
             {/* CTA */}
             <div
               className="rounded-xl p-6 text-center"
-              style={{ backgroundColor: '#9747FF15', border: '1px solid #9747FF40' }}
+              style={{ backgroundColor: '#FF650015', border: '1px solid #FF650040' }}
             >
               <p className="text-white font-semibold mb-1">Want to create your own AI notes?</p>
               <p className="text-gray-400 text-sm mb-4">Upload PDFs, videos, or recordings and get instant study notes.</p>
               <Link
                 href="/sign-up"
                 className="inline-block px-6 py-2.5 rounded-lg font-medium text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#9747FF' }}
+                style={{ backgroundColor: '#FF6500' }}
               >
                 Get started free
               </Link>

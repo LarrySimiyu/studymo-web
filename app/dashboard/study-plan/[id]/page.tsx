@@ -130,7 +130,7 @@ export default function StudyPlanDetailPage() {
             <span className="text-sm font-semibold text-[var(--text-1)]">{pct}%</span>
           </div>
           <div className="h-2 rounded-full" style={{ backgroundColor: 'var(--border)' }}>
-            <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: '#9747FF' }} />
+            <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: 'var(--brand)' }} />
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function StudyPlanDetailPage() {
             key={v}
             onClick={() => setView(v)}
             className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize"
-            style={view === v ? { backgroundColor: '#9747FF', color: 'white' } : { color: 'var(--text-2)' }}
+            style={view === v ? { backgroundColor: 'var(--brand)', color: 'white' } : { color: 'var(--text-2)' }}
           >
             {v === 'calendar' ? '📅 Calendar' : '📋 List'}
           </button>
@@ -194,13 +194,13 @@ export default function StudyPlanDetailPage() {
                       onClick={() => entry && setSelectedDay(entry)}
                       className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${entry ? 'cursor-pointer hover:bg-black/8' : 'cursor-default'}`}
                       style={{
-                        backgroundColor: isSelected ? '#9747FF' : isToday ? 'var(--bg-input)' : 'transparent',
+                        backgroundColor: isSelected ? 'var(--brand)' : isToday ? 'var(--bg-input)' : 'transparent',
                         color: isSelected ? 'white' : entry ? 'var(--text-1)' : 'var(--text-3)',
                       }}
                     >
                       {dayNum}
                       {entry && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ backgroundColor: entry.completed ? '#22C55E' : isSelected ? 'white' : '#9747FF' }} />
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ backgroundColor: entry.completed ? '#22C55E' : isSelected ? 'white' : 'var(--brand)' }} />
                       )}
                     </button>
                   );
@@ -210,7 +210,7 @@ export default function StudyPlanDetailPage() {
               {/* Legend */}
               <div className="flex items-center gap-4 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-1.5 text-xs text-[var(--text-2)]">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#9747FF' }} /> Scheduled
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--brand)' }} /> Scheduled
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-[var(--text-2)]">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /> Completed
@@ -232,7 +232,7 @@ export default function StudyPlanDetailPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                      style={{ backgroundColor: day.completed ? 'var(--success-subtle)' : 'var(--bg-input)', color: day.completed ? '#22C55E' : '#9747FF' }}
+                      style={{ backgroundColor: day.completed ? 'var(--success-subtle)' : 'var(--bg-input)', color: day.completed ? '#22C55E' : 'var(--brand)' }}
                     >
                       {day.dayNumber}
                     </div>
@@ -265,7 +265,7 @@ export default function StudyPlanDetailPage() {
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
                   style={selectedDay.completed
                     ? { backgroundColor: 'var(--success-subtle)', color: '#22C55E', border: '1px solid var(--success-border)' }
-                    : { backgroundColor: '#9747FF', color: 'white' }
+                    : { backgroundColor: 'var(--brand)', color: 'white' }
                   }
                 >
                   {toggling === selectedDay.id ? '...' : selectedDay.completed ? '✓ Completed' : 'Mark Complete'}
@@ -281,7 +281,7 @@ export default function StudyPlanDetailPage() {
                 <div className="space-y-1.5">
                   {parsedTopics(selectedDay).map((topic, i) => (
                     <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}>
-                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: '#9747FF' }} />
+                      <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: 'var(--brand)' }} />
                       <span className="text-sm text-[var(--text-1)]">{topic}</span>
                     </div>
                   ))}
