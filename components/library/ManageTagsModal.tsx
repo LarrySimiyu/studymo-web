@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { docTagsApi } from '@/lib/api/documents';
-import { TAG_COLORS } from './libraryUtils';
+import TagRowMenu from '@/components/ui/tagRowMenu';
+import { TAG_COLORS, tagColor } from '@/lib/tagColors';
 
 interface Props {
   onClose: () => void;
@@ -48,7 +49,7 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
             className="w-full bg-transparent text-sm text-[var(--text-1)] outline-none placeholder-[var(--text-3)] mb-2"
           />
           <div className="flex items-center justify-between">
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 flex-wrap">
               {TAG_COLORS.map(c => (
                 <button
                   key={c}
@@ -69,15 +70,14 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
         </div>
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {tags.map(t => (
-            <div key={t.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color ?? 'var(--brand)' }} />
+            <div key={t.id} className="group/row flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tagColor(t.color) }} />
               <span className="flex-1 text-sm text-[var(--text-2)]">{t.name}</span>
-              <button
-                onClick={async () => { await docTagsApi.delete(t.id); load(); onChange(); }}
-                className="text-[var(--text-1)] opacity-20 hover:text-red-400 hover:opacity-100 text-xl leading-none"
-              >
-                ×
-              </button>
+              <TagRowMenu
+                tag={t}
+                onChanged={() => { load(); onChange(); }}
+                className="opacity-0 group-hover/row:opacity-100 data-[state=open]:opacity-100"
+              />
             </div>
           ))}
         </div>

@@ -59,6 +59,9 @@ Linear progress bar. Takes `index` (0-based) and `total`.
 ### `components/ui/TagDropdown`
 Tag selector with color dot display. Handles multi-select and tag creation.
 
+### `components/ui/badge`
+shadcn Badge (`default` / `secondary` / `destructive` / `outline` / `tag` variants, `sm` / `default` sizes). **`TagBadge` is the only way to render a tag pill** — pass `color` and it applies the tint + text colour from `lib/tagColors`. Never hand-roll a `<span>` with `color + '22'`.
+
 ### `components/ui/calendar`
 shadcn Calendar extended with `scheduledDates`, `completedDates`, and `compact` props. Use with Radix `Popover` for date pickers in modals.
 
@@ -115,7 +118,7 @@ Collected once after signup. All steps are required except GPA (high school / un
 **Step 3 — Goal GPA** (`goalGpa`) — float 0.0–4.0, +/− stepper. High school / undergrad only.
 
 **Step 4 — Subjects** (`subjects`) — multi-select pill chips + free-text custom entry. Saved as colored `Tag` records. Preset options:
-- Mathematics, Biology, Chemistry, Physics, History, English / Literature, Computer Science, Economics, Psychology, Law, Medicine / Nursing, Engineering, Coding, Personal Finance, Language Learning, Business, Design, Marketing, Philosophy, Music Theory
+- Mathematics, Biology, Chemistry, Physics, History, English, Computer Science, Economics, Psychology, Law, Medicine, Engineering, Coding, Personal Finance, Language Learning, Business, Design, Marketing, Philosophy, Music Theory
 
 **Step 5 — Learning Style** (`learningStyle`) — single select:
 - `notes` — Reading notes and summaries

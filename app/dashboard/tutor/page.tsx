@@ -19,14 +19,10 @@ export default function TutorPage() {
   const contextNotes = t.activeSession?.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title })) ?? [];
 
   return (
-    <div className="flex h-full gap-3 overflow-hidden p-3">
+    <div className="flex h-full overflow-hidden">
       <div
-        className="flex flex-1 min-w-0 flex-col overflow-hidden min-h-0 rounded-2xl"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          boxShadow: 'var(--shadow-card)',
-        }}
+        className="flex flex-1 min-w-0 flex-col overflow-hidden min-h-0"
+        style={{ backgroundColor: 'var(--bg-card)' }}
       >
         {!t.activeSession ? (
           <TutorWelcome
@@ -89,9 +85,12 @@ export default function TutorPage() {
       </div>
 
       {t.activeSession && (
-        <aside className="hidden lg:flex w-[280px] xl:w-[320px] shrink-0 flex-col gap-3 overflow-y-auto">
+        <aside
+          className="hidden lg:flex w-[280px] xl:w-[320px] shrink-0 flex-col overflow-hidden"
+          style={{ borderLeft: '1px solid var(--border)' }}
+        >
           <SourcesPanel
-            className="shrink-0 max-h-[22rem]"
+            className="flex-1 min-h-0"
             sources={t.sources}
             attachedIds={t.activeSession.noteIds}
             onToggle={t.toggleNote}

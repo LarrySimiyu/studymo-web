@@ -21,7 +21,10 @@ export default function TutorTopBar({ title, onRename, mode, onModeChange }: Pro
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 px-4 sm:px-5 h-14 shrink-0">
+    <div
+      className="flex items-center justify-between gap-3 px-4 sm:px-5 h-14 shrink-0"
+      style={{ borderBottom: '1px solid var(--border)' }}
+    >
       {editing ? (
         <input
           autoFocus

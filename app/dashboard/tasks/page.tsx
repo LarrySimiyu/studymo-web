@@ -9,6 +9,7 @@ import TaskModal from '@/components/tasks/TaskModal';
 import TagDropdown from '@/components/ui/TagDropdown';
 import SlidingTabs from '@/components/ui/SlidingTabs';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import { TAG_COLORS, tagColor } from '@/lib/tagColors';
 
 function XIcon() {
   return (
@@ -17,11 +18,6 @@ function XIcon() {
     </svg>
   );
 }
-
-const TAG_COLORS = [
-  '#FF6500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-  '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE',
-];
 
 function TagManager({ tags, onClose, onChange }: { tags: Tag[]; onClose: () => void; onChange: () => void }) {
   const [newName, setNewName] = useState('');
@@ -113,7 +109,7 @@ function TagManager({ tags, onClose, onChange }: { tags: Tag[]; onClose: () => v
                     className="flex-1 min-w-0 rounded px-2 py-1 text-sm text-[var(--text-1)] outline-none"
                     style={{ backgroundColor: 'var(--bg-hover)' }}
                   />
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1 flex-wrap max-w-[120px] shrink-0">
                     {TAG_COLORS.map(c => (
                       <button
                         key={c}
@@ -128,7 +124,7 @@ function TagManager({ tags, onClose, onChange }: { tags: Tag[]; onClose: () => v
                 </>
               ) : (
                 <>
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tag.color }} />
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: tagColor(tag.color) }} />
                   <span className="flex-1 min-w-0 text-sm text-[var(--text-1)] truncate">{tag.name}</span>
                   <button
                     onClick={() => { setEditId(tag.id); setEditName(tag.name); setEditColor(tag.color); }}

@@ -31,17 +31,19 @@ export default function SourcesPanel({ sources, attachedIds, onToggle, maxNotes 
 
   return (
     <Card
-      className={cn('flex flex-col overflow-hidden rounded-2xl border-[var(--border)] bg-[var(--bg-card)]', className)}
-      style={{ boxShadow: 'var(--shadow-card)' }}
+      className={cn('flex flex-col overflow-hidden rounded-none border-0 shadow-none bg-[var(--bg-card)]', className)}
     >
-      <CardHeader className="flex-row items-center justify-between space-y-0 p-4 pb-3">
+      <CardHeader
+        className="flex-row items-center justify-between space-y-0 shrink-0 px-4 h-14"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
         <CardTitle className="text-sm font-semibold text-[var(--text-1)]">Sources</CardTitle>
         <span className="text-xs" style={{ color: 'var(--text-3)' }}>
           {attached.size}/{maxNotes}
         </span>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-y-auto p-2 pt-0">
+      <CardContent className="flex-1 min-h-0 overflow-y-auto p-2">
         {sources.length === 0 ? (
           <p className="px-2 py-6 text-center text-xs" style={{ color: 'var(--text-3)' }}>
             Nothing in your library yet.

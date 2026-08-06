@@ -118,13 +118,13 @@ export default function EditorToolbar({
   return (
     <div
       ref={wrapRef}
-      className="sticky top-0 z-20 pt-1 pb-2"
+      className="sticky top-0 z-20"
       style={{ backgroundColor: 'var(--bg-page)' }}
       onMouseDown={e => e.preventDefault()}
     >
       <div
-        className="flex items-center gap-0.5 px-1.5 py-1 rounded-xl overflow-x-auto [&::-webkit-scrollbar]:hidden"
-        style={{ ...popoverStyle, scrollbarWidth: 'none' }}
+        className="flex items-center gap-0.5 px-1.5 py-1 rounded-xl overflow-x-auto shadow-field [&::-webkit-scrollbar]:hidden"
+        style={{ backgroundColor: 'var(--bg-card)', scrollbarWidth: 'none' }}
       >
         {mkBtn(<Undo2 size={15} />, () => editor.chain().focus().undo().run(), false, 'Undo', !s.canUndo)}
         {mkBtn(<Redo2 size={15} />, () => editor.chain().focus().redo().run(), false, 'Redo', !s.canRedo)}

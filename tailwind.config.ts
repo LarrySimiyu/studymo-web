@@ -57,6 +57,9 @@ const config: Config = {
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, #FF6500, #FF9A3C)',
       },
+      boxShadow: {
+        field: '0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -4px rgba(0,0,0,0.08)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',

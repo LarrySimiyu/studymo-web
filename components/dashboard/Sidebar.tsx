@@ -401,8 +401,8 @@ export default function Sidebar() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -20, opacity: 0 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="fixed top-14 left-3 bottom-3 z-50 flex flex-col rounded-2xl overflow-hidden shadow-2xl"
-              style={{ width: 280, backgroundColor: 'var(--bg-card)' }}
+              className="fixed top-0 left-0 bottom-0 z-50 flex flex-col overflow-hidden shadow-2xl"
+              style={{ width: 280, backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
               onMouseEnter={handleOverlayEnter}
               onMouseLeave={handleOverlayLeave}
             >
@@ -428,8 +428,8 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="shrink-0 w-[330px] flex flex-col my-3 ml-3 rounded-2xl overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-card)' }}
+      className="shrink-0 w-[330px] flex flex-col h-screen overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
     >
       <SidebarContent {...sharedProps} toggleCollapsed={() => setCollapsedPersisted(true)} />
     </aside>
