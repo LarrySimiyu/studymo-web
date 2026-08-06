@@ -29,7 +29,12 @@ export default function TutorPage() {
         }}
       >
         {!t.activeSession ? (
-          <TutorWelcome creating={t.creating} onStart={t.createSession} />
+          <TutorWelcome
+            value={t.input}
+            onChange={t.setInput}
+            onSend={t.startWithMessage}
+            creating={t.creating}
+          />
         ) : (
           <>
             <TutorTopBar

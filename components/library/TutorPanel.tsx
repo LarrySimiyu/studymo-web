@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { marked } from 'marked';
 import {
   tutorApi,
   streamTutorChat,
@@ -16,6 +15,7 @@ import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdo
 import { useAuth } from '@/hooks/useAuth';
 import TutorInput from '@/components/tutor/TutorInput';
 import UserBubble from '@/components/tutor/UserBubble';
+import AssistantMessage from '@/components/tutor/AssistantMessage';
 import ContextPicker from '@/components/tutor/ContextPicker';
 
 interface Props {
@@ -24,20 +24,16 @@ interface Props {
   onSessionCreated: (id: string) => void;
   onClose: () => void;
   initialMessage?: string;
+  initialReveal?: boolean;
   onInitialMessageConsumed?: () => void;
 }
 
 type UIMessage = TutorMessage & { isStreaming?: boolean };
 
-function renderMarkdown(text: string): string {
-  const collapsed = text.replace(/\n{3,}/g, '\n\n');
-  return marked.parse(collapsed, { breaks: true }) as string;
-}
-
 let msgIdCounter = 0;
 function nextId() { return `local-${++msgIdCounter}`; }
 
-export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, onInitialMessageConsumed }: Props) {
+export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, initialReveal, onInitialMessageConsumed }: Props) {
   const { currentUser } = useAuth();
   const { refetch: refetchSessions } = useTutorSessions();
   const [session, setSession] = useState<TutorSession | null>(null);
@@ -152,7 +148,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     if (!loading && session && initialMessage && !initialMessageSentRef.current) {
       initialMessageSentRef.current = true;
       setTimeout(() => {
-        sendText(initialMessage).then(() => onInitialMessageConsumed?.());
+        sendText(initialMessage, initialReveal).then(() => onInitialMessageConsumed?.());
       }, 150);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,13 +194,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           msg.role === 'user' ? (
             <UserBubble key={msg.id} content={msg.content} />
           ) : (
-            <div
-              key={msg.id}
-              className="tutor-message text-sm text-[var(--text-1)] leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: renderMarkdown(msg.content) + (msg.isStreaming ? '<span class="tutor-cursor"></span>' : ''),
-              }}
-            />
+            <AssistantMessage key={msg.id} content={msg.content} isStreaming={msg.isStreaming} />
           )
         ))}
         {messages.length === 0 && !loading && (

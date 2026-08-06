@@ -2,7 +2,7 @@
 
 import { RefObject } from 'react';
 import UserBubble from '@/components/tutor/UserBubble';
-import { renderMarkdown } from '@/lib/tutor/markdown';
+import AssistantMessage from '@/components/tutor/AssistantMessage';
 import type { UIMessage } from '@/hooks/useTutorChat';
 
 interface Props {
@@ -40,10 +40,10 @@ export default function TutorMessages({ messages, isStreaming, bottomRef }: Prop
           return <UserBubble key={msg.id} content={msg.content} />;
         }
         return (
-          <div
+          <AssistantMessage
             key={msg.id}
-            className="tutor-message text-sm text-[var(--text-1)] leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) + ('isStreaming' in msg && msg.isStreaming ? '<span class="tutor-cursor"></span>' : '') }}
+            content={msg.content}
+            isStreaming={'isStreaming' in msg && msg.isStreaming}
           />
         );
       })}
