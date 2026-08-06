@@ -17,10 +17,10 @@ const badgeVariants = cva(
         tag: 'border-0 font-medium',
         // Toggleable pill — on/off driven by data-state, applied by TogglePill
         pill: [
-          'bg-[var(--bg-card)] border-[var(--border-md)] text-[var(--text-2)]',
+          'border-0 shadow-field bg-[var(--bg-card)] text-[var(--text-2)]',
           'hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]',
-          'data-[state=on]:bg-[var(--brand-pill)] data-[state=on]:border-[var(--brand-border)] data-[state=on]:text-[var(--brand-ink)]',
-          'data-[state=on]:hover:bg-[var(--brand-pill)] data-[state=on]:hover:text-[var(--brand-ink)]',
+          'data-[state=on]:bg-[var(--brand)] data-[state=on]:text-white',
+          'data-[state=on]:hover:bg-[var(--brand-hover)] data-[state=on]:hover:text-white',
         ],
       },
       size: {
