@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react';
 import { Document } from '@/lib/api/documents';
 import { Folder } from '@/lib/api/organization';
 import { timeAgo, flattenFolders } from './libraryUtils';
+import { TagBadge } from '@/components/ui/badge';
 
 interface Props {
   doc: Document;
@@ -36,10 +37,10 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
   return (
     <div
       onClick={onClick}
-      className="group relative mx-2 my-2 px-3 py-2.5 cursor-pointer transition-colors rounded-xl"
-      style={{ backgroundColor: isSelected ? 'var(--bg-hover)' : 'var(--bg-card)' }}
+      className="group relative px-4 py-3 cursor-pointer transition-colors border-b"
+      style={{ backgroundColor: isSelected ? 'var(--bg-hover)' : 'transparent', borderColor: 'var(--border)' }}
       onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-hover)'; }}
-      onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-card)'; }}
+      onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
@@ -107,13 +108,9 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
           {docTags.length > 0 && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {docTags.slice(0, 3).map(dt => (
-                <span
-                  key={dt.tagId}
-                  className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: (dt.tag.color ?? 'var(--brand)') + '25', color: dt.tag.color ?? 'var(--brand)' }}
-                >
+                <TagBadge key={dt.tagId} color={dt.tag.color} size="sm">
                   {dt.tag.name}
-                </span>
+                </TagBadge>
               ))}
             </div>
           )}

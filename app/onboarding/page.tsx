@@ -29,8 +29,8 @@ const GRADE_OPTIONS = [
 
 const PRESET_SUBJECTS = [
   'Mathematics','Biology','Chemistry','Physics','History',
-  'English / Literature','Computer Science','Economics','Psychology',
-  'Law','Medicine / Nursing','Engineering',
+  'English','Computer Science','Economics','Psychology',
+  'Law','Medicine','Engineering',
   'Coding','Personal Finance','Language Learning','Business',
   'Design','Marketing','Philosophy','Music Theory',
 ];

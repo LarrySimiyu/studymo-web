@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowUp, FileText, Lightbulb, Plus, X } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/Button';
+import { TogglePill } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export interface ContextNote { id: string; title: string }
@@ -59,20 +60,14 @@ export default function TutorInput({
       {showPillRow && (
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
           {onToggleReveal && (
-            <Button
-              variant="pill"
-              size="pill"
+            <TogglePill
+              pressed={revealAnswer}
               onClick={onToggleReveal}
               title="Get the direct answer with your next message"
-              aria-pressed={revealAnswer}
-              className={cn(
-                revealAnswer &&
-                  'bg-[var(--brand-subtle)] border-[var(--brand-border)] text-[var(--brand-ink)] hover:bg-[var(--brand-subtle)] hover:text-[var(--brand-ink)]'
-              )}
             >
               <Lightbulb size={12} />
               Just tell me
-            </Button>
+            </TogglePill>
           )}
 
           {onAddContext && (
@@ -111,10 +106,8 @@ export default function TutorInput({
       <div
         className={cn(
           'flex gap-2 p-2 pl-4 rounded-2xl border bg-[var(--bg-card)] border-[var(--border)]',
-          'shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_16px_-4px_rgba(0,0,0,0.08)]',
-          'transition-[border-color,box-shadow] duration-150',
-          'focus-within:border-[var(--brand-border)]',
-          'focus-within:shadow-[0_0_0_3px_var(--brand-subtle),0_6px_16px_-4px_rgba(0,0,0,0.08)]',
+          'shadow-field',
+          'transition-colors duration-150',
           multiline ? 'items-end' : 'items-center'
         )}
       >

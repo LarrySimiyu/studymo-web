@@ -1,6 +1,7 @@
 'use client';
 
 import { Task } from '@/lib/api/tasks';
+import { TagBadge } from '@/components/ui/badge';
 
 function EditIcon() {
   return (
@@ -125,12 +126,9 @@ export default function TaskItem({ task, compact, onToggle, onEdit, onDelete }: 
         {/* Tag row */}
         {tag && (
           <div className="mt-1">
-            <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-              style={{ backgroundColor: tag.color + '22', color: tag.color }}
-            >
+            <TagBadge color={tag.color} size="sm">
               {tag.name}
-            </span>
+            </TagBadge>
           </div>
         )}
       </div>

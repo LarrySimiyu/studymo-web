@@ -17,6 +17,9 @@
   --brand-hover:   #FF7A24;
   --brand-subtle:  rgba(255, 101, 0, 0.12);
   --brand-border:  rgba(255, 101, 0, 0.35);
+  /* Deliberately not re-declared in .light — toggle pills hold the same tint
+     density as tag pills (#RRGGBB22) in both themes. */
+  --brand-pill:    rgba(255, 101, 0, 0.13);
   --danger:         #EF4444;
   --danger-subtle:  rgba(239, 68, 68, 0.12);
   --danger-border:  rgba(239, 68, 68, 0.35);

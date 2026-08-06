@@ -12,6 +12,7 @@ import DeleteConfirmModal from '@/components/library/DeleteConfirmModal';
 import FolderModal from '@/components/library/FolderModal';
 import ManageTagsModal from '@/components/library/ManageTagsModal';
 import { flattenFolders, notifyFoldersChanged } from '@/components/library/libraryUtils';
+import { TagBadge } from '@/components/ui/badge';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import TagDropdown from '@/components/ui/TagDropdown';
 import { Input } from '@/components/ui/Input';
@@ -212,6 +213,7 @@ export default function LibraryPage() {
                 value={tagFilter}
                 onChange={setTagFilter}
                 onManageTags={() => setShowManageTags(true)}
+                onTagsChanged={refetch}
                 align="right"
               />
             </div>
@@ -219,20 +221,20 @@ export default function LibraryPage() {
               const tag = availableTags.find(t => t.id === tagFilter);
               return tag ? (
                 <div className="flex items-center gap-1 mt-1.5">
-                  <span
-                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
-                    style={{ backgroundColor: (tag.color ?? 'var(--brand)') + '25', color: tag.color ?? 'var(--brand)' }}
+                  <TagBadge
+                    color={tag.color}
+                    onRemove={() => setTagFilter('')}
+                    removeLabel={`Clear ${tag.name} filter`}
                   >
                     {tag.name}
-                    <button onClick={() => setTagFilter('')} className="leading-none hover:opacity-70 ml-0.5">×</button>
-                  </span>
+                  </TagBadge>
                 </div>
               ) : null;
             })()}
           </div>
 
           {/* List */}
-          <div className="flex-1 overflow-y-auto py-1 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex-1 overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {loading ? (
               <LoadingSpinner size="md" />
             ) : documents.length === 0 ? (

@@ -3,6 +3,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { documentsApi, docTagsApi, Document } from '@/lib/api/documents';
 import TagDropdown from '@/components/ui/TagDropdown';
+import { TagBadge } from '@/components/ui/badge';
+import { TAG_COLORS } from '@/lib/tagColors';
 
 interface Props {
   doc: Document;
@@ -28,7 +30,7 @@ export default function NoteHeader({
   const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showCreateTagModal, setShowCreateTagModal] = useState(false);
   const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('var(--brand)');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const dotsMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,18 +132,14 @@ export default function NoteHeader({
       {/* Tags row */}
       <div className="flex flex-wrap items-center gap-1.5 mb-6">
         {(doc.tags ?? []).map(dt => (
-          <span
+          <TagBadge
             key={dt.tagId}
-            className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full cursor-pointer group"
-            style={{ backgroundColor: (dt.tag.color ?? 'var(--brand)') + '22', color: dt.tag.color ?? 'var(--brand)' }}
+            color={dt.tag.color}
+            onRemove={async () => { await documentsApi.removeTag(id, dt.tagId); onRefetch(); }}
+            removeLabel={`Remove ${dt.tag.name}`}
           >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dt.tag.color ?? 'var(--brand)' }} />
             {dt.tag.name}
-            <button
-              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 ml-0.5 leading-none"
-              onClick={async () => { await documentsApi.removeTag(id, dt.tagId); onRefetch(); }}
-            >×</button>
-          </span>
+          </TagBadge>
         ))}
         <TagDropdown
           tags={allDocTags}
@@ -153,6 +151,7 @@ export default function NoteHeader({
             onRefetch();
           }}
           onManageTags={() => setShowCreateTagModal(true)}
+          onTagsChanged={onRefetch}
         />
       </div>
 
@@ -173,7 +172,7 @@ export default function NoteHeader({
               }}
             />
             <div className="flex items-center gap-2 flex-wrap">
-              {['var(--brand)','#FF6B6B','#4ECDC4','#45B7D1','#F59E0B','#22C55E','#EC4899','#64748B'].map(c => (
+              {TAG_COLORS.map(c => (
                 <button key={c} onClick={() => setNewTagColor(c)}
                   className="w-5 h-5 rounded-full transition-transform hover:scale-110"
                   style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}

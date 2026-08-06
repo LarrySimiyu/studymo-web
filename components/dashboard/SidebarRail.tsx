@@ -78,8 +78,8 @@ export default function SidebarRail({ pathname, initials, hasAccess, onExpand }:
 
   return (
     <aside
-      className="shrink-0 w-16 flex flex-col items-center gap-1 py-3 my-3 ml-3 rounded-2xl"
-      style={{ backgroundColor: 'var(--bg-card)' }}
+      className="shrink-0 w-16 flex flex-col items-center gap-1 py-3 h-screen"
+      style={{ backgroundColor: 'var(--bg-card)', borderRight: '1px solid var(--border)' }}
     >
       <button
         onClick={() => onExpand()}

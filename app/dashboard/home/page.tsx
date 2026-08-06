@@ -39,7 +39,7 @@ function RightPanelTabs() {
   const [taskCount, setTaskCount] = useState(0);
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+    <div className="flex flex-col gap-4 h-full overflow-y-auto scrollbar-hide px-4 sm:px-6 py-4 sm:py-6" style={{ scrollbarWidth: 'none' }}>
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl shrink-0" style={{ backgroundColor: 'var(--bg-card)' }}>
         {(['planning', 'tasks'] as RightTab[]).map(tab => (

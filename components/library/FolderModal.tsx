@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Folder } from '@/lib/api/organization';
-import { TAG_COLORS } from './libraryUtils';
+import { TAG_COLORS } from '@/lib/tagColors';
 
 interface Props {
   folder?: Folder;
@@ -30,7 +30,7 @@ export default function FolderModal({ folder, onClose, onSave }: Props) {
           className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm text-[var(--text-1)] outline-none focus:border-[var(--brand)]/50 mb-3"
           style={{ backgroundColor: 'var(--bg-input)' }}
         />
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
           {TAG_COLORS.map(c => (
             <button
               key={c}
