@@ -90,9 +90,24 @@ export function useTutorChat() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }
 
-  async function createSession() {
+  /**
+   * First message on the welcome screen creates the session and sends in one go.
+   * The new session is passed straight to sendMessage — waiting on the ?session=
+   * round trip would drop the text the student already typed.
+   */
+  async function startWithMessage() {
+    const text = input.trim();
+    if (!text || creating || isStreaming) return;
     const id = await createTutorSession();
-    if (id) router.push(`/dashboard/tutor?session=${id}`);
+    if (!id) return;
+    const { data } = await tutorApi.getSession(id);
+    if (!data) return;
+    setActiveSession(data);
+    setMessages([]);
+    setSuggestions([]);
+    router.push(`/dashboard/tutor?session=${id}`);
+    setTimeout(() => inputRef.current?.focus(), 100);
+    await sendMessage(text, data);
   }
 
   async function changeMode(mode: TutorMode) {
@@ -101,9 +116,10 @@ export function useTutorChat() {
     if (data) setActiveSession(data);
   }
 
-  async function sendMessage(override?: string) {
+  async function sendMessage(override?: string, sessionOverride?: TutorSession) {
+    const session = sessionOverride ?? activeSession;
     const text = (override ?? input).trim();
-    if (!text || isStreaming || !activeSession || !currentUser) return;
+    if (!text || isStreaming || !session || !currentUser) return;
     setInput('');
     setSuggestions([]);
     setNoteOffer(null);
@@ -126,7 +142,7 @@ export function useTutorChat() {
     try {
       const token = await currentUser.getIdToken();
       await streamTutorChat(
-        activeSession.id,
+        session.id,
         apiMessage,
         chunk => {
           setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + chunk } : m));
@@ -140,15 +156,16 @@ export function useTutorChat() {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
     } finally {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
-      touchSession(activeSession.id, text);
+      touchSession(session.id, text);
       // The server generates the session title from the first message fire-and-forget,
       // so an immediate refetch usually still returns the placeholder. Poll once more.
-      const isFirstMessage = messages.filter(m => m.role === 'user').length === 1;
+      // `messages` is the pre-send closure value, so the first message sees zero.
+      const isFirstMessage = messages.filter(m => m.role === 'user').length === 0;
       if (isFirstMessage) {
         refetch().catch(() => {});
         setTimeout(() => {
           refetch().then(() => {
-            tutorApi.getSession(activeSession.id).then(({ data }) => {
+            tutorApi.getSession(session.id).then(({ data }) => {
               if (data) setActiveSession(prev => prev?.id === data.id ? { ...prev, title: data.title } : prev);
             });
           }).catch(() => {});
@@ -223,7 +240,7 @@ export function useTutorChat() {
     revealAnswer, setRevealAnswer, suggestions,
     noteOffer, setNoteOffer, offerSaving, offerSaved, resolvedTopics, setResolvedTopics,
     bottomRef, inputRef,
-    createSession, changeMode, sendMessage, saveTitle,
+    startWithMessage, changeMode, sendMessage, saveTitle,
     addNote, removeNote, toggleNote, acceptOffer,
   };
 }

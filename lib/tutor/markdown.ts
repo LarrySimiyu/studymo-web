@@ -1,13 +1,10 @@
 import { marked } from 'marked';
 
+/**
+ * The tutor prompt leans on single newlines for grouped lead-in lines and blank
+ * lines for real paragraph breaks, so `breaks: true` stays and blank lines are
+ * preserved. Only runs of 3+ newlines collapse.
+ */
 export function renderMarkdown(text: string): string {
-  // Collapse 3+ consecutive newlines to 2, and 2 newlines between short lines to 1
-  const collapsed = text
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/\n\n(?=[^\n])/g, (_, offset, str) => {
-      // If previous paragraph is short (< 120 chars) treat as single newline
-      const prev = str.slice(0, offset).split('\n').pop() ?? '';
-      return prev.length < 120 ? '\n' : '\n\n';
-    });
-  return marked.parse(collapsed, { breaks: true }) as string;
+  return marked.parse(text.replace(/\n{3,}/g, '\n\n'), { breaks: true }) as string;
 }
