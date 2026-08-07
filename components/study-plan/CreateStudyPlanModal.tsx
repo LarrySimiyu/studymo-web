@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { CalendarIcon, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
 import {
@@ -15,6 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface Document { id: string; title: string; status: string }
 
@@ -94,12 +96,10 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               <Popover.Root open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <Popover.Trigger asChild>
                   <button
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-colors"
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-md)',
-                      color: form.testDate ? 'var(--text-1)' : 'var(--text-3)',
-                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 rounded-xl border border-[var(--border-md)] bg-[var(--bg-card)] px-3 py-2.5 text-left text-body-sm transition-colors hover:border-[var(--brand)]',
+                      form.testDate ? 'text-[var(--text-1)]' : 'text-[var(--text-3)]'
+                    )}
                   >
                     <CalendarIcon size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
                     {form.testDate
@@ -135,7 +135,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               <label className="block text-xs font-medium mb-2 text-[var(--text-1)]">
                 Study Materials
                 {form.documentIds.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-2xs" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
                     {form.documentIds.length} selected
                   </span>
                 )}
@@ -152,8 +152,8 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
                         onClick={() => toggleDoc(doc.id)}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-left transition-colors w-full"
                         style={sel ? {
-                          backgroundColor: '#ffffff',
-                          color: '#000000',
+                          backgroundColor: 'var(--brand-subtle)',
+                          color: 'var(--brand-ink)',
                         } : {
                           backgroundColor: 'var(--bg-input)',
                           color: 'var(--text-2)',
@@ -177,7 +177,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
 
             <div className="flex flex-col items-center gap-2 pt-1">
               <Button
-                variant="brand"
+                variant="primary"
                 size="lg"
                 onClick={handleCreate}
                 disabled={!form.title.trim() || !form.testDate || form.documentIds.length === 0}
@@ -185,13 +185,10 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               >
                 Generate Plan
               </Button>
-              <button
-                onClick={onClose}
-                className="text-xs transition-opacity hover:opacity-60"
-                style={{ color: 'var(--text-3)' }}
-              >
+              <UsageCounter limitKey="studyPlans" />
+              <Button variant="link" size="link" className="text-xs" onClick={onClose}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

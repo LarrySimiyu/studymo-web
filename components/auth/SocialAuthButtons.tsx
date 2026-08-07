@@ -3,6 +3,7 @@
 import Image, { type StaticImageData } from 'next/image';
 import googleIcon from '@/assets/google-icon.png';
 import appleIcon from '@/assets/apple-icon.png';
+import { Button } from '@/components/ui/Button';
 
 type SocialAuthButtonsProps = {
   onGoogle: () => void;
@@ -42,20 +43,15 @@ type ProviderButtonProps = {
 
 function ProviderButton({ icon, label, onClick, disabled }: ProviderButtonProps) {
   return (
-    <button
+    <Button
+      variant="outline"
+      size="lg"
       onClick={onClick}
       disabled={disabled}
-      className="w-full min-h-[50px] py-3 px-5 rounded-full text-sm font-medium flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border-md)',
-        color: 'var(--text-1)',
-      }}
-      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+      className="w-full min-h-[50px] gap-3 bg-[var(--bg-card)] font-medium"
     >
       <Image src={icon} alt="" width={18} height={18} className="shrink-0" />
       {label}
-    </button>
+    </Button>
   );
 }

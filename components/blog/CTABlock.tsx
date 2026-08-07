@@ -23,7 +23,7 @@ export default function CTABlock({
       <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>
         {body}
       </p>
-      <Button variant="brand" size="lg" asChild className="rounded-full px-10">
+      <Button variant="primary" size="lg" asChild className="rounded-full px-10">
         <Link href="/sign-up">{label}</Link>
       </Button>
     </div>

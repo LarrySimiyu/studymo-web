@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { X, Search } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 export interface PickerNote {
   id: string;
@@ -54,14 +55,9 @@ export default function ContextPicker({
             </p>
           </div>
           <DialogClose asChild>
-            <button
-              className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-              style={{ color: 'var(--text-3)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
-            >
+            <Button variant="ghost" size="icon-sm" aria-label="Close">
               <X size={14} />
-            </button>
+            </Button>
           </DialogClose>
         </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ArrowBigLeft, ArrowBigRight, Star } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { Flashcard } from '@/lib/api/documents';
 import ProgressBar from '@/components/ui/ProgressBar';
 
@@ -68,7 +69,7 @@ export default function FlipCard({ cards, index, onPrev, onNext, onRestart, onEx
             >
               <p className="text-heading-sm font-bold text-[var(--text-1)] mb-4">Question</p>
               <p className="text-[var(--text-1)] text-body leading-relaxed">{card.front}</p>
-              <p className="text-[10px] text-[var(--text-3)] mt-5">tap to flip</p>
+              <p className="text-2xs text-[var(--text-3)] mt-5">tap to flip</p>
             </div>
             <div
               className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center p-8 text-center"
@@ -82,42 +83,42 @@ export default function FlipCard({ cards, index, onPrev, onNext, onRestart, onEx
 
         <div className="flex flex-col items-center gap-3 w-full">
           <div className="flex items-center gap-3 w-full">
-            <button
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={onPrev}
               disabled={index === 0}
-              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
-              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+              aria-label="Previous card"
+              className="flex-1 disabled:opacity-30"
             >
               <ArrowBigLeft size={22} />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant={index === total - 1 || !flipped ? 'primary' : 'secondary'}
+              size="lg"
               onClick={() => { if (index === total - 1) { onRestart(); return; } if (!animating.current) setFlipped(f => !f); }}
-              className="flex-1 py-2.5 rounded-xl text-body-sm font-medium flex items-center justify-center gap-1.5"
-              style={index === total - 1
-                ? { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
-                : flipped
-                  ? { backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }
-                  : { background: 'linear-gradient(135deg, #FF6500, #FF9A3C)', color: '#fff' }
-              }
+              className="flex-1"
             >
               {index === total - 1
-                ? <><Star size={13} fill="white" stroke="none" />Start Over</>
-                : flipped ? 'Show Question' : <><Star size={13} fill="white" stroke="none" />Reveal Answer</>
+                ? <><Star size={13} fill="currentColor" stroke="none" />Start Over</>
+                : flipped ? 'Show Question' : <><Star size={13} fill="currentColor" stroke="none" />Reveal Answer</>
               }
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={onNext}
               disabled={index === total - 1}
-              className="flex-1 py-2.5 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30"
-              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-2)' }}
+              aria-label="Next card"
+              className="flex-1 disabled:opacity-30"
             >
               <ArrowBigRight size={22} />
-            </button>
+            </Button>
           </div>
           {onExit && (
-            <button onClick={onExit} className="text-xs transition-colors" style={{ color: 'var(--text-3)' }}>
+            <Button variant="link" size="link" onClick={onExit} className="text-xs text-[var(--text-3)]">
               Return to flashcards
-            </button>
+            </Button>
           )}
         </div>
       </div>

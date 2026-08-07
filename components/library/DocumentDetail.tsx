@@ -3,7 +3,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import NoteHeader from '@/components/library/NoteHeader';
+import NoteTagsRow from '@/components/library/NoteTagsRow';
 import NoteEditor from '@/components/library/NoteEditor';
+import EditorToolbar from '@/components/library/EditorToolbar';
 import NoteAskBar from '@/components/library/NoteAskBar';
 import FlashcardsTab from '@/components/library/FlashcardsTab';
 import QuizTab from '@/components/library/QuizTab';
@@ -44,6 +46,7 @@ import {
   Quiz,
 } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
+import { useTutorSessions } from '@/context/TutorSessionsContext';
 import { analytics } from '@/lib/analytics';
 import { tasksApi } from '@/lib/api/tasks';
 import { docTagsApi } from '@/lib/api/documents';
@@ -61,6 +64,7 @@ interface Props {
 }
 
 export default function DocumentDetail({ id, onBack, embedded, availableTags }: Props) {
+  const { sessions: tutorSessions } = useTutorSessions();
   const [doc, setDoc] = useState<Document | null>(null);
   const [note, setNote] = useState<Note | null>(null);
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -78,7 +82,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   const [tutorSessionId, setTutorSessionId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editableTitle, setEditableTitle] = useState('');
   const [, forceTabUpdate] = useState(0);
   const [simplifyLoading, setSimplifyLoading] = useState(false);
   const [simplifyOptions, setSimplifyOptions] = useState<{ label: string; text: string }[] | null>(null);
@@ -86,7 +89,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   const [pendingTutorReveal, setPendingTutorReveal] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const titleDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasTouchedRef = useRef(false);
   const isSettingContent = useRef(false);
   const pendingContent = useRef<{ noteId: string; html: string } | null>(null);
@@ -115,7 +117,6 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
     const { data: docData } = await documentsApi.getById(id);
     if (!docData) return;
     setDoc(docData);
-    setEditableTitle(prev => prev || docData.title);
     if (docData.status === 'complete') {
       const [noteRes, flashRes] = await Promise.all([
         notesApi.getByDocument(id),
@@ -151,6 +152,14 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   }, [fetchAll]);
 
   useEffect(() => { loadSideData(); }, [loadSideData]);
+
+  // Adopt a tutor conversation started on an earlier page load so the ask bar can
+  // offer "Open chat". Empty sessions are skipped — they get discarded on close.
+  useEffect(() => {
+    if (!note || tutorSessionId) return;
+    const existing = tutorSessions.find(s => s.messageCount > 0 && s.noteIds.includes(note.id));
+    if (existing) setTutorSessionId(existing.id);
+  }, [note, tutorSessions, tutorSessionId]);
 
   // Poll podcasts while generating
   useEffect(() => {
@@ -332,155 +341,162 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
   return (
     <>
       <div className="flex h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <div className={`flex-1 min-w-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
+        <div className="flex flex-col flex-1 min-w-0">
 
           <NoteHeader
             doc={doc}
             id={id}
             embedded={embedded}
-            editableTitle={editableTitle}
-            onTitleChange={val => {
-              setEditableTitle(val);
-              setDoc(prev => prev ? { ...prev, title: val } : prev);
+            onRename={async next => {
+              setDoc(prev => prev ? { ...prev, title: next } : prev);
+              await documentsApi.rename(id, next);
+              window.dispatchEvent(new CustomEvent('library:refetch'));
             }}
-            titleDebounceRef={titleDebounceRef}
             onBack={onBack}
-            onShowTutorPanel={() => { if (showTutorPanel) { handleCloseTutorPanel(); } else { setShowTutorPanel(true); } }}
-            showNote={!!note}
-            allDocTags={allDocTags}
-            setAllDocTags={setAllDocTags}
-            onRefetch={fetchAll}
-            onLoadSideData={loadSideData}
             onDeleteConfirm={() => setShowDeleteConfirm(true)}
+            toolbar={doc.status === 'complete' && tab === 'notes' && editor ? (
+              <EditorToolbar
+                editor={editor}
+                saveStatus={saveStatus}
+                onSimplify={handleSimplify}
+                simplifyLoading={simplifyLoading}
+                simplifyOptions={simplifyOptions}
+                onApplySimplify={applySimplify}
+                onClearSimplify={() => { setSimplifyOptions(null); simplifyRangeRef.current = null; }}
+              />
+            ) : undefined}
           />
 
-          <DeleteConfirmModal
-            open={showDeleteConfirm}
-            title="Delete this note?"
-            description="All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone."
-            deleting={deleting}
-            onClose={() => setShowDeleteConfirm(false)}
-            onConfirm={async () => {
-              setDeleting(true);
-              await documentsApi.delete(id);
-              onBack?.();
-            }}
-          />
+          <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${embedded ? 'px-6 py-4' : 'max-w-4xl mx-auto py-2 w-full'}`}>
 
-          <DocumentStatusState
-            status={doc.status}
-            errorMessage={doc.errorMessage}
-            onDelete={() => setShowDeleteConfirm(true)}
-          />
+            <NoteTagsRow
+              doc={doc}
+              id={id}
+              allDocTags={allDocTags}
+              onRefetch={fetchAll}
+              onLoadSideData={loadSideData}
+            />
 
-          {doc.status === 'complete' && (
-            <>
-              <div className="mb-6">
-                <SlidingTabs
-                  tabs={tabs.map(t => ({
-                    value: t,
-                    label: t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1),
-                    icon: t === 'notes' ? <BookOpen size={13} /> : t === 'flashcards' ? <Layers size={13} /> : t === 'quiz' ? <Heart size={13} /> : t === 'podcast' ? <Mic size={13} /> : t === 'weak-topics' ? <Target size={13} /> : t === 'transcript' ? <ScrollText size={13} /> : undefined,
-                  }))}
-                  active={tab}
-                  onChange={(t) => {
-                    setTab(t);
-                    if (t === 'flashcards' && flashcards.length > 0) {
-                      analytics.flashcardsViewed(id, flashcards.length);
-                    }
-                  }}
-                />
-              </div>
+            <DeleteConfirmModal
+              open={showDeleteConfirm}
+              title="Delete this note?"
+              description="All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone."
+              deleting={deleting}
+              onClose={() => setShowDeleteConfirm(false)}
+              onConfirm={async () => {
+                setDeleting(true);
+                await documentsApi.delete(id);
+                onBack?.();
+              }}
+            />
 
-              {tab === 'notes' && (
-                <>
-                  <NoteEditor
-                    editor={editor}
-                    saveStatus={saveStatus}
-                    onSimplify={handleSimplify}
-                    simplifyLoading={simplifyLoading}
-                    simplifyOptions={simplifyOptions}
-                    onApplySimplify={applySimplify}
-                    onClearSimplify={() => { setSimplifyOptions(null); simplifyRangeRef.current = null; }}
+            <DocumentStatusState
+              status={doc.status}
+              errorMessage={doc.errorMessage}
+              onDelete={() => setShowDeleteConfirm(true)}
+            />
+
+            {doc.status === 'complete' && (
+              <>
+                <div className="mb-6">
+                  <SlidingTabs
+                    tabs={tabs.map(t => ({
+                      value: t,
+                      label: t === 'podcast' ? 'Podcast' : t === 'weak-topics' ? 'Weak Topics' : t === 'transcript' ? 'Transcript' : t.charAt(0).toUpperCase() + t.slice(1),
+                      icon: t === 'notes' ? <BookOpen size={13} /> : t === 'flashcards' ? <Layers size={13} /> : t === 'quiz' ? <Heart size={13} /> : t === 'podcast' ? <Mic size={13} /> : t === 'weak-topics' ? <Target size={13} /> : t === 'transcript' ? <ScrollText size={13} /> : undefined,
+                    }))}
+                    active={tab}
+                    onChange={(t) => {
+                      setTab(t);
+                      if (t === 'flashcards' && flashcards.length > 0) {
+                        analytics.flashcardsViewed(id, flashcards.length);
+                      }
+                    }}
                   />
-                  {/* Spacer so the last lines of the note aren't hidden behind the ask bar */}
-                  <div className="h-20" />
-                  {/* Ask bar — must be after note content so sticky bottom works correctly */}
-                  <AnimatePresence>
-                    {!showTutorPanel && (
-                      <NoteAskBar
-                        key="note-ask-bar"
-                        embedded={embedded}
-                        hasSession={!!tutorSessionId}
-                        onSend={(text, reveal) => {
-                          setPendingTutorMessage(text);
-                          setPendingTutorReveal(reveal);
-                          setShowTutorPanel(true);
-                        }}
-                        onOpenPanel={() => setShowTutorPanel(true)}
-                      />
-                    )}
-                  </AnimatePresence>
-                </>
-              )}
-
-              {tab === 'flashcards' && (
-                <FlashcardsTab
-                  flashcards={flashcards}
-                  onGenerate={async () => {
-                    const { data } = await flashcardsApi.generate(id);
-                    if (data) { setFlashcards(data); analytics.flashcardsGenerated(id); }
-                  }}
-                />
-              )}
-
-              {tab === 'quiz' && (
-                <QuizTab
-                  doc={doc}
-                  quiz={quiz}
-                  onGenerate={async (types) => {
-                    const { data } = await quizzesApi.generate(id, types);
-                    if (data) { setQuiz(data); analytics.quizGenerated(id); }
-                  }}
-                />
-              )}
-
-              {tab === 'podcast' && (
-                <PodcastTab
-                  documentId={id}
-                  podcasts={podcasts}
-                  setPodcasts={setPodcasts}
-                  showModal={showGeneratePodcast}
-                  setShowModal={setShowGeneratePodcast}
-                />
-              )}
-
-              {tab === 'transcript' && (
-                <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
-                  {doc?.transcript ? (
-                    <p className="text-sm text-[var(--text-1)] whitespace-pre-wrap leading-relaxed">{doc.transcript}</p>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-                      <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
-                        <ScrollText size={24} style={{ color: '#22C55E' }} />
-                      </div>
-                      <div>
-                        <p className="text-[var(--text-1)] font-semibold">No transcript available</p>
-                        <p className="text-[var(--text-2)] text-sm mt-1">Transcripts are generated automatically from audio and video uploads</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {tab === 'weak-topics' && (
-                <WeakTopicsTab
-                  topics={docWeakTopics}
-                  onResolved={updated => setDocWeakTopics(prev => prev.map(t => t.id === updated.id ? updated : t))}
-                />
-              )}
-            </>
-          )}
+                {tab === 'notes' && (
+                  <>
+                    <NoteEditor editor={editor} saveStatus={saveStatus} />
+                    {/* Spacer so the last lines of the note aren't hidden behind the ask bar */}
+                    <div className="h-20" />
+                    {/* Ask bar — must be after note content so sticky bottom works correctly */}
+                    <AnimatePresence>
+                      {!showTutorPanel && (
+                        <NoteAskBar
+                          key="note-ask-bar"
+                          embedded={embedded}
+                          hasSession={!!tutorSessionId}
+                          onSend={(text, reveal) => {
+                            setPendingTutorMessage(text);
+                            setPendingTutorReveal(reveal);
+                            setShowTutorPanel(true);
+                          }}
+                          onOpenPanel={() => setShowTutorPanel(true)}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
+
+                {tab === 'flashcards' && (
+                  <FlashcardsTab
+                    flashcards={flashcards}
+                    onGenerate={async () => {
+                      const { data } = await flashcardsApi.generate(id);
+                      if (data) { setFlashcards(data); analytics.flashcardsGenerated(id); }
+                    }}
+                  />
+                )}
+
+                {tab === 'quiz' && (
+                  <QuizTab
+                    doc={doc}
+                    quiz={quiz}
+                    onGenerate={async (types) => {
+                      const { data } = await quizzesApi.generate(id, types);
+                      if (data) { setQuiz(data); analytics.quizGenerated(id); }
+                    }}
+                  />
+                )}
+
+                {tab === 'podcast' && (
+                  <PodcastTab
+                    documentId={id}
+                    podcasts={podcasts}
+                    setPodcasts={setPodcasts}
+                    showModal={showGeneratePodcast}
+                    setShowModal={setShowGeneratePodcast}
+                  />
+                )}
+
+                {tab === 'transcript' && (
+                  <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
+                    {doc?.transcript ? (
+                      <p className="text-sm text-[var(--text-1)] whitespace-pre-wrap leading-relaxed">{doc.transcript}</p>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(34,197,94,0.12)' }}>
+                          <ScrollText size={24} style={{ color: '#22C55E' }} />
+                        </div>
+                        <div>
+                          <p className="text-[var(--text-1)] font-semibold">No transcript available</p>
+                          <p className="text-[var(--text-2)] text-sm mt-1">Transcripts are generated automatically from audio and video uploads</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {tab === 'weak-topics' && (
+                  <WeakTopicsTab
+                    topics={docWeakTopics}
+                    onResolved={updated => setDocWeakTopics(prev => prev.map(t => t.id === updated.id ? updated : t))}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Tutor Panel */}

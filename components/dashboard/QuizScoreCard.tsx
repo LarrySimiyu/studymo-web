@@ -136,7 +136,7 @@ function QuizRow({ documentTitle, latestScore, attempts, improvement }: QuizRowP
       <div className="relative shrink-0">
         <SmallRing value={latestScore} size={44} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[10px] font-bold" style={{ color }}>{latestScore}%</span>
+          <span className="text-2xs font-bold" style={{ color }}>{latestScore}%</span>
         </div>
       </div>
 
@@ -219,11 +219,11 @@ export default function QuizScoreCard({
           <div className="flex flex-col gap-2 w-full">
             <div className="px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-input)' }}>
               <p className="text-sm font-bold text-[var(--text-1)]">{total}</p>
-              <p className="text-[10px] text-[var(--text-2)]">Quizzes taken</p>
+              <p className="text-2xs text-[var(--text-2)]">Quizzes taken</p>
             </div>
             <div className="px-3 py-2 rounded-lg" style={{ backgroundColor: scoreBg(best) }}>
               <p className="text-sm font-bold" style={{ color: scoreColor(best) }}>{best}%</p>
-              <p className="text-[10px]" style={{ color: scoreColor(best), opacity: 0.8 }}>Best score</p>
+              <p className="text-2xs" style={{ color: scoreColor(best), opacity: 0.8 }}>Best score</p>
             </div>
           </div>
         </div>

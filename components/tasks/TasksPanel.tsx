@@ -6,6 +6,7 @@ import TaskItem from '@/components/tasks/TaskItem';
 import TaskModal from '@/components/tasks/TaskModal';
 import { Plus, ClipboardList } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Button } from '@/components/ui/Button';
 
 export default function TasksPanel({ onCountChange, hideCompleted }: { onCountChange?: (n: number) => void; hideCompleted?: boolean }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -67,13 +68,14 @@ export default function TasksPanel({ onCountChange, hideCompleted }: { onCountCh
           <div className="flex flex-col items-center justify-center py-10 rounded-xl text-center" style={{ backgroundColor: 'var(--bg-card)' }}>
             <ClipboardList size={20} style={{ color: 'var(--text-3)' }} className="mb-2" />
             <p className="text-xs text-[var(--text-3)] mb-1">No tasks yet</p>
-            <button
+            <Button
+              variant="link"
+              size="link"
               onClick={() => { setEditingTask(null); setShowModal(true); }}
-              className="text-xs transition-opacity hover:opacity-70"
-              style={{ color: 'var(--brand)' }}
+              className="text-xs text-[var(--brand-ink)] hover:text-[var(--brand)]"
             >
               Add your first task
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
@@ -102,7 +104,7 @@ export default function TasksPanel({ onCountChange, hideCompleted }: { onCountCh
             {/* Completed */}
             {!hideCompleted && completedTasks.length > 0 && (
               <div className="mt-1">
-                <p className="text-[10px] font-medium uppercase tracking-wide mb-1.5 px-1" style={{ color: 'var(--text-3)' }}>
+                <p className="text-2xs font-medium uppercase tracking-wide mb-1.5 px-1" style={{ color: 'var(--text-3)' }}>
                   Completed · {completedTasks.length}
                 </p>
                 <div className="flex flex-col gap-1.5">

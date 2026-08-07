@@ -6,6 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import QuizRunner from '@/components/quiz/QuizRunner';
 import { documentsApi, quizzesApi, Document, Quiz } from '@/lib/api/documents';
+import PageShell from '@/components/dashboard/PageShell';
+import { Button } from '@/components/ui/Button';
 
 export default function QuizPage({ params }: { params: { documentId: string } }) {
   const router = useRouter();
@@ -28,15 +30,11 @@ export default function QuizPage({ params }: { params: { documentId: string } })
   const exit = () => router.push('/dashboard/quizzes');
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    <PageShell width="sm" center>
       <div className="mb-6 sm:mb-8">
-        <button
-          onClick={exit}
-          aria-label="Back to quizzes"
-          className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
+        <Button variant="ghost" size="icon-sm" onClick={exit} aria-label="Back to quizzes">
+          <ArrowLeft size={18} />
+        </Button>
       </div>
 
       {loading ? (
@@ -48,6 +46,6 @@ export default function QuizPage({ params }: { params: { documentId: string } })
       ) : (
         <QuizRunner key={quiz.id} document={doc} quiz={quiz} onBack={exit} />
       )}
-    </div>
+    </PageShell>
   );
 }

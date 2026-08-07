@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { documentsApi } from '@/lib/api/documents';
-import { useAuth } from '@/hooks/useAuth';
+import { useUsage } from '@/hooks/useUsage';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TYPE_META, type UploadType, type UploadFormProps } from './uploadTypes';
 import { useUploadFlow } from './useUploadFlow';
@@ -31,24 +30,22 @@ const FORMS: Record<Exclude<UploadType, 'blank'>, React.ComponentType<UploadForm
 export default function UploadDialog({ type, onClose, onSuccess }: Props) {
   const [checking, setChecking] = useState(true);
   const { title, icon: Icon, color, bg } = TYPE_META[type];
-  const { subscriptionStatus, loading: authLoading } = useAuth();
+  const { usage, loading: usageLoading, atLimit } = useUsage();
   const flow = useUploadFlow(type, onSuccess);
 
+  // A blank note spends the notes quota; everything else spends an upload.
+  const quotaKey = type === 'blank' ? 'notes' : 'uploads';
+
   useEffect(() => {
-    if (authLoading) return;
-    if (subscriptionStatus?.hasAccess) { setChecking(false); return; }
-    documentsApi.getCount()
-      .then(({ data }) => {
-        if (data && data.count >= 1) {
-          onClose();
-          window.dispatchEvent(new CustomEvent('app:show-paywall', { detail: { trigger: 'upload_limit' } }));
-        } else {
-          setChecking(false);
-        }
-      })
-      .catch(() => setChecking(false));
+    if (usageLoading) return;
+    if (atLimit(quotaKey)) {
+      onClose();
+      window.dispatchEvent(new CustomEvent('app:show-paywall', { detail: { trigger: quotaKey } }));
+      return;
+    }
+    setChecking(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, subscriptionStatus]);
+  }, [usageLoading, usage, quotaKey]);
 
   const Form = type === 'blank' ? null : FORMS[type];
 

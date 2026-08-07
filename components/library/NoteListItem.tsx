@@ -73,7 +73,7 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
                   ))}
                   <div className="border-t mx-2 my-1" style={{ borderColor: 'var(--border)' }} />
                   <button
-                    className="w-full text-left px-3 py-2 text-body-sm text-red-400 hover:bg-black/5"
+                    className="w-full text-left px-3 py-2 text-body-sm text-[var(--danger-ink)] hover:bg-black/5"
                     onClick={e => { e.stopPropagation(); onDelete(doc.id); setShowMenu(false); }}
                   >
                     Delete
@@ -91,8 +91,8 @@ export default function NoteListItem({ doc, preview, isSelected, onClick, onDele
 
           {doc.status === 'processing' && (
             <div className="flex items-center gap-1 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-              <span className="text-xs text-yellow-500">Processing…</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] animate-pulse" />
+              <span className="text-xs text-[var(--warning-ink)]">Processing…</span>
             </div>
           )}
 

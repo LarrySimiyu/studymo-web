@@ -1,11 +1,10 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getAdditionalUserInfo } from 'firebase/auth';
 import { useAuth } from '@/hooks/useAuth';
-import { billingApi } from '@/lib/api/billing';
 import { gaSignUpCompleted } from '@/lib/analytics/ga';
 import AuthShell from '@/components/auth/AuthShell';
 import SocialAuthButtons from '@/components/auth/SocialAuthButtons';
@@ -17,40 +16,22 @@ export default function SignUpPage() {
 function SignUpContent() {
   const { googleSignIn, appleSignIn, currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const priceId = searchParams.get('priceId');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
-      if (priceId) {
-        billingApi.createCheckout(priceId).then(({ data }) => {
-          if (data?.url) window.location.href = data.url;
-          else router.replace('/dashboard');
-        });
-      } else {
-        router.replace('/dashboard');
-      }
-    }
-  }, [currentUser, authLoading, router, priceId]);
+    if (!authLoading && currentUser) router.replace('/dashboard');
+  }, [currentUser, authLoading, router]);
 
-  async function redirectAfterAuth(isNew: boolean, method: 'google' | 'apple') {
+  // Signing up never touches Stripe. New accounts land on the free tier and only
+  // meet a checkout when a free quota runs out and the paywall opens.
+  function redirectAfterAuth(isNew: boolean, method: 'google' | 'apple') {
     if (isNew) {
       gaSignUpCompleted(method);
-      router.push(priceId ? `/onboarding?priceId=${priceId}` : '/onboarding');
+      router.push('/onboarding');
       return;
     }
-    if (priceId) {
-      const { data } = await billingApi.createCheckout(priceId);
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        router.push('/dashboard');
-      }
-    } else {
-      router.push('/dashboard');
-    }
+    router.push('/dashboard');
   }
 
   async function handleGoogle() {

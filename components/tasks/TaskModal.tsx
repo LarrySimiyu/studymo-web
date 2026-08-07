@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { tasksApi, Task } from '@/lib/api/tasks';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
 import { CalendarIcon } from 'lucide-react';
@@ -14,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface TaskModalProps {
   open: boolean;
@@ -90,12 +92,10 @@ export default function TaskModal({ open, task, defaultDueDate, onClose, onSave 
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-colors"
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-md)',
-                    color: dueDate ? 'var(--text-1)' : 'var(--text-3)',
-                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2.5 rounded-xl border border-[var(--border-md)] bg-[var(--bg-card)] px-3 py-2.5 text-left text-body-sm transition-colors hover:border-[var(--brand)]',
+                    dueDate ? 'text-[var(--text-1)]' : 'text-[var(--text-3)]'
+                  )}
                 >
                   <CalendarIcon size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
                   {dueDate
@@ -134,20 +134,16 @@ export default function TaskModal({ open, task, defaultDueDate, onClose, onSave 
             <select ...>...</select>
           </div> */}
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-[var(--danger-ink)] text-xs">{error}</p>}
 
           <div className="flex flex-col items-center gap-2 pt-1">
-            <Button variant="brand" size="lg" type="submit" disabled={saving} className="w-full">
+            <Button variant="primary" size="lg" type="submit" disabled={saving} className="w-full">
               {saving ? 'Saving…' : task ? 'Save Changes' : 'Add Task'}
             </Button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-xs transition-opacity hover:opacity-60"
-              style={{ color: 'var(--text-3)' }}
-            >
+            {!task && <UsageCounter limitKey="tasks" />}
+            <Button type="button" variant="link" size="link" className="text-xs" onClick={onClose}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       </DialogContent>

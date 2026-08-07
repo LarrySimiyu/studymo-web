@@ -26,9 +26,9 @@ export default function ProcessingOverlay({ state, errorMessage, onRetry, onClos
             This may take a minute. You can close this — it will appear in your library when ready.
           </p>
         </div>
-        <button onClick={onClose} className="text-xs text-[var(--text-3)] transition-colors hover:text-[var(--text-2)]">
+        <Button variant="link" size="link" onClick={onClose} className="text-xs text-[var(--text-3)]">
           Close
-        </button>
+        </Button>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export default function ProcessingOverlay({ state, errorMessage, onRetry, onClos
         </p>
       </div>
       <div className="flex gap-3">
-        <Button variant="brand" size="sm" onClick={onRetry}>Try Again</Button>
+        <Button variant="primary" size="sm" onClick={onRetry}>Try Again</Button>
         <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
       </div>
     </div>

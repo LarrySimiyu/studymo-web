@@ -63,10 +63,8 @@ export default function LibraryUploadMenu({ onDismiss, onUploaded }: Props) {
               <button
                 key={type}
                 onClick={() => { setOpen(false); setUploadType(type); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors bg-transparent hover:bg-[var(--bg-hover)]"
                 style={{ color: 'var(--text-2)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
                 <span className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: bg }}>
                   <Icon size={11} style={{ color }} />

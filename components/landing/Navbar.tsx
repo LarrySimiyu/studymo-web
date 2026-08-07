@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import studymoLogo from '@/assets/studymo_logo.png';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Navbar() {
+  const router = useRouter();
+  const { currentUser, loading, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -55,20 +59,38 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right auth buttons */}
-        <div className="flex items-center gap-3">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium transition-colors"
-            style={{ color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-          >
-            Login
-          </Link>
-          <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
-            Start Free
-          </Link>
+        {/* Right auth buttons — held blank until Firebase resolves, so a signed-in
+            visitor never sees "Login" flash before it swaps. */}
+        <div className="flex h-9 items-center gap-3">
+          {loading ? null : currentUser ? (
+            <>
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut();
+                  router.push('/');
+                }}
+                className="text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
+              >
+                Logout
+              </button>
+              <Link href="/dashboard" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
+              >
+                Login
+              </Link>
+              <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
+                Start Free
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

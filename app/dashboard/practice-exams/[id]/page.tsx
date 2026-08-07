@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import PageShell from '@/components/dashboard/PageShell';
 import { practiceExamsApi, PracticeExam, PracticeExamAttempt, ExamContent, ExamQuestion, ExamSection } from '@/lib/api/organization';
 import ProgressBar from '@/components/ui/ProgressBar';
 import MultipleChoiceOptions from '@/components/ui/MultipleChoiceOptions';
@@ -47,7 +49,7 @@ function CircularTimer({ totalSeconds, onExpire }: { totalSeconds: number; onExp
         <span className="text-[var(--text-1)] text-xs font-mono font-semibold">
           {mins}:{secs.toString().padStart(2, '0')}
         </span>
-        {isDone && <span className="text-red-400 text-[10px] leading-none mt-0.5">Time up</span>}
+        {isDone && <span className="text-[var(--danger-ink)] text-2xs leading-none mt-0.5">Time up</span>}
       </div>
     </div>
   );
@@ -210,12 +212,14 @@ export default function PracticeExamPage() {
     }) ?? [];
 
     return (
-      <div className="max-w-2xl mx-auto py-2">
-        <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => router.back()} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">← Back</button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-[var(--text-1)]">{exam.title}</h1>
-            <p className="text-[var(--text-2)] text-sm mt-1">
+      <PageShell width="sm" center>
+        <div className="mb-8 flex items-center gap-4">
+          <Button variant="ghost" size="icon-sm" onClick={() => router.back()} aria-label="Back">
+            <ArrowLeft size={18} />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-heading-sm md:text-heading text-[var(--text-1)]">{exam.title}</h1>
+            <p className="mt-1 text-body-sm text-[var(--text-2)]">
               {examContent.totalPoints ?? '?'} pts · ~{examContent.estimatedMinutes ?? '?'} min
             </p>
           </div>
@@ -229,8 +233,8 @@ export default function PracticeExamPage() {
               style={{ backgroundColor: 'var(--bg-card)' }}
             >
               <div className="w-2 h-2 rounded-full mb-2" style={{ backgroundColor: typeColors[s.type ?? ''] ?? 'var(--brand)' }} />
-              <p className="text-[var(--text-1)] font-semibold text-lg">{s.count}</p>
-              <p className="text-[var(--text-2)] text-xs mt-0.5">{s.title}</p>
+              <p className="text-body-lg font-semibold text-[var(--text-1)]">{s.count}</p>
+              <p className="mt-0.5 text-xs text-[var(--text-2)]">{s.title}</p>
             </div>
           ))}
         </div>
@@ -239,60 +243,55 @@ export default function PracticeExamPage() {
           <div className="mb-6 p-4 rounded-xl text-center" style={{ backgroundColor: 'var(--bg-hover)' }}>
             {submitted && finalScore ? (
               <>
-                <p className="text-[var(--text-1)] font-bold text-2xl">{finalScore.earned} / {finalScore.total}</p>
-                <p className="text-sm mt-1" style={{ color: 'var(--brand)' }}>
+                <p className="text-heading text-[var(--text-1)]">{finalScore.earned} / {finalScore.total}</p>
+                <p className="mt-1 text-body-sm text-[var(--brand-ink)]">
                   {Math.round((finalScore.earned / finalScore.total) * 100)}%
                 </p>
               </>
             ) : latestAttempt ? (
               <>
                 <p className="text-xs text-[var(--text-3)] mb-1">Last attempt · {new Date(latestAttempt.createdAt).toLocaleDateString()}</p>
-                <p className="text-[var(--text-1)] font-bold text-2xl">{latestAttempt.earnedPoints} / {latestAttempt.totalPoints}</p>
-                <p className="text-sm mt-1" style={{ color: 'var(--brand)' }}>{Math.round(latestAttempt.score)}%</p>
+                <p className="text-heading text-[var(--text-1)]">{latestAttempt.earnedPoints} / {latestAttempt.totalPoints}</p>
+                <p className="mt-1 text-body-sm text-[var(--brand-ink)]">{Math.round(latestAttempt.score)}%</p>
               </>
             ) : null}
           </div>
         )}
 
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            className="flex-1"
             onClick={() => { setAnswers({}); setSubmitted(false); setTimeExpired(false); setGradingResults({}); setFinalScore(null); setMode('take'); }}
-            className="flex-1 py-3 rounded-xl font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
             {submitted || latestAttempt ? 'Retake Exam' : 'Take Exam'}
-          </button>
+          </Button>
           {submitted && (
-            <button
-              onClick={() => setMode('results')}
-              className="flex-1 py-3 rounded-xl font-medium transition-colors"
-              style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-            >
+            <Button variant="secondary" size="lg" className="flex-1" onClick={() => setMode('results')}>
               View Results
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   // ── Take Mode ─────────────────────────────────────────────────────────────────
   if (mode === 'take') {
     return (
-      <div className="max-w-3xl mx-auto py-2">
-        <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => setMode('select')} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="flex-1 text-base font-bold text-[var(--text-1)] truncate">{exam.title}</h1>
+      <PageShell center>
+        <div className="mb-6 flex items-center gap-4">
+          <Button variant="ghost" size="icon-sm" onClick={() => setMode('select')} aria-label="Back">
+            <ArrowLeft size={18} />
+          </Button>
+          <h1 className="flex-1 truncate text-heading-sm text-[var(--text-1)]">{exam.title}</h1>
           <CircularTimer totalSeconds={durationSeconds} onExpire={() => setTimeExpired(true)} />
         </div>
 
         {timeExpired && (
-          <div className="mb-6 px-4 py-3 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
-            <span className="text-red-400 text-sm font-medium">Time is up — but you can keep going and submit when ready.</span>
+          <div className="mb-6 rounded-xl bg-[var(--danger-subtle)] px-4 py-3">
+            <span className="text-body-sm font-medium text-[var(--danger-ink)]">Time is up — but you can keep going and submit when ready.</span>
           </div>
         )}
 
@@ -304,8 +303,8 @@ export default function PracticeExamPage() {
           {(examContent.sections ?? []).map((section: ExamSection) => (
             <div key={section.title}>
               <div className="mb-4">
-                <h2 className="text-[var(--text-1)] font-semibold text-lg">{section.title}</h2>
-                <p className="text-[var(--text-2)] text-sm">{section.instructions}</p>
+                <h2 className="text-body-lg font-semibold text-[var(--text-1)]">{section.title}</h2>
+                <p className="text-body-sm text-[var(--text-2)]">{section.instructions}</p>
               </div>
               <div className="space-y-4">
                 {section.questions.map((q: ExamQuestion) => (
@@ -332,7 +331,9 @@ export default function PracticeExamPage() {
         </div>
 
         <div className="mt-8 flex gap-3">
-          <button
+          <Button
+            variant="secondary"
+            size="lg"
             onClick={() => {
               if (progressDebounceRef.current) clearTimeout(progressDebounceRef.current);
               if (Object.keys(answers).length > 0) {
@@ -340,43 +341,36 @@ export default function PracticeExamPage() {
               }
               setMode('select');
             }}
-            className="px-6 py-3 rounded-xl transition-colors"
-            style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
           >
-            Save & Exit
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={grading}
-            className="flex-1 py-3 rounded-xl font-medium text-white disabled:opacity-50 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-          >
-            {grading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+            Save &amp; Exit
+          </Button>
+          <Button variant="primary" size="lg" className="flex-1" onClick={handleSubmit} disabled={grading}>
+            {grading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
             {grading ? 'Grading…' : 'Submit Exam'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   // ── Results Mode ───────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto px-6 py-6">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => setMode('select')} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors">← Back</button>
-        <h1 className="flex-1 text-lg font-bold text-[var(--text-1)] truncate">{exam.title} — Results</h1>
+    <PageShell center>
+      <div className="mb-6 flex items-center gap-4">
+        <Button variant="ghost" size="icon-sm" onClick={() => setMode('select')} aria-label="Back">
+          <ArrowLeft size={18} />
+        </Button>
+        <h1 className="flex-1 truncate text-heading-sm text-[var(--text-1)]">{exam.title} — Results</h1>
       </div>
 
       {finalScore && (
         <div className="mb-8 p-6 rounded-xl text-center" style={{ backgroundColor: 'var(--bg-hover)' }}>
-          <p className="text-[var(--text-1)] font-bold text-4xl">{finalScore.earned} / {finalScore.total}</p>
-          <p className="text-lg mt-1" style={{ color: 'var(--brand)' }}>{Math.round((finalScore.earned / finalScore.total) * 100)}%</p>
-          <p className="text-[var(--text-2)] text-sm mt-2">
-            {finalScore.earned / finalScore.total >= 0.8 ? 'Excellent work! 🎉' :
-             finalScore.earned / finalScore.total >= 0.6 ? 'Good effort, keep studying! 📚' :
-             'More review needed. 💪'}
+          <p className="text-display text-[var(--text-1)]">{finalScore.earned} / {finalScore.total}</p>
+          <p className="mt-1 text-body-lg text-[var(--brand-ink)]">{Math.round((finalScore.earned / finalScore.total) * 100)}%</p>
+          <p className="mt-2 text-body-sm text-[var(--text-2)]">
+            {finalScore.earned / finalScore.total >= 0.8 ? 'Excellent work' :
+             finalScore.earned / finalScore.total >= 0.6 ? 'Good effort — keep studying' :
+             'More review needed'}
           </p>
         </div>
       )}
@@ -384,7 +378,7 @@ export default function PracticeExamPage() {
       <div className="space-y-8">
         {(examContent.sections ?? []).map((section: ExamSection) => (
           <div key={section.title}>
-            <h2 className="text-[var(--text-1)] font-semibold text-lg mb-4">{section.title}</h2>
+            <h2 className="mb-4 text-body-lg font-semibold text-[var(--text-1)]">{section.title}</h2>
             <div className="space-y-4">
               {section.questions.map((q: ExamQuestion) => {
                 const result = gradingResults[q.number];
@@ -396,7 +390,7 @@ export default function PracticeExamPage() {
                   <div
                     key={q.number}
                     className="p-5 rounded-xl"
-                    style={{ backgroundColor: isCorrect ? 'rgba(22,163,74,0.1)' : isWrong ? 'rgba(220,38,38,0.1)' : 'var(--bg-card)' }}
+                    style={{ backgroundColor: isCorrect ? 'var(--success-subtle)' : isWrong ? 'var(--danger-subtle)' : 'var(--bg-card)' }}
                   >
                     <div className="flex items-start justify-between mb-3">
                       <p className="text-[var(--text-1)] font-medium text-sm flex-1 pr-4">
@@ -404,9 +398,9 @@ export default function PracticeExamPage() {
                       </p>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {result && (
-                          <span className={`text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
-                            {isCorrect ? '✓' : '✗'}
-                          </span>
+                          isCorrect
+                            ? <Check size={15} className="text-[var(--success-ink)]" />
+                            : <X size={15} className="text-[var(--danger-ink)]" />
                         )}
                         <span className="text-xs text-[var(--text-3)]">{q.points} pts</span>
                       </div>
@@ -436,7 +430,7 @@ export default function PracticeExamPage() {
                                 color: isAnswer ? '#fff' : isUserWrong ? '#fff' : 'var(--text-2)',
                               }}
                             >
-                              {opt} {isAnswer && '✓'}
+                              {opt} {isAnswer && <Check size={13} className="inline shrink-0" />}
                             </div>
                           );
                         })}
@@ -452,7 +446,7 @@ export default function PracticeExamPage() {
                           </div>
                         )}
                         <div className="p-3 rounded-lg text-sm" style={{ backgroundColor: 'rgba(22,163,74,0.15)' }}>
-                          <p className="text-green-400 font-medium mb-1">Expected:</p>
+                          <p className="text-[var(--success-ink)] font-medium mb-1">Expected:</p>
                           <p className="text-[var(--text-2)]">{q.correctAnswer}</p>
                         </div>
                         {result?.feedback && (
@@ -477,7 +471,7 @@ export default function PracticeExamPage() {
           </div>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }
 

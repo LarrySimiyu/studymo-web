@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
 import { CalendarDays, ChevronDown, ChevronUp, Check, Maximize2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const PALETTE: [string, string][] = [
@@ -69,7 +70,7 @@ function TopicProgressBadge({ done, total }: { done: number; total: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-semibold tabular-nums text-[var(--text-1)]">
+        <span className="text-2xs font-semibold tabular-nums text-[var(--text-1)]">
           {done}/{total}
         </span>
       </div>
@@ -126,14 +127,12 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
     <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-input)' }}>
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors"
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+        className="w-full flex items-start gap-3 px-3 py-2.5 text-left transition-colors bg-transparent hover:bg-[var(--bg-hover)]"
       >
         <TopicProgressBadge done={doneCount} total={totalCount} />
         <div className="flex-1 min-w-0">
-          <p className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-1)]`}>{day.title}</p>
-          <p className={`${compact ? 'text-[9px]' : 'text-[10px]'} mt-0.5 text-[var(--text-2)]`}>
+          <p className={`${compact ? 'text-2xs' : 'text-xs'} font-medium text-[var(--text-1)]`}>{day.title}</p>
+          <p className={`${compact ? 'text-[9px]' : 'text-2xs'} mt-0.5 text-[var(--text-2)]`}>
             {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </p>
         </div>
@@ -153,7 +152,7 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
             style={{ overflow: 'hidden', borderTop: '1px solid var(--border)' }}
             className="px-3 pb-3 pt-2 space-y-1.5"
           >
-            <p className="text-[10px] font-medium tracking-wide text-[var(--text-3)] mb-2">
+            <p className="text-2xs font-medium tracking-wide text-[var(--text-3)] mb-2">
               Topics
             </p>
             {topics.map((topic, i) => {
@@ -174,7 +173,7 @@ export function DayRow({ day, planId, onUpdate, compact }: { day: StudyPlanDay; 
                     {isDone && <Check size={9} color="#22C55E" />}
                   </div>
                   <span
-                    className={`${compact ? 'text-[10px]' : 'text-xs'} transition-all duration-300`}
+                    className={`${compact ? 'text-2xs' : 'text-xs'} transition-all duration-300`}
                     style={{
                       color: isDone ? 'var(--text-3)' : 'var(--text-1)',
                       textDecoration: isDone ? 'line-through' : 'none',
@@ -236,10 +235,8 @@ export default function PlanCard({
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
       <div
-        className={`flex flex-col ${compact ? 'gap-2 p-3' : 'gap-3 p-4'} cursor-pointer transition-colors`}
+        className={cn(`flex flex-col ${compact ? 'gap-2 p-3' : 'gap-3 p-4'} cursor-pointer transition-colors`, 'bg-transparent hover:bg-[var(--bg-hover)]')}
         onClick={handleExpand}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
         {/* Top row: icon, title/date, pill+chevron */}
         <div className="flex items-start gap-3">
@@ -249,12 +246,12 @@ export default function PlanCard({
 
           <div className="flex-1 min-w-0">
             <p className={`text-[var(--text-1)] font-bold truncate ${compact ? 'text-xs' : ''}`}>{plan.title}</p>
-            <span className={`${compact ? 'text-[10px]' : 'text-xs'} font-medium text-[var(--text-2)]`}>{formatDate(plan.testDate)}</span>
+            <span className={`${compact ? 'text-2xs' : 'text-xs'} font-medium text-[var(--text-2)]`}>{formatDate(plan.testDate)}</span>
           </div>
 
           <div className="shrink-0 flex items-center gap-1.5">
             {days >= 0 && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
+              <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${daysColor(days)}20`, color: daysColor(days) }}>
                 {days === 0 ? 'Today!' : `${days}d Left`}
               </span>
             )}

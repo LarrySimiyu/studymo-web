@@ -8,6 +8,8 @@ import {
   List, ListOrdered, Quote,
   Baseline, Highlighter, Star,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   editor: Editor;
@@ -67,11 +69,14 @@ export default function EditorToolbar({
     return () => document.removeEventListener('mousedown', onDown);
   }, [picker]);
 
+  // Touch targets stay 44px on mobile and tighten to 32px from sm up.
   const btnClass = 'shrink-0 flex items-center justify-center rounded-lg transition-colors h-11 w-11 sm:h-8 sm:w-8 disabled:opacity-30';
-  const activeStyle = (active: boolean) => ({
-    color: active ? 'var(--brand)' : 'var(--text-2)',
-    backgroundColor: active ? 'rgba(255,101,0,0.12)' : 'transparent',
-  });
+  const toggleClass = (active: boolean) => cn(
+    btnClass,
+    active
+      ? 'bg-[var(--brand-subtle)] text-[var(--brand-ink)]'
+      : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+  );
 
   const sep = <div className="w-px h-5 mx-1 shrink-0" style={{ backgroundColor: 'var(--border)' }} />;
 
@@ -80,11 +85,9 @@ export default function EditorToolbar({
       key={title}
       onClick={action}
       title={title}
+      aria-pressed={active}
       disabled={disabled}
-      className={btnClass}
-      style={activeStyle(active)}
-      onMouseEnter={e => { if (!active && !disabled) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = active ? 'rgba(255,101,0,0.12)' : 'transparent'; }}
+      className={toggleClass(active)}
     >
       {icon}
     </button>
@@ -103,10 +106,8 @@ export default function EditorToolbar({
     <button
       title={title}
       onClick={e => togglePicker(kind, e)}
-      className={`${btnClass} flex-col gap-0.5`}
-      style={activeStyle(picker === kind)}
-      onMouseEnter={e => { if (picker !== kind) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = picker === kind ? 'rgba(255,101,0,0.12)' : 'transparent'; }}
+      aria-pressed={picker === kind}
+      className={cn(toggleClass(picker === kind), 'flex-col gap-0.5')}
     >
       {icon}
       <div className="h-0.5 w-3.5 rounded-full" style={{ backgroundColor: swatch }} />
@@ -118,13 +119,12 @@ export default function EditorToolbar({
   return (
     <div
       ref={wrapRef}
-      className="sticky top-0 z-20"
-      style={{ backgroundColor: 'var(--bg-page)' }}
+      className="relative"
       onMouseDown={e => e.preventDefault()}
     >
       <div
-        className="flex items-center gap-0.5 px-1.5 py-1 rounded-xl overflow-x-auto shadow-field [&::-webkit-scrollbar]:hidden"
-        style={{ backgroundColor: 'var(--bg-card)', scrollbarWidth: 'none' }}
+        className="flex items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none' }}
       >
         {mkBtn(<Undo2 size={15} />, () => editor.chain().focus().undo().run(), false, 'Undo', !s.canUndo)}
         {mkBtn(<Redo2 size={15} />, () => editor.chain().focus().redo().run(), false, 'Redo', !s.canRedo)}
@@ -154,23 +154,24 @@ export default function EditorToolbar({
         {mkBtn(<ListOrdered size={15} />, () => editor.chain().focus().toggleOrderedList().run(), s.orderedList, 'Numbered list')}
         {mkBtn(<Quote size={15} />, () => editor.chain().focus().toggleBlockquote().run(), s.blockquote, 'Blockquote')}
 
-        <span className="ml-auto hidden md:block text-[11px] px-2 shrink-0 whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
-          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'unsaved' ? 'Unsaved changes' : ''}
+        <span className="ml-auto hidden shrink-0 whitespace-nowrap px-2 text-2xs text-[var(--text-3)] md:block">
+          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'unsaved' ? 'Unsaved changes' : ''}
         </span>
 
-        <button
+        <Button
+          variant="primary"
+          size="xs"
           title={s.hasSelection ? 'Simplify selected text' : 'Select text to simplify'}
           onClick={onSimplify}
           disabled={simplifyLoading || !s.hasSelection}
-          className="ml-1 md:ml-0 flex items-center gap-1.5 px-2.5 h-11 sm:h-8 rounded-lg transition-opacity shrink-0 disabled:opacity-40 hover:opacity-90"
-          style={{ color: '#fff', backgroundColor: 'var(--brand)' }}
+          className="ml-1 h-11 shrink-0 disabled:opacity-40 sm:h-7 md:ml-0"
         >
           {simplifyLoading
             ? <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
             : <Star size={14} fill="white" />
           }
-          <span className="text-xs font-medium">Simplify</span>
-        </button>
+          Simplify
+        </Button>
       </div>
 
       {picker && (
@@ -201,8 +202,7 @@ export default function EditorToolbar({
               else editor.chain().focus().unsetHighlight().run();
               setPicker(null);
             }}
-            className="text-xs px-1.5 py-0.5 rounded shrink-0"
-            style={{ color: 'var(--text-3)', border: '1px solid var(--border)' }}
+            className="shrink-0 rounded border border-[var(--border-md)] px-1.5 py-0.5 text-xs text-[var(--text-3)] transition-colors hover:text-[var(--text-1)]"
           >✕</button>
         </div>
       )}
@@ -213,10 +213,7 @@ export default function EditorToolbar({
             <span className="text-xs font-medium" style={{ color: 'var(--brand)' }}>Simplify</span>
             <button
               onClick={onClearSimplify}
-              className="text-xs transition-colors"
-              style={{ color: 'var(--text-3)' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
+              className="text-xs transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]"
             >✕</button>
           </div>
           {simplifyOptions.map((option, i) => (
@@ -228,7 +225,7 @@ export default function EditorToolbar({
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,101,0,0.06)'; }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              <span className="block text-[10px] font-semibold mb-0.5" style={{ color: 'var(--brand)' }}>{option.label}</span>
+              <span className="block text-2xs font-semibold mb-0.5" style={{ color: 'var(--brand)' }}>{option.label}</span>
               <span className="block text-xs" style={{ color: 'var(--text-1)', whiteSpace: 'pre-line' }}>{option.text}</span>
             </button>
           ))}

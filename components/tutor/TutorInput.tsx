@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowUp, FileText, Lightbulb, Plus, X } from 'lucide-react';
+import { ArrowUp, FileText, Lightbulb, MessageSquare, Plus, X } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/Button';
 import { TogglePill } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -18,14 +18,14 @@ interface Props {
   /** Omit to hide the "Just tell me" toggle. */
   revealAnswer?: boolean;
   onToggleReveal?: () => void;
+  /** Omit to hide the "Open chat" pill. */
+  onOpenChat?: () => void;
   /** Omit to hide the "Add context" pill. */
   onAddContext?: () => void;
   contextPillClassName?: string;
   contextNotes?: ContextNote[];
   /** Omit to render context pills without a remove button. */
   onRemoveContext?: (id: string) => void;
-  /** Renders a dismiss button beside send. */
-  onDismiss?: () => void;
   inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
@@ -36,9 +36,9 @@ const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayout
 
 export default function TutorInput({
   value, onChange, onSend, disabled, placeholder, autoFocus,
-  revealAnswer, onToggleReveal,
+  revealAnswer, onToggleReveal, onOpenChat,
   onAddContext, contextPillClassName, contextNotes = [], onRemoveContext,
-  onDismiss, inputRef: externalRef,
+  inputRef: externalRef,
 }: Props) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const ref = externalRef ?? internalRef;
@@ -53,12 +53,19 @@ export default function TutorInput({
     setMultiline(next > MULTILINE_AT);
   }, [value, ref]);
 
-  const showPillRow = !!onToggleReveal || !!onAddContext || contextNotes.length > 0;
+  const showPillRow = !!onToggleReveal || !!onAddContext || !!onOpenChat || contextNotes.length > 0;
 
   return (
     <div>
       {showPillRow && (
         <div className="flex flex-wrap items-center gap-1.5 mb-2">
+          {onOpenChat && (
+            <Button variant="pill" size="pill" onClick={onOpenChat} title="Open the tutor conversation">
+              <MessageSquare size={12} />
+              Open chat
+            </Button>
+          )}
+
           {onToggleReveal && (
             <TogglePill
               pressed={revealAnswer}
@@ -82,7 +89,7 @@ export default function TutorInput({
               key={n.id}
               className={cn(
                 buttonVariants({ variant: 'pill', size: 'pill' }),
-                'text-[var(--text-1)] hover:bg-[var(--bg-card)]',
+                'text-[var(--text-1)] hover:bg-[var(--bg-hover)]',
                 onRemoveContext && 'pr-2'
               )}
             >
@@ -105,7 +112,7 @@ export default function TutorInput({
 
       <div
         className={cn(
-          'flex gap-2 p-2 pl-4 rounded-2xl border bg-[var(--bg-card)] border-[var(--border)]',
+          'flex gap-2 p-2 pl-4 rounded-2xl border bg-[var(--bg-input)] border-[var(--border-md)]',
           'shadow-field',
           'transition-colors duration-150',
           multiline ? 'items-end' : 'items-center'
@@ -121,31 +128,21 @@ export default function TutorInput({
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
           }}
           disabled={disabled}
-          placeholder={placeholder ?? 'Ask your tutor…'}
+          placeholder={placeholder ?? 'Write a message…'}
           className="flex-1 min-w-0 bg-transparent outline-none resize-none py-1.5 text-sm leading-relaxed text-[var(--text-1)] placeholder-[var(--text-3)] disabled:opacity-50"
           style={{ maxHeight: MAX_HEIGHT }}
         />
 
-        {onDismiss && (
-          <button
-            onClick={onDismiss}
-            aria-label="Hide"
-            className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
-            style={{ color: 'var(--text-3)' }}
-          >
-            <X size={16} strokeWidth={2.5} />
-          </button>
-        )}
-
-        <button
+        <Button
+          variant="primary"
+          size="icon"
           onClick={onSend}
           disabled={!value.trim() || disabled}
           aria-label="Send"
-          className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
-          style={{ backgroundColor: 'var(--brand)' }}
+          className="shrink-0 disabled:opacity-30"
         >
-          <ArrowUp size={16} color="white" strokeWidth={2.5} />
-        </button>
+          <ArrowUp size={16} strokeWidth={2.5} />
+        </Button>
       </div>
     </div>
   );

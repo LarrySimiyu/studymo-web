@@ -6,6 +6,8 @@ import { ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import FlipCard from '@/components/flashcards/FlipCard';
 import { documentsApi, flashcardsApi, Document, Flashcard } from '@/lib/api/documents';
+import PageShell from '@/components/dashboard/PageShell';
+import { Button } from '@/components/ui/Button';
 
 export default function FlashcardDeckPage({ params }: { params: { documentId: string } }) {
   const router = useRouter();
@@ -30,15 +32,11 @@ export default function FlashcardDeckPage({ params }: { params: { documentId: st
   const exit = () => router.push('/dashboard/flashcards');
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    <PageShell width="sm" center>
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
-        <button
-          onClick={exit}
-          aria-label="Back to flashcards"
-          className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors shrink-0"
-        >
-          <ArrowLeft size={20} />
-        </button>
+        <Button variant="ghost" size="icon-sm" onClick={exit} aria-label="Back to flashcards" className="shrink-0">
+          <ArrowLeft size={18} />
+        </Button>
         {doc && (
           <h1 className="text-body-sm sm:text-body font-semibold text-[var(--text-1)] truncate">
             {doc.title}
@@ -64,6 +62,6 @@ export default function FlashcardDeckPage({ params }: { params: { documentId: st
           />
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

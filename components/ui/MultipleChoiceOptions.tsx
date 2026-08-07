@@ -58,7 +58,7 @@ export default function MultipleChoiceOptions({ options, selected, correctAnswer
             >
               {opt}
               {showFeedback && opt === correctAnswer && (
-                <span className="ml-2 text-green-400">✓</span>
+                <span className="ml-2 text-[var(--success-ink)]">✓</span>
               )}
             </div>
           );
@@ -75,7 +75,7 @@ export default function MultipleChoiceOptions({ options, selected, correctAnswer
           >
             {opt}
             {showFeedback && opt === correctAnswer && (
-              <span className="ml-2 text-green-400">✓</span>
+              <span className="ml-2 text-[var(--success-ink)]">✓</span>
             )}
           </button>
         );

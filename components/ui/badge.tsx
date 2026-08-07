@@ -17,7 +17,7 @@ const badgeVariants = cva(
         tag: 'border-0 font-medium',
         // Toggleable pill — on/off driven by data-state, applied by TogglePill
         pill: [
-          'border-0 shadow-field bg-[var(--bg-card)] text-[var(--text-2)]',
+          'border-0 shadow-field bg-[var(--bg-input)] text-[var(--text-2)]',
           'hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]',
           'data-[state=on]:bg-[var(--brand)] data-[state=on]:text-white',
           'data-[state=on]:hover:bg-[var(--brand-hover)] data-[state=on]:hover:text-white',
@@ -25,7 +25,7 @@ const badgeVariants = cva(
       },
       size: {
         default: 'px-2.5 py-0.5 text-xs',
-        sm: 'gap-1 px-1.5 py-0.5 text-[10px] leading-4',
+        sm: 'gap-1 px-1.5 py-0.5 text-2xs leading-4',
         pill: 'h-7 gap-1 px-2.5 text-xs font-medium',
       },
     },

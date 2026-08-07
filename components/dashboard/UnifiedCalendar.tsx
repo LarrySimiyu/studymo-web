@@ -57,7 +57,7 @@ function Section({
         </span>
         {count > 0 && (
           <span
-            className="ml-1 text-[10px] font-medium px-1.5 rounded leading-4"
+            className="ml-1 text-2xs font-medium px-1.5 rounded leading-4"
             style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-3)' }}
           >
             {count}
@@ -102,25 +102,25 @@ function StudyDayRow({
         <p className={`text-xs font-medium ${day.completed ? 'line-through' : ''}`} style={{ color: day.completed ? 'var(--text-3)' : 'var(--text-1)' }}>
           {day.title}
         </p>
-        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-3)' }}>
+        <p className="text-2xs mt-0.5" style={{ color: 'var(--text-3)' }}>
           {plan.title} · Day {day.dayNumber}
         </p>
         {topics.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
             {topics.slice(0, 3).map((t, i) => (
-              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'var(--brand-subtle)', color: 'var(--brand)' }}>
+              <span key={i} className="text-2xs px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'var(--brand-subtle)', color: 'var(--brand)' }}>
                 {t}
               </span>
             ))}
             {topics.length > 3 && (
-              <span className="text-[10px]" style={{ color: 'var(--text-3)' }}>+{topics.length - 3} more</span>
+              <span className="text-2xs" style={{ color: 'var(--text-3)' }}>+{topics.length - 3} more</span>
             )}
           </div>
         )}
       </div>
       <Link
         href={`/dashboard/study-plan/${plan.id}`}
-        className="text-[10px] shrink-0 mt-0.5 hover:underline"
+        className="text-2xs shrink-0 mt-0.5 hover:underline"
         style={{ color: 'var(--brand)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -360,7 +360,7 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
         {/* Day headers */}
         <div className="grid grid-cols-7 mb-1">
           {DAY_HEADERS.map(d => (
-            <div key={d} className="text-center text-[10px] py-0.5" style={{ color: 'var(--text-3)' }}>{d}</div>
+            <div key={d} className="text-center text-2xs py-0.5" style={{ color: 'var(--text-3)' }}>{d}</div>
           ))}
         </div>
 
@@ -425,7 +425,7 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px]" style={{ color: 'var(--text-3)' }}>{label}</span>
+              <span className="text-2xs" style={{ color: 'var(--text-3)' }}>{label}</span>
             </div>
           ))}
         </div>
@@ -436,7 +436,7 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
         {/* Date header */}
         <div className="flex items-center gap-2 mb-3">
           <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>{selectedDisplay}</p>
-          {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--brand-subtle)', color: 'var(--brand)' }}>Today</span>}
+          {isToday && <span className="text-2xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--brand-subtle)', color: 'var(--brand)' }}>Today</span>}
           {totalDayItems === 0 && !loading && (
             <span className="text-xs ml-auto" style={{ color: 'var(--text-3)' }}>Nothing scheduled</span>
           )}
@@ -477,8 +477,8 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
                     <div key={ev.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border)' }}>
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ev.color }} />
                       <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-1)' }}>{ev.title}</span>
-                      <span className="text-[10px] shrink-0" style={{ color: 'var(--text-3)' }}>{ev.type}</span>
-                      <button onClick={() => deleteEvent(ev.id)} className="text-[var(--text-3)] hover:text-red-400 shrink-0 text-sm leading-none">×</button>
+                      <span className="text-2xs shrink-0" style={{ color: 'var(--text-3)' }}>{ev.type}</span>
+                      <button onClick={() => deleteEvent(ev.id)} className="text-[var(--text-3)] hover:text-[var(--danger-ink)] shrink-0 text-sm leading-none">×</button>
                     </div>
                   ))}
                 </div>
@@ -488,7 +488,7 @@ export default function UnifiedCalendar({ onAddTask }: { onAddTask?: (defaultDue
             {/* Add event form */}
             {addFormType === 'event' && (
               <div className="pt-2 mt-1" style={{ borderTop: totalDayItems > 0 ? '1px solid var(--border)' : 'none' }}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>New Event</p>
+                <p className="text-2xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>New Event</p>
                 <div className="flex gap-2 flex-wrap">
                   <input
                     autoFocus

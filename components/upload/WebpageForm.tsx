@@ -44,7 +44,7 @@ export default function WebpageForm({ loading, onStart, onSuccess, onError }: Up
           Works with articles, Wikipedia, documentation, and most public pages. Paywalled or login-required pages won&apos;t import.
         </p>
       </div>
-      <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url.trim() || loading}>
+      <Button variant="primary" size="lg" className="w-full" onClick={handleImport} disabled={!url.trim() || loading}>
         {loading ? 'Importing…' : 'Import Page'}
       </Button>
     </div>

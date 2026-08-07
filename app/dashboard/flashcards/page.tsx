@@ -6,6 +6,8 @@ import { Layers } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { documentsApi, flashcardsApi, Document } from '@/lib/api/documents';
 import { PageHeader } from '@/components/dashboard/PageHeader';
+import PageShell from '@/components/dashboard/PageShell';
+import EmptyState from '@/components/dashboard/EmptyState';
 import { getPalette } from '@/components/dashboard/PlanCard';
 
 interface DeckEntry {
@@ -31,28 +33,19 @@ export default function FlashcardsPage() {
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <PageHeader title="Flashcards" action={{ label: 'New Flashcard', href: '/dashboard/library' }} />
+    <PageShell width="xl" header={<PageHeader title="Flashcards" action={{ label: 'New Flashcard', href: '/dashboard/library' }} />}>
 
       {loading ? (
         <LoadingSpinner size="lg" />
       ) : decks.length === 0 ? (
-        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
-            <Layers size={40} style={{ color: '#3B82F6' }} />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-[var(--text-1)]">No Flashcards</h3>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Memorize key concepts faster with spaced repetition.</p>
-            <Link
-              href="/dashboard/library"
-              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-            >
-              Go to Notes
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Layers}
+          accent="#3B82F6"
+          accentBg="rgba(59,130,246,0.12)"
+          title="No Flashcards"
+          description="Memorize key concepts faster with spaced repetition."
+          action={{ label: 'Go to Notes', href: '/dashboard/library' }}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {decks.map(({ document: doc, count }) => {
@@ -61,10 +54,7 @@ export default function FlashcardsPage() {
               <Link
                 key={doc.id}
                 href={`/dashboard/flashcards/${doc.id}`}
-                className="p-5 rounded-xl transition-colors text-left block"
-                style={{ backgroundColor: 'var(--bg-card)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+                className="block rounded-xl bg-[var(--bg-card)] p-5 text-left transition-colors hover:bg-[var(--bg-hover)]"
               >
                 <div className="flex items-center gap-4">
                   <div
@@ -75,8 +65,8 @@ export default function FlashcardsPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5">
-                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">{count}</p>
-                      <p className="text-3xl font-bold text-[var(--text-1)] leading-none">Cards</p>
+                      <p className="text-title text-[var(--text-1)] leading-none">{count}</p>
+                      <p className="text-title text-[var(--text-1)] leading-none">Cards</p>
                     </div>
                     <p className="text-xs text-[var(--text-3)] truncate mt-1">{doc.title}</p>
                   </div>
@@ -86,6 +76,6 @@ export default function FlashcardsPage() {
           })}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

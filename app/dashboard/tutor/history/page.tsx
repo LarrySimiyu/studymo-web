@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Input } from '@/components/ui/Input';
 import ChatHistoryRow from '@/components/dashboard/ChatHistoryRow';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
+import PageShell from '@/components/dashboard/PageShell';
 
 export default function ChatHistoryPage() {
   const router = useRouter();
@@ -17,17 +18,21 @@ export default function ChatHistoryPage() {
     : sessions;
 
   async function handleNewChat() {
-    const id = await createSession();
-    if (id) router.push(`/dashboard/tutor/${id}`);
+    const session = await createSession();
+    if (session) router.push(`/dashboard/tutor/${session.id}`);
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-3xl mx-auto">
-      <PageHeader
-        title="All chats"
-        subtitle={`${sessions.length} chat${sessions.length !== 1 ? 's' : ''} with your AI tutor`}
-        action={{ label: creating ? 'Starting…' : 'New Chat', onClick: handleNewChat }}
-      />
+    <PageShell
+      width="lg"
+      header={
+        <PageHeader
+          title="All chats"
+          subtitle={`${sessions.length} chat${sessions.length !== 1 ? 's' : ''} with your AI tutor`}
+          action={{ label: creating ? 'Starting…' : 'New Chat', onClick: handleNewChat }}
+        />
+      }
+    >
 
       <div className="mb-4">
         <Input
@@ -59,6 +64,6 @@ export default function ChatHistoryPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

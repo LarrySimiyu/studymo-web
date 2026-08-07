@@ -6,6 +6,7 @@ import { Document, Quiz } from '@/lib/api/documents';
 import { quizzesApi } from '@/lib/api/documents';
 import { analytics } from '@/lib/analytics';
 import ProgressBar from '@/components/ui/ProgressBar';
+import { Button } from '@/components/ui/Button';
 import QuestionCard from '@/components/ui/QuestionCard';
 
 interface QuizQuestion {
@@ -26,20 +27,16 @@ interface Props {
 function StartScreen({ document: doc, count, onStart }: { document: Document; count: number; onStart: () => void }) {
   return (
     <div className="flex flex-col items-center gap-6 py-16 text-center">
-      <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
-        <Heart size={44} style={{ color: '#FF6500' }} fill="#FF6500" />
+      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--brand-subtle)]">
+        <Heart size={44} className="text-[var(--brand)]" fill="currentColor" />
       </div>
       <div>
-        <p className="text-title md:text-3xl font-bold text-[var(--text-1)]">{count} Questions</p>
-        <p className="text-body-sm text-[var(--text-3)] mt-1">{doc.title}</p>
+        <p className="text-title md:text-display text-[var(--text-1)]">{count} Questions</p>
+        <p className="mt-1 text-body-sm text-[var(--text-2)]">{doc.title}</p>
       </div>
-      <button
-        onClick={onStart}
-        className="px-8 py-3 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-        style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-      >
+      <Button variant="primary" size="lg" onClick={onStart} className="px-8">
         Start Quiz
-      </button>
+      </Button>
     </div>
   );
 }
@@ -94,29 +91,17 @@ export default function QuizRunner({ document: doc, quiz, onBack }: Props) {
   if (done) {
     return (
       <div className="flex flex-col items-center gap-4 py-12 text-center">
-        <p className="text-display md:text-5xl font-bold text-[var(--text-1)]">{score} / {questions.length}</p>
-        <p className="text-heading font-semibold" style={{ color: 'var(--brand)' }}>
+        <p className="text-display text-[var(--text-1)]">{score} / {questions.length}</p>
+        <p className="text-heading text-[var(--brand-ink)]">
           {Math.round((score / questions.length) * 100)}%
         </p>
-        <p className="text-[var(--text-2)] text-body-sm">
-          {score / questions.length >= 0.8 ? 'Great job! 🎉' : 'Keep studying! 📚'}
+        <p className="text-body-sm text-[var(--text-2)]">
+          {score / questions.length >= 0.8 ? 'Great job' : 'Keep studying'}
         </p>
-        <div className="flex gap-3 mt-2">
-          <button
-            onClick={reset}
-            className="px-5 py-2.5 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            Retake Quiz
-          </button>
+        <div className="mt-2 flex gap-3">
+          <Button variant="primary" size="lg" onClick={reset}>Retake Quiz</Button>
           {onBack && (
-            <button
-              onClick={onBack}
-              className="px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-black/5 transition-colors"
-              style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}
-            >
-              All Quizzes
-            </button>
+            <Button variant="outline" size="lg" onClick={onBack}>All Quizzes</Button>
           )}
         </div>
       </div>
@@ -140,24 +125,14 @@ export default function QuizRunner({ document: doc, quiz, onBack }: Props) {
         onShortAnswerChange={setShortAnswer}
         onAnswer={handleAnswer}
       />
-      <div className="flex gap-2 mt-4">
+      <div className="mt-4 flex gap-2">
         {selected === null && (
-          <button
-            onClick={next}
-            className="px-4 py-2.5 rounded-lg text-sm text-[var(--text-2)] border hover:bg-black/5 transition-colors"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            Skip
-          </button>
+          <Button variant="outline" size="lg" onClick={next}>Skip</Button>
         )}
         {selected !== null && (
-          <button
-            onClick={next}
-            className="flex-1 py-2.5 rounded-xl font-medium text-sm text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
+          <Button variant="primary" size="lg" onClick={next} className="flex-1">
             {qIndex + 1 >= questions.length ? 'See Results' : 'Next'}
-          </button>
+          </Button>
         )}
       </div>
     </div>

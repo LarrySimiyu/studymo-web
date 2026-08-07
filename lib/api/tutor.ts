@@ -60,6 +60,18 @@ export function deleteSessionOnUnload(sessionId: string, token: string): void {
   }).catch(() => {});
 }
 
+/** The chat stream bypasses lib/api.ts, so it can't ride the global paywall
+ *  interceptor. Callers catch this and show the notice inline in the chat
+ *  instead of throwing a modal over it. */
+export class FreeLimitError extends Error {
+  readonly limit: string;
+  constructor(limit: string) {
+    super('free_limit_reached');
+    this.name = 'FreeLimitError';
+    this.limit = limit;
+  }
+}
+
 export interface NoteOffer {
   noteId: string;
   noteTitle: string;
@@ -85,7 +97,14 @@ export async function streamTutorChat(
     body: JSON.stringify({ message }),
   });
 
-  if (!response.ok || !response.body) throw new Error('Stream failed');
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string; limit?: string };
+    if (response.status === 403 && body.error === 'free_limit_reached') {
+      throw new FreeLimitError(body.limit ?? 'aiMessages');
+    }
+    throw new Error(body.error ?? 'Stream failed');
+  }
+  if (!response.body) throw new Error('Stream failed');
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

@@ -8,13 +8,11 @@ import AudioWaveform from '@/components/ui/AudioWaveform';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { uploadDocumentFile } from '@/lib/upload/uploadDocument';
+import { formatClock } from '@/lib/audio/formatClock';
 import UploadProgress from './UploadProgress';
 import type { UploadFormProps } from './uploadTypes';
 
 const PROGRESS_COLOR = '#EC4899';
-
-const fmt = (s: number) =>
-  `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 export default function RecordForm({ loading, onStart, onSuccess, onError }: UploadFormProps) {
   const [title, setTitle] = useState('');
@@ -60,7 +58,9 @@ export default function RecordForm({ loading, onStart, onSuccess, onError }: Upl
             {label}
           </span>
           <span className="tabular-nums text-[var(--text-2)]">
-            {done ? `${fmt(player.currentTime)} / ${fmt(player.total)}` : fmt(rec.elapsed)}
+            {done
+              ? `${formatClock(player.currentTime)} / ${formatClock(player.total)}`
+              : formatClock(rec.elapsed)}
           </span>
         </div>
         <AudioWaveform
@@ -101,12 +101,9 @@ export default function RecordForm({ loading, onStart, onSuccess, onError }: Upl
           )}
         </button>
         {done && (
-          <button
-            onClick={rec.start}
-            className="text-xs text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
-          >
+          <Button variant="link" size="link" onClick={rec.start} className="text-xs">
             Re-record
-          </button>
+          </Button>
         )}
       </div>
 
@@ -121,7 +118,7 @@ export default function RecordForm({ loading, onStart, onSuccess, onError }: Upl
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Recording title" />
           </div>
           {loading && <UploadProgress progress={uploadProgress} color={PROGRESS_COLOR} />}
-          <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={loading}>
+          <Button variant="primary" size="lg" className="w-full" onClick={handleUpload} disabled={loading}>
             {loading ? 'Uploading…' : 'Upload Recording'}
           </Button>
         </>

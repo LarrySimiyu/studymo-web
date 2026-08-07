@@ -10,7 +10,11 @@ import {
   StudySessionsData,
   WeakTopicsSummaryData,
 } from '@/lib/api/analytics';
+import { FileText, Clock, Flame, HelpCircle, CheckCircle2, TriangleAlert, Mic } from 'lucide-react';
 import ActivityHeatmap from '@/components/dashboard/ActivityHeatmap';
+import PageShell from '@/components/dashboard/PageShell';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import SegmentedTabs from '@/components/ui/SegmentedTabs';
 import QuizScoreCard from '@/components/dashboard/QuizScoreCard';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 import { WeakTopic } from '@/lib/api/studyPlan';
@@ -25,9 +29,9 @@ function fmtMins(mins: number): string {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 80) return '#22C55E';
-  if (score >= 60) return '#F59E0B';
-  return '#EF4444';
+  if (score >= 80) return 'var(--success-ink)';
+  if (score >= 60) return 'var(--warning-ink)';
+  return 'var(--danger-ink)';
 }
 
 
@@ -48,7 +52,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-sm font-semibold text-[var(--text-1)] mb-4">{children}</h2>;
+  return <h2 className="mb-4 text-body-sm font-semibold text-[var(--text-1)]">{children}</h2>;
 }
 
 // ─── Progress bar ───────────────────────────────────────────────────────────
@@ -109,16 +113,12 @@ export default function AnalyticsPage() {
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto py-2 space-y-6">
-        <div>
-          <Skeleton className="h-7 w-32 mb-1" />
-          <Skeleton className="h-4 w-48 mt-2" />
-        </div>
+      <PageShell width="xl" className="space-y-6" header={<PageHeader title="Analytics" />}>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
         {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
-      </div>
+      </PageShell>
     );
   }
 
@@ -133,56 +133,53 @@ export default function AnalyticsPage() {
   const todayWeekLabel = todayWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   return (
-    <div className="max-w-5xl mx-auto py-2 space-y-6">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-1)]">Analytics</h1>
-        <p className="text-[var(--text-2)] text-sm mt-0.5">Last updated just now</p>
-      </div>
-
+    <PageShell
+      width="xl"
+      className="space-y-6"
+      header={<PageHeader title="Analytics" subtitle="Last updated just now" />}
+    >
       {/* ── Section 1: Overview stats ──────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
-          { icon: '📄', label: 'Notes Uploaded', value: String(overview?.totalDocuments ?? 0) },
+          { icon: FileText, label: 'Notes Uploaded', value: String(overview?.totalDocuments ?? 0) },
           {
-            icon: '⏱', label: 'Time Studied',
+            icon: Clock, label: 'Time Studied',
             value: fmtMins(overview?.totalMinsStudied ?? 0),
           },
           {
-            icon: '🔥', label: 'Current Streak',
+            icon: Flame, label: 'Current Streak',
             value: `${overview?.currentStreak ?? 0} days`,
           },
           {
-            icon: '❓', label: 'Avg Quiz Score',
+            icon: HelpCircle, label: 'Avg Quiz Score',
             value: `${overview?.avgQuizScore ?? 0}%`,
             valueColor: scoreColor(overview?.avgQuizScore ?? 0),
           },
           {
-            icon: '✓', label: 'Tasks Completed',
+            icon: CheckCircle2, label: 'Tasks Completed',
             value: `${overview?.totalTasksCompleted ?? 0} / ${overview?.totalTasksCreated ?? 0}`,
           },
           {
-            icon: '⚠', label: 'Weak Topics Remaining',
+            icon: TriangleAlert, label: 'Weak Topics Remaining',
             value: String((overview?.totalWeakTopics ?? 0) - (overview?.resolvedWeakTopics ?? 0)),
           },
           {
-            icon: '🎙️', label: 'Podcasts Generated',
+            icon: Mic, label: 'Podcasts Generated',
             value: String(overview?.totalPodcastsGenerated ?? 0),
           },
-        ].map(stat => (
+        ].map(({ icon: Icon, ...stat }) => (
           <Card key={stat.label}>
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <p
-                  className="text-2xl font-bold text-[var(--text-1)] mt-1"
+                  className="mt-1 text-heading text-[var(--text-1)]"
                   style={stat.valueColor ? { color: stat.valueColor } : {}}
                 >
                   {stat.value}
                 </p>
-                <p className="text-xs text-[var(--text-2)] mt-1">{stat.label}</p>
+                <p className="mt-1 text-xs text-[var(--text-2)]">{stat.label}</p>
               </div>
-              <span className="text-xl">{stat.icon}</span>
+              <Icon size={18} className="shrink-0 text-[var(--text-3)]" />
             </div>
           </Card>
         ))}
@@ -278,7 +275,7 @@ export default function AnalyticsPage() {
                       {fmtMins(week.totalMins)}
                     </p>
                     <p className="text-xs text-[var(--text-3)]">{week.sessionCount} sess.</p>
-                    <p className="text-xs text-[var(--text-3)] mt-0.5" style={{ fontSize: '10px' }}>
+                    <p className="mt-0.5 text-2xs text-[var(--text-3)]">
                       {week.weekLabel.split(' - ')[0]}
                     </p>
                   </div>
@@ -306,23 +303,20 @@ export default function AnalyticsPage() {
               <span>Resolution rate</span>
               <span>{weakSummary!.resolutionRate}%</span>
             </div>
-            <ProgressBar pct={weakSummary!.resolutionRate} color="#22C55E" />
+            <ProgressBar pct={weakSummary!.resolutionRate} color="var(--success-ink)" />
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 p-1 rounded-lg w-fit" style={{ backgroundColor: 'var(--bg-input)' }}>
-          {(['needs', 'resolved'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setWeakTab(t)}
-              className="px-3 py-1 rounded-md text-xs font-medium transition-colors"
-              style={weakTab === t ? { backgroundColor: 'var(--brand)', color: 'white' } : { color: 'var(--text-2)' }}
-            >
-              {t === 'needs' ? 'Needs Review' : 'Resolved'}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs
+          className="mb-4"
+          active={weakTab}
+          onChange={setWeakTab}
+          segments={[
+            { value: 'needs' as const, label: 'Needs Review' },
+            { value: 'resolved' as const, label: 'Resolved' },
+          ]}
+        />
 
         {weakTab === 'needs' && (() => {
           const groups = weakSummary?.byDocument.filter(d => d.topics.some(t => !t.resolved)) ?? [];
@@ -333,8 +327,8 @@ export default function AnalyticsPage() {
             <div className="space-y-5">
               {groups.map(doc => (
                 <div key={doc.documentId}>
-                  <p className="text-xs font-semibold text-[var(--text-2)] mb-2 flex items-center gap-1.5">
-                    <span>📄</span>{doc.documentTitle}
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-2)]">
+                    <FileText size={12} className="shrink-0 text-[var(--text-3)]" />{doc.documentTitle}
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => !t.resolved).map(topic => (
@@ -361,8 +355,8 @@ export default function AnalyticsPage() {
             <div className="space-y-5">
               {groups.map(doc => (
                 <div key={doc.documentId}>
-                  <p className="text-xs font-semibold text-[var(--text-2)] mb-2 flex items-center gap-1.5">
-                    <span>📄</span>{doc.documentTitle}
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--text-2)]">
+                    <FileText size={12} className="shrink-0 text-[var(--text-3)]" />{doc.documentTitle}
                   </p>
                   <div className="space-y-2">
                     {doc.topics.filter(t => t.resolved).map(topic => (
@@ -395,8 +389,8 @@ export default function AnalyticsPage() {
                   className="text-xs font-medium px-2 py-0.5 rounded shrink-0"
                   style={
                     s.mode === 'pomodoro'
-                      ? { backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }
-                      : { backgroundColor: '#3B82F620', color: '#60A5FA' }
+                      ? { backgroundColor: 'var(--danger-subtle)', color: 'var(--danger-ink)' }
+                      : { backgroundColor: 'rgba(59,130,246,0.12)', color: '#3B82F6' }
                   }
                 >
                   {s.mode === 'pomodoro' ? 'Pomodoro' : 'Time Block'}
@@ -429,12 +423,12 @@ export default function AnalyticsPage() {
           <SectionTitle>Task Completion</SectionTitle>
           <div className="flex items-end gap-2 mb-4">
             <span
-              className="text-4xl font-bold"
+              className="text-display"
               style={{ color: scoreColor(overview?.taskCompletionRate ?? 0) }}
             >
               {overview?.taskCompletionRate ?? 0}%
             </span>
-            <span className="text-[var(--text-2)] text-sm mb-1">completion rate</span>
+            <span className="mb-1 text-body-sm text-[var(--text-2)]">completion rate</span>
           </div>
           <ProgressBar
             pct={overview?.taskCompletionRate ?? 0}
@@ -496,6 +490,6 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-    </div>
+    </PageShell>
   );
 }
