@@ -4,34 +4,24 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { House, Plus, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Zap, Sun, Moon, PanelLeft } from 'lucide-react';
+import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Zap, Sun, Moon, PanelLeft } from 'lucide-react';
 import { useTheme } from '@/components/ui/ThemeProvider';
 import { useAuth } from '@/hooks/useAuth';
 import { useNewChat } from '@/hooks/useNewChat';
+import { useSidebarCounts, SidebarCounts } from '@/hooks/useSidebarCounts';
 import { cn } from '@/lib/utils';
-import { foldersApi, Folder, practiceExamsApi } from '@/lib/api/organization';
-import { documentsApi } from '@/lib/api/documents';
-import { podcastsApi } from '@/lib/api/podcasts';
+import { Folder } from '@/lib/api/organization';
 import { flattenFolders } from '@/components/library/libraryUtils';
 import { CountBadge, SectionHeader, NavLink, sectionMotion, SectionKey } from './SidebarNavPrimitives';
 import SidebarChatHistory from './SidebarChatHistory';
 import SidebarRail from './SidebarRail';
-
-interface Counts {
-  notes: number;
-  flashcardDecks: number;
-  quizDecks: number;
-  exams: number;
-  podcasts: number;
-}
 
 interface SidebarContentProps {
   pathname: string;
   selectedFolder: string;
   isLibraryActive: boolean;
   folders: Folder[];
-  counts: Partial<Counts>;
-  unfiledCount: number;
+  counts: Partial<SidebarCounts>;
   sectionOpen: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey) => void;
   toggleCollapsed?: () => void;
@@ -46,7 +36,6 @@ function SidebarContent({
   isLibraryActive,
   folders,
   counts,
-  unfiledCount,
   sectionOpen,
   toggleSection,
   toggleCollapsed,
@@ -63,7 +52,7 @@ function SidebarContent({
   }
 
   function isFolderActive(value: string) {
-    if (!isLibraryActive || pathname !== '/dashboard/library') return false;
+    if (!isLibraryActive) return false;
     return selectedFolder === value;
   }
 
@@ -93,15 +82,14 @@ function SidebarContent({
         <button
           onClick={startNewChat}
           disabled={creating}
-          className="group w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-bold text-sm text-white transition-all duration-200 hover:scale-[1.03] hover:brightness-125 active:scale-100 disabled:opacity-60 disabled:hover:scale-100"
-          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+          className="group w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-semibold text-[var(--brand)] disabled:opacity-60"
         >
           {creating
-            ? <span className="w-4 h-4 shrink-0 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <Plus size={16} className="shrink-0" strokeWidth={2.5} />}
+            ? <span className="w-4 h-4 shrink-0 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            : <CirclePlus size={14} className="shrink-0" strokeWidth={2} />}
           <span className="truncate flex-1 text-left">New Chat</span>
         </button>
-        <NavLink href="/dashboard/home" icon={<House size={16} />} label="Home" isActive={isActive('/dashboard/home', true)} />
+        <NavLink href="/dashboard/home" icon={<House size={14} />} label="Home" isActive={isActive('/dashboard/home', true)} />
 
         {/* ── NOTES ── */}
         <SectionHeader label="Notes" icon={FolderIcon} open={sectionOpen.notes} onToggle={() => toggleSection('notes')} />
@@ -122,19 +110,6 @@ function SidebarContent({
                   <span className="truncate flex-1">All Notes</span>
                   <CountBadge n={counts.notes} />
                 </Link>
-                <Link
-                  href={folderHref('none')}
-                  className={cn(
-                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
-                    isFolderActive('none')
-                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
-                      : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
-                  )}
-                >
-                  <span className="truncate flex-1">No Collection</span>
-                  <CountBadge n={unfiledCount} />
-                </Link>
-
                 {flat.map((f) => (
                   <Link
                     key={f.id}
@@ -269,9 +244,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [counts, setCounts] = useState<Partial<Counts>>({});
-  const [unfiledCount, setUnfiledCount] = useState(0);
+  const { folders, counts, refreshFolders } = useSidebarCounts();
   const [sectionOpen, setSectionOpen] = useState<Record<SectionKey, boolean>>({ notes: true, study: false, tools: false, chats: true });
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('sidebar-collapsed') === 'true';
@@ -309,39 +282,8 @@ export default function Sidebar() {
   }
 
   useEffect(() => {
-    async function load() {
-      const [foldersRes, docsRes, podcastsRes, examsRes] = await Promise.all([
-        foldersApi.getAll(),
-        documentsApi.getAll(),
-        podcastsApi.getAll(),
-        practiceExamsApi.getAll(),
-      ]);
-      if (foldersRes.data) setFolders(foldersRes.data);
-      const docs = docsRes.data ?? [];
-      const completeDocs = docs.filter(d => d.status === 'complete');
-      setUnfiledCount(completeDocs.filter(d => !d.folderId).length);
-      setCounts({
-        notes: docs.length,
-        flashcardDecks: completeDocs.length,
-        quizDecks: completeDocs.length,
-        exams: examsRes.data?.length ?? 0,
-        podcasts: podcastsRes.data?.length ?? 0,
-      });
-    }
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!isLibraryActive) return;
-    foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
-  }, [isLibraryActive]);
-
-  useEffect(() => {
-    if (!isLibraryActive) return;
-    const handler = () => foldersApi.getAll().then(({ data }) => { if (data) setFolders(data); });
-    window.addEventListener('library:folders-changed', handler);
-    return () => window.removeEventListener('library:folders-changed', handler);
-  }, [isLibraryActive]);
+    if (isLibraryActive) refreshFolders();
+  }, [isLibraryActive, refreshFolders]);
 
   // Close overlay when route changes
   useEffect(() => { setOverlayOpen(false); }, [pathname]);
@@ -373,7 +315,6 @@ export default function Sidebar() {
     isLibraryActive,
     folders,
     counts,
-    unfiledCount,
     sectionOpen,
     toggleSection,
     displayName,

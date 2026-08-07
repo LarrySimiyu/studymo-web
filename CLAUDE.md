@@ -184,7 +184,9 @@ Collected once after signup. All steps are required except GPA (high school / un
 ### Document Library
 Users upload PDFs, audio files, YouTube URLs, website URLs, or create blank notes. Each document goes through async AI processing (notes, flashcards, quiz generated server-side). Tags are auto-assigned from a fixed subject list during processing.
 
-- **List view**: `app/dashboard/library/page.tsx` — folder tree on left, document grid on right. Upload triggered via a dropdown that opens `UploadDialog` with the appropriate `type`.
+- **Split layout**: `app/dashboard/library/layout.tsx` — note list, filters, and modals on the left; the `[id]` route renders into the right pane. Upload triggered via `components/library/LibraryUploadMenu.tsx`, which opens `UploadDialog` with the appropriate `type`. The layout owns the search/tag filters, auto-opens the first note on arrival, and falls back to the first match when the open note is filtered or deleted away — both via `router.replace`, so Back doesn't walk through every filter keystroke.
+- **Empty state**: `app/dashboard/library/page.tsx` — "Select a note to view it". Only reached when the filtered list is empty, since the layout auto-opens the first note otherwise.
+- **Selected note**: `app/dashboard/library/[id]/page.tsx` — renders `DocumentDetail` in `embedded` mode. Selecting a note is a real navigation; `?folder=` is carried across so the list and sidebar keep their filter.
 - **Upload modal**: `components/upload/UploadDialog.tsx` — handles all 5 upload types (`blank`, `file`, `record`, `video`, `webpage`) in one component. Waits on `watchDocumentStatus`, which reads the SSE stream at `GET /documents/:id/status-stream` with a 10s polling backstop — the stream alone can die without ever delivering an event, which leaves the dialog spinning until a reload.
 - **Document detail**: `components/library/DocumentDetail.tsx` — the main viewer. Has 6 tabs (Notes, Flashcards, Quiz, Podcast, Weak Topics, Transcript). Each tab shows an empty state with a generate button if content hasn't been created yet.
 - **API**: `lib/api/documents.ts` — `documentsApi`, `notesApi`, `flashcardsApi`, `quizzesApi`
@@ -200,15 +202,17 @@ Rich text editor inside DocumentDetail's Notes tab. Auto-saves on a 30s debounce
 ### Flashcards
 Flashcard decks generated from document notes. Flip animation, keyboard navigation (arrow keys + space).
 
-- **Deck list**: `app/dashboard/flashcards/page.tsx`
+- **Deck list**: `app/dashboard/flashcards/page.tsx` — each deck links to `/dashboard/flashcards/[documentId]`
+- **Deck viewer**: `app/dashboard/flashcards/[documentId]/page.tsx` — a deck is keyed by its document; card index is local state, not in the URL
 - **Viewer**: `components/flashcards/FlipCard.tsx` — used both on the flashcards page and inside DocumentDetail
 - **API**: `lib/api/documents.ts` — `flashcardsApi`
 
 ### Quizzes
 AI-generated quizzes with multiple choice, short answer, and true/false questions. Attempts are recorded and feed into weak topic tracking.
 
-- **Quiz list**: `app/dashboard/quizzes/page.tsx`
-- **Quiz runner**: `components/quiz/QuizRunner.tsx` — used on the quizzes page and inside DocumentDetail. Submits attempt to API on completion.
+- **Quiz list**: `app/dashboard/quizzes/page.tsx` — each quiz links to `/dashboard/quizzes/[documentId]`
+- **Quiz page**: `app/dashboard/quizzes/[documentId]/page.tsx` — a quiz is keyed by its document
+- **Quiz runner**: `components/quiz/QuizRunner.tsx` — used on the quiz page and inside DocumentDetail. Submits attempt to API on completion.
 - **API**: `lib/api/documents.ts` — `quizzesApi`
 
 ### Practice Exams
@@ -229,7 +233,7 @@ Converts document notes into a spoken audio lecture. User picks length (5/10/15 
 ### Study Plans
 AI generates a day-by-day study schedule from selected documents, test date, user profile, and weak topics. Users can mark days and individual topics complete. Topic completion state is stored in DB (`completedTopics` field), not localStorage.
 
-- **Plan list**: `app/dashboard/study-plan/page.tsx`
+- **Plan list**: `app/dashboard/study-plan/page.tsx` — `PlanCard` expands inline for a quick look; the expand icon in its header links to the full `[id]` page
 - **Plan detail**: `app/dashboard/study-plan/[id]/page.tsx` — day rows, topic checkboxes, progress bars, calendar view
 - **Calendar**: `components/dashboard/PlanCalendar.tsx`
 - **API**: `lib/api/studyPlan.ts` — `studyPlansApi` (includes `saveTopics`, `completeDay`, `incompleteDay`)
@@ -254,7 +258,8 @@ Automatically tracked when a user answers a quiz or practice exam question incor
 ### AI Tutor
 Streaming chat with 5 teaching modes (`casual`, `tutor`, `strict`, `teach_back`, `eli5`) — same chat, mode changes teaching method. Tutor is aware of user's weak topics, active study plans, and loaded notes. Weak topics are resolved in DB when the student demonstrates understanding.
 
-- **Standalone page**: `app/dashboard/tutor/page.tsx` — session list + mode selector on welcome screen
+- **Welcome screen**: `app/dashboard/tutor/page.tsx` — no session open
+- **Chat session**: `app/dashboard/tutor/[sessionId]/page.tsx` — the route segment is the source of truth for the open chat; `useTutorChat(sessionId)` takes it as an argument. Both routes render `components/tutor/TutorSurface.tsx`. Read the open session's id with `hooks/useActiveSessionId.ts` — never parse the pathname by hand, it has to skip the static `history` sibling.
 - **In-document panel**: `components/library/TutorPanel.tsx` — slides in from the right inside DocumentDetail
 - **Input + bubbles**: `components/tutor/` — `TutorInput`, `UserBubble`, `ContextPicker`
 - **API**: `lib/api/tutor.ts` — `tutorApi`, `streamTutorChat` (SSE stream, handles `delta`, `offer`, `resolved`, `done` events)
@@ -328,6 +333,8 @@ Rules:
 - Always test mental model for all three breakpoints before finalizing any layout.
 
 ## General Conventions
+- **Opening a record is a navigation, not a state change.** Anything with an id — a note, deck, quiz, exam, plan, chat — gets a `[id]` route so it survives refresh, works with the Back button, and can be linked to. Never swap a list view for a detail view with `useState`. Query params are for filters (`?folder=`), not for identity. Inline expansion is fine for a preview (`PlanCard`), but the full view still needs its own route.
+- Master-detail screens use a route group: `layout.tsx` holds the list, `page.tsx` the empty state, `[id]/page.tsx` the detail — see `app/dashboard/library/`. Carry the existing query string across those navigations so filters survive.
 - All API calls go through `lib/api/` — never call `fetch` directly
 - GET responses are cached 5 min — call `invalidatePrefix('/resource')` after mutations if needed
 - Use `api.postForm` for file/recording uploads

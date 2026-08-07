@@ -40,8 +40,8 @@ export function NavLink({ href, icon, label, count, isActive, small }: {
     <Link
       href={href}
       className={cn(
-        'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg font-medium transition-colors',
-        small ? 'text-xs' : 'text-sm',
+        'group flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-colors',
+        small ? 'text-xs font-medium' : 'text-sm font-semibold',
         isActive
           ? 'active text-[var(--text-1)] bg-[var(--bg-hover)]'
           : 'text-[var(--text-1)] hover:bg-[var(--bg-hover)]'

@@ -148,7 +148,7 @@ function DashboardContent() {
                 return (
                   <Link
                     key={note.id}
-                    href={`/dashboard/library?note=${note.document.id}`}
+                    href={`/dashboard/library/${note.document.id}`}
                     className="shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
                     style={{ backgroundColor: 'var(--bg-card)', width: 220 }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}

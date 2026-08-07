@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { House, Plus, Folder as FolderIcon, Library, Wrench, PanelLeft, Zap, Sun, Moon, LucideIcon } from 'lucide-react';
+import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, PanelLeft, Zap, Sun, Moon, LucideIcon } from 'lucide-react';
 import studymoLogo from '@/assets/studymo_logo.png';
 import { useTheme } from '@/components/ui/ThemeProvider';
 import { useNewChat } from '@/hooks/useNewChat';
@@ -101,7 +101,7 @@ export default function SidebarRail({ pathname, initials, hasAccess, onExpand }:
       >
         {creating
           ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          : <Plus size={18} strokeWidth={2.5} />}
+          : <CirclePlus size={18} strokeWidth={2} />}
       </button>
 
       {ITEMS.map(item => (
