@@ -10,7 +10,7 @@ import TopNav from '@/components/dashboard/TopNav';
 import { billingApi } from '@/lib/api/billing';
 import { LibraryProvider } from '@/context/LibraryContext';
 import { TutorSessionsProvider } from '@/context/TutorSessionsContext';
-import PaywallModal from '@/components/ui/PaywallModal';
+import PaywallModal from '@/components/pricing/PaywallModal';
 import PendingUploadHandler from '@/components/dashboard/PendingUploadHandler';
 import { analytics } from '@/lib/analytics';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
@@ -170,7 +170,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           </main>
         </div>
 
-        {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+        <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
 
         <PendingUploadHandler />
       </div>

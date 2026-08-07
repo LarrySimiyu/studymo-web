@@ -5,6 +5,7 @@ import { documentsApi, docTagsApi, Document } from '@/lib/api/documents';
 import TagDropdown from '@/components/ui/TagDropdown';
 import { TagBadge } from '@/components/ui/badge';
 import { TAG_COLORS } from '@/lib/tagColors';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   doc: Document;
@@ -155,51 +156,51 @@ export default function NoteHeader({
         />
       </div>
 
-      {/* Create tag modal */}
-      {showCreateTagModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="rounded-2xl w-full max-w-xs p-5 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <p className="text-sm font-semibold text-[var(--text-1)]">New tag</p>
-            <input
-              autoFocus
-              value={newTagName}
-              onChange={e => setNewTagName(e.target.value)}
-              placeholder="Tag name"
-              className="w-full px-3 py-2 rounded-lg text-xs outline-none text-[var(--text-1)] placeholder-[var(--text-3)]"
-              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
-              onKeyDown={e => {
-                if (e.key === 'Escape') { setShowCreateTagModal(false); setNewTagName(''); }
-              }}
-            />
-            <div className="flex items-center gap-2 flex-wrap">
-              {TAG_COLORS.map(c => (
-                <button key={c} onClick={() => setNewTagColor(c)}
-                  className="w-5 h-5 rounded-full transition-transform hover:scale-110"
-                  style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-                />
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => { setShowCreateTagModal(false); setNewTagName(''); }}
-                className="flex-1 py-2 rounded-lg text-xs text-[var(--text-2)] hover:bg-[var(--bg-hover)] transition-colors">
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  if (!newTagName.trim()) return;
-                  const { data } = await docTagsApi.create({ name: newTagName.trim(), color: newTagColor });
-                  if (data) { await documentsApi.addTag(id, data.id); onRefetch(); onLoadSideData(); window.dispatchEvent(new CustomEvent('library:refetch')); }
-                  setShowCreateTagModal(false); setNewTagName('');
-                }}
-                className="flex-1 py-2 rounded-lg text-xs text-white hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: 'var(--brand)' }}
-              >
-                Create
-              </button>
-            </div>
+      <Dialog
+        open={showCreateTagModal}
+        onOpenChange={o => { if (!o) { setShowCreateTagModal(false); setNewTagName(''); } }}
+      >
+        <DialogContent size="sm" className="flex max-w-xs flex-col gap-3 p-5 sm:p-5">
+          <DialogHeader className="mb-0">
+            <DialogTitle className="text-body-sm">New tag</DialogTitle>
+          </DialogHeader>
+          <input
+            autoFocus
+            value={newTagName}
+            onChange={e => setNewTagName(e.target.value)}
+            placeholder="Tag name"
+            className="w-full rounded-lg px-3 py-2 text-xs text-[var(--text-1)] outline-none placeholder-[var(--text-3)]"
+            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            {TAG_COLORS.map(c => (
+              <button key={c} onClick={() => setNewTagColor(c)}
+                aria-label={`Colour ${c}`}
+                className="h-5 w-5 rounded-full transition-transform hover:scale-110"
+                style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
+              />
+            ))}
           </div>
-        </div>
-      )}
+          <div className="flex gap-2">
+            <button onClick={() => { setShowCreateTagModal(false); setNewTagName(''); }}
+              className="flex-1 rounded-lg py-2 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--bg-hover)]">
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                if (!newTagName.trim()) return;
+                const { data } = await docTagsApi.create({ name: newTagName.trim(), color: newTagColor });
+                if (data) { await documentsApi.addTag(id, data.id); onRefetch(); onLoadSideData(); window.dispatchEvent(new CustomEvent('library:refetch')); }
+                setShowCreateTagModal(false); setNewTagName('');
+              }}
+              className="flex-1 rounded-lg py-2 text-xs text-white transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'var(--brand)' }}
+            >
+              Create
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

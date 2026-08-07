@@ -1,13 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
 import { PODCAST_VOICES, podcastsApi } from '@/lib/api/podcasts';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { analytics } from '@/lib/analytics';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface Props {
+  open: boolean;
   documentId: string;
   onClose: () => void;
   onCreated: () => void;
@@ -19,7 +26,7 @@ const LENGTHS: { mins: 5 | 10 | 15; label: string; desc: string }[] = [
   { mins: 15, label: '15 minutes', desc: 'Comprehensive lecture' },
 ];
 
-export default function GeneratePodcastModal({ documentId, onClose, onCreated }: Props) {
+export default function GeneratePodcastModal({ open, documentId, onClose, onCreated }: Props) {
   const { currentUser: user } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [lengthMins, setLengthMins] = useState<5 | 10 | 15 | null>(null);
@@ -37,6 +44,16 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
       audioRef.current?.pause();
     };
   }, []);
+
+  useEffect(() => {
+    if (open) return;
+    audioRef.current?.pause();
+    setStep(1);
+    setLengthMins(null);
+    setVoice(null);
+    setPlayingVoice(null);
+    setError(null);
+  }, [open]);
 
   async function playPreview(voiceId: string) {
     if (previewLoading) return;
@@ -92,27 +109,14 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl p-6 flex flex-col gap-5"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-[var(--text-1)]">Generate Podcast</h2>
-            <p className="text-xs text-white mt-0.5">
-              Step {step} of 2 — {step === 1 ? 'Choose length' : 'Choose voice'}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-1 rounded-lg transition-colors hover:bg-[var(--bg-hover)]" style={{ color: 'var(--text-3)' }}>
-            <X size={18} />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={o => { if (!o && !generating) onClose(); }}>
+      <DialogContent size="lg" showClose className="flex flex-col gap-5">
+        <DialogHeader className="mb-0 gap-0.5">
+          <DialogTitle>Generate Podcast</DialogTitle>
+          <DialogDescription className="text-xs">
+            Step {step} of 2 — {step === 1 ? 'Choose length' : 'Choose voice'}
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Step 1 — Length */}
         {step === 1 && (
@@ -220,7 +224,7 @@ export default function GeneratePodcastModal({ documentId, onClose, onCreated }:
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

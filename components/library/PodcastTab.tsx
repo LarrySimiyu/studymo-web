@@ -109,17 +109,16 @@ export default function PodcastTab({ documentId, podcasts, setPodcasts, showModa
         </div>
       )}
 
-      {showModal && (
-        <GeneratePodcastModal
-          documentId={documentId}
-          onClose={() => setShowModal(false)}
-          onCreated={async () => {
-            setShowModal(false);
-            const { data } = await podcastsApi.getByDocument(documentId);
-            if (data) setPodcasts(data);
-          }}
-        />
-      )}
+      <GeneratePodcastModal
+        open={showModal}
+        documentId={documentId}
+        onClose={() => setShowModal(false)}
+        onCreated={async () => {
+          setShowModal(false);
+          const { data } = await podcastsApi.getByDocument(documentId);
+          if (data) setPodcasts(data);
+        }}
+      />
     </div>
   );
 }

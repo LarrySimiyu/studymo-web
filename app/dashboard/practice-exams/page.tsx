@@ -51,7 +51,7 @@ function ExamMenu({ onDelete }: { onDelete: () => void }) {
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-[9999] rounded-xl shadow-xl py-1 min-w-[120px]"
+          className="absolute right-0 top-full mt-1 z-[70] rounded-xl shadow-xl py-1 min-w-[120px]"
           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
         >
           <button

@@ -65,6 +65,24 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      keyframes: {
+        'overlay-in':  { from: { opacity: '0' }, to: { opacity: '1' } },
+        'overlay-out': { from: { opacity: '1' }, to: { opacity: '0' } },
+        'dialog-in': {
+          from: { opacity: '0', transform: 'scale(0.96)' },
+          to:   { opacity: '1', transform: 'scale(1)' },
+        },
+        'dialog-out': {
+          from: { opacity: '1', transform: 'scale(1)' },
+          to:   { opacity: '0', transform: 'scale(0.96)' },
+        },
+      },
+      animation: {
+        'overlay-in':  'overlay-in 150ms ease-out',
+        'overlay-out': 'overlay-out 120ms ease-in',
+        'dialog-in':   'dialog-in 150ms ease-out',
+        'dialog-out':  'dialog-out 120ms ease-in',
+      },
     },
   },
   plugins: [typography],

@@ -165,16 +165,14 @@ export default function ChatHistoryRow({ session, active, onSelect, onDeleted, v
         document.body
       )}
 
-      {confirming && createPortal(
-        <DeleteConfirmModal
-          title="Delete this chat?"
-          description={`“${session.title}” and its full message history will be permanently deleted.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirming(false)}
-          deleting={deleting}
-        />,
-        document.body
-      )}
+      <DeleteConfirmModal
+        open={confirming}
+        title="Delete this chat?"
+        description={`“${session.title}” and its full message history will be permanently deleted.`}
+        onConfirm={confirmDelete}
+        onClose={() => setConfirming(false)}
+        deleting={deleting}
+      />
     </>
   );
 }

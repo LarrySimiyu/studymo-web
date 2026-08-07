@@ -101,6 +101,13 @@
   --input: 218 30% 96%;
 }
 
+/* ─── Stacking scale ─────────────────────────────────────────────────────────
+   z-10..40  page chrome, sticky headers
+   z-50      dialog overlay + content (components/ui/dialog, alertDialog)
+   z-[60]    popovers/calendars nested *inside* a dialog
+   z-[70]    portalled dropdowns + toasts
+   Nothing should exceed z-[70]. */
+
 @layer base {
   * { @apply border-border; box-sizing: border-box; }
   body {

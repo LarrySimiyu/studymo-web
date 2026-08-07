@@ -71,7 +71,7 @@ function ThreeDotsMenu({ audioUrl, title, onDelete }: { audioUrl?: string; title
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-[9999] rounded-xl shadow-xl py-1 min-w-[130px]"
+          className="absolute right-0 top-full mt-1 z-[70] rounded-xl shadow-xl py-1 min-w-[130px]"
           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
         >
           {audioUrl && (

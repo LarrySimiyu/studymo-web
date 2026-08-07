@@ -293,13 +293,12 @@ export default function TasksPage() {
         </div>
       )}
 
-      {showTaskModal && (
-        <TaskModal
-          task={editingTask}
-          onClose={() => setShowTaskModal(false)}
-          onSave={() => { setShowTaskModal(false); loadData(); }}
-        />
-      )}
+      <TaskModal
+        open={showTaskModal}
+        task={editingTask}
+        onClose={() => setShowTaskModal(false)}
+        onSave={() => { setShowTaskModal(false); loadData(); }}
+      />
       {showTagManager && (
         <TagManager
           tags={tags}
