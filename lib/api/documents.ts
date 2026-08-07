@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { auth } from '@/lib/firebase';
+import { emitContentChanged } from '@/lib/contentEvents';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -130,6 +131,7 @@ export const notesApi = {
 };
 
 export const flashcardsApi = {
+  getDecks: () => api.get<{ documentId: string; count: number }[]>('/flashcards/decks'),
   getByDocument: (documentId: string) => api.get<Flashcard[]>(`/flashcards/${documentId}`),
   generate: (documentId: string) => api.post<Flashcard[]>(`/flashcards/${documentId}/generate`, {}),
 };
@@ -159,6 +161,9 @@ export function watchDocumentStatus(
   const settle = (status: 'complete' | 'failed', errorMessage?: string) => {
     if (settled || cancelled) return;
     settled = true;
+    // Processing generates notes, flashcards and a quiz server-side, so this is
+    // a content change no client-side mutation ever announces.
+    if (status === 'complete') emitContentChanged();
     onStatus(status, errorMessage);
   };
 

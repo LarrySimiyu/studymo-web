@@ -18,7 +18,7 @@ export default function ChatHistoryPage() {
 
   async function handleNewChat() {
     const id = await createSession();
-    if (id) router.push(`/dashboard/tutor?session=${id}`);
+    if (id) router.push(`/dashboard/tutor/${id}`);
   }
 
   return (
@@ -54,7 +54,7 @@ export default function ChatHistoryPage() {
               session={s}
               active={false}
               variant="full"
-              onSelect={id => router.push(`/dashboard/tutor?session=${id}`)}
+              onSelect={id => router.push(`/dashboard/tutor/${id}`)}
             />
           ))}
         </div>

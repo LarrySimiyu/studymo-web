@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
-import { CalendarDays, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronUp, Check, Maximize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const PALETTE: [string, string][] = [
@@ -257,6 +258,14 @@ export default function PlanCard({
                 {days === 0 ? 'Today!' : `${days}d Left`}
               </span>
             )}
+            <Link
+              href={`/dashboard/study-plan/${plan.id}`}
+              onClick={e => e.stopPropagation()}
+              aria-label={`Open ${plan.title}`}
+              className="p-1 rounded-md text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--bg-input)] transition-colors"
+            >
+              <Maximize2 size={compact ? 12 : 14} />
+            </Link>
             <span className="text-[var(--text-1)]">
               {expanded ? <ChevronUp size={compact ? 14 : 18} /> : <ChevronDown size={compact ? 14 : 18} />}
             </span>

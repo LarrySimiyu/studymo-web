@@ -48,6 +48,18 @@ export const tutorApi = {
   getSuggestions: (id: string) => api.get<{ suggestions: string[] }>(`/tutor/${id}/suggestions`),
 };
 
+/**
+ * Delete that outlives the page. `keepalive` lets the browser finish the request
+ * after unload, which the cached api client can't do — it awaits a fresh token.
+ */
+export function deleteSessionOnUnload(sessionId: string, token: string): void {
+  fetch(`${API_URL}/tutor/${sessionId}`, {
+    method: 'DELETE',
+    keepalive: true,
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => {});
+}
+
 export interface NoteOffer {
   noteId: string;
   noteTitle: string;

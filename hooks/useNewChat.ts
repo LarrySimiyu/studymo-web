@@ -1,23 +1,23 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
+import { useActiveSessionId } from '@/hooks/useActiveSessionId';
 
 export function useNewChat() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const activeId = useActiveSessionId();
   const { sessions, creating, createSession } = useTutorSessions();
 
   async function startNewChat() {
     // Reuse the open chat if it's still empty instead of stacking up blank sessions.
-    const activeId = searchParams.get('session');
     const active = sessions.find(s => s.id === activeId);
     if (active && active.messageCount === 0) {
-      router.push(`/dashboard/tutor?session=${active.id}`);
+      router.push(`/dashboard/tutor/${active.id}`);
       return;
     }
     const id = await createSession();
-    if (id) router.push(`/dashboard/tutor?session=${id}`);
+    if (id) router.push(`/dashboard/tutor/${id}`);
   }
 
   return { startNewChat, creating };

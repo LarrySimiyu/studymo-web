@@ -74,7 +74,7 @@ export default function WeakTopicItem({ topic, linkToDocument, onResolved }: Pro
             </span>
             {linkToDocument && current.document?.id && (
               <button
-                onClick={e => { e.stopPropagation(); router.push(`/dashboard/library?note=${current.document!.id}`); }}
+                onClick={e => { e.stopPropagation(); router.push(`/dashboard/library/${current.document!.id}`); }}
                 className="text-xs px-2.5 py-1 rounded-lg transition-opacity hover:opacity-80"
                 style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
               >

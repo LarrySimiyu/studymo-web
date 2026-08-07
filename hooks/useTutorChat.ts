@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import {
   tutorApi,
@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/tutor';
 import { documentsApi, notesApi } from '@/lib/api/documents';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
+import { useEmptyChatCleanup } from '@/hooks/useEmptyChatCleanup';
 import { TutorMode } from '@/components/tutor/TutorModeDropdown';
 
 export type UIMessage =
@@ -26,11 +27,9 @@ const MAX_NOTES = 15;
 let msgIdCounter = 0;
 function nextId() { return `local-${++msgIdCounter}`; }
 
-export function useTutorChat() {
+export function useTutorChat(sessionParam: string | null) {
   const { currentUser } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const sessionParam = searchParams.get('session');
   const { creating, createSession: createTutorSession, renameSession, touchSession, refetch } = useTutorSessions();
 
   const [activeSession, setActiveSession] = useState<TutorSession | null>(null);
@@ -59,7 +58,7 @@ export function useTutorChat() {
     });
   }, []);
 
-  // The ?session= param is the source of truth for what's open
+  // The [sessionId] route segment is the source of truth for what's open
   useEffect(() => {
     if (!sessionParam) {
       setActiveSession(null);
@@ -75,6 +74,8 @@ export function useTutorChat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEmptyChatCleanup({ sessionId: sessionParam, loadedId: activeSession?.id ?? null, messageCount: messages.length, busy: isStreaming || creating });
 
   async function loadSession(id: string) {
     const { data } = await tutorApi.getSession(id);
@@ -92,7 +93,7 @@ export function useTutorChat() {
 
   /**
    * First message on the welcome screen creates the session and sends in one go.
-   * The new session is passed straight to sendMessage — waiting on the ?session=
+   * The new session is passed straight to sendMessage — waiting on the route
    * round trip would drop the text the student already typed.
    */
   async function startWithMessage() {
@@ -105,7 +106,7 @@ export function useTutorChat() {
     setActiveSession(data);
     setMessages([]);
     setSuggestions([]);
-    router.push(`/dashboard/tutor?session=${id}`);
+    router.push(`/dashboard/tutor/${id}`);
     setTimeout(() => inputRef.current?.focus(), 100);
     await sendMessage(text, data);
   }

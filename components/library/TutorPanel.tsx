@@ -13,6 +13,7 @@ import { invalidatePrefix } from '@/lib/api';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
 import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdown';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmptyChatCleanup } from '@/hooks/useEmptyChatCleanup';
 import TutorInput from '@/components/tutor/TutorInput';
 import UserBubble from '@/components/tutor/UserBubble';
 import AssistantMessage from '@/components/tutor/AssistantMessage';
@@ -21,7 +22,7 @@ import ContextPicker from '@/components/tutor/ContextPicker';
 interface Props {
   noteId: string;
   sessionId: string | null;
-  onSessionCreated: (id: string) => void;
+  onSessionCreated: (id: string | null) => void;
   onClose: () => void;
   initialMessage?: string;
   initialReveal?: boolean;
@@ -54,6 +55,15 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // A pending initialMessage counts as busy — it sends on a short delay after init.
+  useEmptyChatCleanup({
+    sessionId: session?.id ?? null,
+    loadedId: session?.id ?? null,
+    messageCount: messages.length,
+    busy: isStreaming || loading || !!initialMessage,
+    onDiscarded: () => onSessionCreated(null),
+  });
 
   useEffect(() => {
     notesApi.getAll().then(({ data }) => {

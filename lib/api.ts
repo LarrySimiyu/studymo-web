@@ -1,7 +1,25 @@
 import { auth } from './firebase';
 import { cacheGet, cacheSet, invalidatePrefix } from './apiCache';
+import { emitContentChanged } from './contentEvents';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+// Mutating any of these changes a number the sidebar shows.
+const CONTENT_PREFIXES = new Set([
+  '/documents',
+  '/notes',
+  '/folders',
+  '/flashcards',
+  '/quizzes',
+  '/podcasts',
+  '/practice-exams',
+]);
+
+function afterMutation(path: string): void {
+  const basePath = '/' + path.split('?')[0].split('/')[1];
+  invalidatePrefix(basePath);
+  if (CONTENT_PREFIXES.has(basePath)) emitContentChanged();
+}
 
 type ApiResponse<T> = {
   data: T | null;
@@ -46,11 +64,7 @@ async function request<T>(
     }
 
     // Invalidate related GET cache on mutations before reading body
-    if (!isGet) {
-      const segments = path.split('?')[0].split('/');
-      const basePath = '/' + segments[1];
-      invalidatePrefix(basePath);
-    }
+    if (!isGet) afterMutation(path);
 
     // 204/205 — no body, nothing to parse
     if (response.status === 204 || response.status === 205) {
@@ -96,9 +110,7 @@ async function requestForm<T>(
 
     const data = (await response.json()) as T;
 
-    const segments = path.split('?')[0].split('/');
-    const basePath = '/' + segments[1];
-    invalidatePrefix(basePath);
+    afterMutation(path);
 
     return { data, error: null };
   } catch (err) {

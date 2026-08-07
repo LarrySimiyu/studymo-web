@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare } from 'lucide-react';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
+import { useActiveSessionId } from '@/hooks/useActiveSessionId';
 import { SectionHeader, sectionMotion } from './SidebarNavPrimitives';
 import ChatHistoryRow from './ChatHistoryRow';
 
@@ -17,14 +18,13 @@ interface Props {
 
 export default function SidebarChatHistory({ open, onToggle }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { sessions, loading } = useTutorSessions();
 
-  const activeId = searchParams.get('session');
+  const activeId = useActiveSessionId();
   const recent = sessions.slice(0, RECENT_LIMIT);
 
   function selectSession(id: string) {
-    router.push(`/dashboard/tutor?session=${id}`);
+    router.push(`/dashboard/tutor/${id}`);
   }
 
   function handleDeleted(id: string) {
