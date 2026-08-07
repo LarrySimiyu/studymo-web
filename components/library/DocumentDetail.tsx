@@ -11,6 +11,7 @@ import PodcastTab from '@/components/library/PodcastTab';
 import WeakTopicsTab from '@/components/library/WeakTopicsTab';
 import DocumentStatusState from '@/components/library/DocumentStatusState';
 import TutorPanel from '@/components/library/TutorPanel';
+import DeleteConfirmModal from '@/components/library/DeleteConfirmModal';
 import SlidingTabs from '@/components/ui/SlidingTabs';
 
 // Module-level: survives component unmount so the library page can trigger a save
@@ -353,38 +354,18 @@ export default function DocumentDetail({ id, onBack, embedded, availableTags }: 
             onDeleteConfirm={() => setShowDeleteConfirm(true)}
           />
 
-          {/* Delete confirmation modal */}
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-              <div className="bg-[var(--bg-card)] border border-black/10 rounded-2xl w-full max-w-sm p-6">
-                <div className="flex flex-col items-center text-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--danger-subtle)' }}>🗑</div>
-                  <div>
-                    <p className="text-[var(--text-1)] font-semibold">Delete this note?</p>
-                    <p className="text-[var(--text-2)] text-sm mt-1">All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
-                    className="flex-1 py-2.5 rounded-xl border border-black/10 text-[var(--text-2)] text-sm hover:bg-black/5 disabled:opacity-40 transition-colors">
-                    Cancel
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setDeleting(true);
-                      await documentsApi.delete(id);
-                      onBack?.();
-                    }}
-                    disabled={deleting}
-                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: '#EF4444' }}
-                  >
-                    {deleting ? 'Deleting…' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <DeleteConfirmModal
+            open={showDeleteConfirm}
+            title="Delete this note?"
+            description="All notes, flashcards, and quizzes will be permanently deleted. This cannot be undone."
+            deleting={deleting}
+            onClose={() => setShowDeleteConfirm(false)}
+            onConfirm={async () => {
+              setDeleting(true);
+              await documentsApi.delete(id);
+              onBack?.();
+            }}
+          />
 
           <DocumentStatusState
             status={doc.status}

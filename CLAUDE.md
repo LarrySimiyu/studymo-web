@@ -71,8 +71,19 @@ Animated flip card with prev/next/restart. Takes `cards`, `index`, `onPrev`, `on
 ### `components/quiz/QuizRunner`
 Full quiz-taking UI — question flow, scoring, attempt submission to the API, results screen. Takes `document` and `quiz`. Used in DocumentDetail and the quizzes page.
 
+### `components/ui/dialog`
+The modal primitive (shadcn Dialog on `@radix-ui/react-dialog`). Gives focus trap, Escape, body scroll lock, and `aria-modal` for free. `DialogContent` takes `variant` (`default` | `fullscreen`), `size` (`sm` | `default` | `lg` | `xl`), and `showClose`. Exports `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`. **Every modal in the app goes through this — never hand-roll `fixed inset-0`.**
+
+### `components/ui/alertDialog`
+Destructive-confirm primitive (shadcn AlertDialog on `@radix-ui/react-alert-dialog`). Focus defaults to Cancel and click-outside does not dismiss. Use for anything that deletes or is irreversible.
+
+### `components/library/DeleteConfirmModal`
+The shared delete confirmation, built on `alertDialog`. Takes `open`, `onConfirm`, `onClose`, `deleting`, and optional `title` / `description` / `count`. Used by the library grid, DocumentDetail, and chat history rows — **don't write another delete confirm.**
+
 ### `components/upload/UploadDialog`
-The single upload modal for all content types. Takes a `type` prop: `'blank' | 'file' | 'record' | 'video'`. Handles the full flow: form input → upload → processing poll → success/failure. Always use this — don't build custom upload forms.
+The single upload modal for all content types. Takes a `type` prop: `'blank' | 'file' | 'record' | 'video' | 'webpage'`. Handles the full flow: form input → upload → processing poll → success/failure. Always use this — don't build custom upload forms.
+
+Split by responsibility: `UploadDialog.tsx` is the Dialog shell + type routing; `useUploadFlow.ts` owns the upload → processing → complete/failed state machine and the status-watch teardown; one form component per type (`BlankNoteForm`, `FileUploadForm`, `RecordForm`, `VideoForm`, `WebpageForm`), all sharing the `UploadFormProps` contract in `uploadTypes.ts`. `UploadProgress.tsx` is the shared progress bar.
 
 ### `components/dashboard/PageHeader`
 Page title + optional action button. Use at the top of every dashboard page.
@@ -275,10 +286,11 @@ Profile management and Stripe subscription portal.
 ```
 app/dashboard/          — page routes (one folder per feature)
 components/
-  ui/                   — shared primitives (Button, Input, SlidingTabs, QuestionCard, etc.)
+  ui/                   — shared primitives (dialog, alertDialog, Button, Input, SlidingTabs, QuestionCard, etc.)
   dashboard/            — dashboard-wide components (Sidebar, PageHeader, PlanCard, WeakTopicItem, etc.)
-  library/              — document viewer (DocumentDetail, TutorPanel)
-  upload/               — UploadDialog (all upload flows in one component)
+  library/              — document viewer (DocumentDetail, TutorPanel, DeleteConfirmModal)
+  pricing/              — PlanSelector, PlanCard, PaywallModal (fullscreen dialog)
+  upload/               — UploadDialog shell + useUploadFlow + one form per upload type
   flashcards/           — FlipCard
   quiz/                 — QuizRunner
   podcast/              — GeneratePodcastModal, PodcastPlayer
@@ -319,7 +331,17 @@ Rules:
 - All API calls go through `lib/api/` — never call `fetch` directly
 - GET responses are cached 5 min — call `invalidatePrefix('/resource')` after mutations if needed
 - Use `api.postForm` for file/recording uploads
-- Modals: `fixed inset-0 flex items-center justify-center p-4` — no bottom-sheet behavior
+- **Modals: import `Dialog` from `components/ui/dialog`. Never hand-roll an overlay.** A raw `fixed inset-0` wrapper has no focus trap, no Escape key, no body scroll lock, and no `aria-modal`. Use `AlertDialog` from `components/ui/alertDialog` for destructive confirms. No bottom-sheet behavior.
+- Stacking scale (also documented at the top of `globals.css`) — nothing may exceed `z-[70]`:
+
+  | Layer | z |
+  |---|---|
+  | Page chrome, sticky headers | `z-10`–`z-40` |
+  | Dialog overlay + content | `z-50` |
+  | Popovers/calendars nested inside a dialog | `z-[60]` |
+  | Portalled dropdowns, toasts | `z-[70]` |
+
+- Radix primitives (`dialog`, `alertDialog`) animate via Tailwind keyframes declared in `tailwind.config.ts` (`overlay-in/out`, `dialog-in/out`) driven by `data-[state=open|closed]`. This is the one exception to the framer-motion rule — Radix exit animations would otherwise need `forceMount` + `AnimatePresence` on every call site.
 - Cancel actions: small text link below the primary button, not an X icon
 - Dropdowns that appear inside `overflow-hidden` containers: use `getBoundingClientRect()` + `position: fixed`
 - Never hardcode a color palette array locally — import `PALETTE` / `getPalette` from `components/dashboard/PlanCard`

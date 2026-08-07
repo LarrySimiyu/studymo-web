@@ -9,6 +9,7 @@ import { practiceExamsApi } from '@/lib/api/organization';
 import GeneratePracticeExamModal from '@/components/practice-exams/GeneratePracticeExamModal';
 import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
 import CreateStudyPlanModal from '@/components/study-plan/CreateStudyPlanModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 const UPLOAD_OPTIONS: { type: UploadType; icon: React.ReactNode; label: string }[] = [
@@ -140,43 +141,30 @@ export default function RecommendedSection() {
       </div>
 
       {/* Type picker */}
-      {showTypePicker && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowTypePicker(false); }}
-        >
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold text-[var(--text-1)]">New Note</h2>
+      <Dialog open={showTypePicker} onOpenChange={o => !o && setShowTypePicker(false)}>
+        <DialogContent size="sm" showClose>
+          <DialogHeader className="mb-5">
+            <DialogTitle>New Note</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            {UPLOAD_OPTIONS.map(({ type, icon, label }) => (
               <button
-                onClick={() => setShowTypePicker(false)}
-                className="text-xl leading-none transition-colors"
-                style={{ color: 'var(--text-2)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-              >×</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {UPLOAD_OPTIONS.map(({ type, icon, label }) => (
-                <button
-                  key={type}
-                  onClick={() => handleSelectType(type)}
-                  className="flex flex-col items-start gap-3 p-4 rounded-xl text-left transition-colors"
-                  style={{ backgroundColor: 'var(--bg-input)' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: ICON_BG[type] }}>
-                    {icon}
-                  </div>
-                  <p className="text-sm font-medium text-[var(--text-1)]">{label}</p>
-                </button>
-              ))}
-            </div>
+                key={type}
+                onClick={() => handleSelectType(type)}
+                className="flex flex-col items-start gap-3 rounded-xl p-4 text-left transition-colors"
+                style={{ backgroundColor: 'var(--bg-input)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: ICON_BG[type] }}>
+                  {icon}
+                </div>
+                <p className="text-body-sm font-medium text-[var(--text-1)]">{label}</p>
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {uploadType && (
         <UploadDialog

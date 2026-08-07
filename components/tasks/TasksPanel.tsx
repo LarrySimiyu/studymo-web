@@ -123,13 +123,12 @@ export default function TasksPanel({ onCountChange, hideCompleted }: { onCountCh
         )}
       </div>
 
-      {showModal && (
-        <TaskModal
-          task={editingTask}
-          onClose={() => setShowModal(false)}
-          onSave={() => { setShowModal(false); load(); }}
-        />
-      )}
+      <TaskModal
+        open={showModal}
+        task={editingTask}
+        onClose={() => setShowModal(false)}
+        onSave={() => { setShowModal(false); load(); }}
+      />
     </>
   );
 }

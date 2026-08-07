@@ -3,6 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStudyTimer } from '@/context/StudyTimerContext';
 import { tasksApi, Task } from '@/lib/api/tasks';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alertDialog';
 
 const PRESET_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'];
 
@@ -472,9 +482,11 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
 
 // ─── End Session Confirmation ─────────────────────────────────────────────────
 function EndConfirmModal({
+  open,
   onConfirm,
   onCancel,
 }: {
+  open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -482,34 +494,29 @@ function EndConfirmModal({
   const completed = taskEntries.filter((e) => e.completed).length;
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
-    >
-      <div className="w-full max-w-sm p-6 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <h3 className="text-[var(--text-1)] font-semibold mb-2">End Session?</h3>
-        <p className="text-[var(--text-2)] text-sm mb-1">Time studied: {fmtMins(totalElapsedMins)}</p>
-        <p className="text-[var(--text-2)] text-sm mb-5">
-          Tasks completed: {completed} / {taskEntries.length}
-        </p>
-        <div className="flex gap-3">
-          <button
+    <AlertDialog open={open} onOpenChange={o => !o && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader className="mb-5 items-start text-left">
+          <AlertDialogTitle>End Session?</AlertDialogTitle>
+          <AlertDialogDescription className="mt-2">
+            Time studied: {fmtMins(totalElapsedMins)}
+            <br />
+            Tasks completed: {completed} / {taskEntries.length}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-lg text-white font-medium text-sm hover:opacity-90"
-            style={{ backgroundColor: 'var(--brand)' }}
+            className="bg-[var(--brand)] text-white"
           >
-            Save & End
-          </button>
-          <button
-            onClick={onCancel}
-            className="flex-1 py-2.5 rounded-lg text-[var(--text-1)] font-medium text-sm hover:opacity-90"
-            style={{ backgroundColor: 'var(--bg-input)' }}
-          >
+            Save &amp; End
+          </AlertDialogAction>
+          <AlertDialogCancel className="border-0 bg-[var(--bg-input)] text-[var(--text-1)]">
             Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -530,15 +537,14 @@ export default function StudyTimerPanel() {
 
   return (
     <>
-      {showEndConfirm && (
-        <EndConfirmModal
-          onConfirm={async () => {
-            await endSession();
-            setShowEndConfirm(false);
-          }}
-          onCancel={() => setShowEndConfirm(false)}
-        />
-      )}
+      <EndConfirmModal
+        open={showEndConfirm}
+        onConfirm={async () => {
+          await endSession();
+          setShowEndConfirm(false);
+        }}
+        onCancel={() => setShowEndConfirm(false)}
+      />
 
       <div
         className="fixed bottom-6 right-6 z-50 w-80 rounded-2xl shadow-2xl flex flex-col"

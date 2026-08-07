@@ -211,12 +211,11 @@ function DashboardContent() {
 
     </div>
 
-    {showTaskModal && (
-      <TaskModal
-        onClose={() => setShowTaskModal(false)}
-        onSave={() => setShowTaskModal(false)}
-      />
-    )}
+    <TaskModal
+      open={showTaskModal}
+      onClose={() => setShowTaskModal(false)}
+      onSave={() => setShowTaskModal(false)}
+    />
     </>
   );
 }

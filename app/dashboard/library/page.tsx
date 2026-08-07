@@ -298,28 +298,28 @@ export default function LibraryPage() {
           onSuccess={(docId) => { setUploadType(null); refetch(); if (docId) selectDoc(docId); }}
         />
       )}
-      {showFolderModal && (
-        <FolderModal
-          onClose={() => setShowFolderModal(false)}
-          onSave={async (name, color) => {
-            await foldersApi.create({ name, color });
-            setShowFolderModal(false);
-            refetch();
-            notifyFoldersChanged();
-          }}
-        />
-      )}
-      {showManageTags && (
-        <ManageTagsModal onClose={() => setShowManageTags(false)} onChange={() => refetch()} />
-      )}
-      {deleteTarget && (
-        <DeleteConfirmModal
-          count={deleteTarget.size}
-          onConfirm={() => confirmDelete(deleteTarget)}
-          onCancel={() => setDeleteTarget(null)}
-          deleting={deleting}
-        />
-      )}
+      <FolderModal
+        open={showFolderModal}
+        onClose={() => setShowFolderModal(false)}
+        onSave={async (name, color) => {
+          await foldersApi.create({ name, color });
+          setShowFolderModal(false);
+          refetch();
+          notifyFoldersChanged();
+        }}
+      />
+      <ManageTagsModal
+        open={showManageTags}
+        onClose={() => setShowManageTags(false)}
+        onChange={() => refetch()}
+      />
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        count={deleteTarget?.size ?? 0}
+        onConfirm={() => { if (deleteTarget) confirmDelete(deleteTarget); }}
+        onClose={() => setDeleteTarget(null)}
+        deleting={deleting}
+      />
     </DndContext>
   );
 }

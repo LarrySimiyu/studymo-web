@@ -4,13 +4,20 @@ import { useState, useCallback, useEffect } from 'react';
 import { docTagsApi } from '@/lib/api/documents';
 import TagRowMenu from '@/components/ui/tagRowMenu';
 import { TAG_COLORS, tagColor } from '@/lib/tagColors';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Props {
+  open: boolean;
   onClose: () => void;
   onChange: () => void;
 }
 
-export default function ManageTagsModal({ onClose, onChange }: Props) {
+export default function ManageTagsModal({ open, onClose, onChange }: Props) {
   const [tags, setTags] = useState<{ id: string; name: string; color: string | null }[]>([]);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(TAG_COLORS[0]);
@@ -21,7 +28,7 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
     if (data) setTags(data);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (open) load(); }, [open, load]);
 
   const create = async () => {
     if (!newName.trim() || saving) return;
@@ -34,27 +41,27 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="border border-black/10 rounded-2xl w-full max-w-sm p-5" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <div className="flex justify-between mb-4">
-          <h3 className="font-semibold text-[var(--text-1)]">Note Tags</h3>
-          <button onClick={onClose} className="text-[var(--text-1)] opacity-40 hover:opacity-100 text-xl leading-none">×</button>
-        </div>
-        <div className="mb-4 p-3 rounded-xl" style={{ backgroundColor: 'var(--bg-input)' }}>
+    <Dialog open={open} onOpenChange={o => !o && onClose()}>
+      <DialogContent size="sm" showClose>
+        <DialogHeader>
+          <DialogTitle>Note Tags</DialogTitle>
+        </DialogHeader>
+        <div className="mb-4 rounded-xl p-3" style={{ backgroundColor: 'var(--bg-input)' }}>
           <input
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && create()}
             placeholder="New tag name"
-            className="w-full bg-transparent text-sm text-[var(--text-1)] outline-none placeholder-[var(--text-3)] mb-2"
+            className="mb-2 w-full bg-transparent text-body-sm text-[var(--text-1)] outline-none placeholder-[var(--text-3)]"
           />
           <div className="flex items-center justify-between">
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="flex flex-wrap gap-1.5">
               {TAG_COLORS.map(c => (
                 <button
                   key={c}
                   onClick={() => setNewColor(c)}
-                  className="w-5 h-5 rounded-full border-2 transition-all"
+                  aria-label={`Colour ${c}`}
+                  className="h-5 w-5 rounded-full border-2 transition-all"
                   style={{ backgroundColor: c, borderColor: newColor === c ? 'var(--text-1)' : 'transparent' }}
                 />
               ))}
@@ -62,17 +69,20 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
             <button
               onClick={create}
               disabled={saving || !newName.trim()}
-              className="px-3 py-1 bg-[var(--brand)] text-white text-xs rounded-lg disabled:opacity-40"
+              className="rounded-lg bg-[var(--brand)] px-3 py-1 text-xs text-white transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               Add
             </button>
           </div>
         </div>
-        <div className="space-y-1 max-h-48 overflow-y-auto">
+        <div className="max-h-48 space-y-1 overflow-y-auto">
           {tags.map(t => (
-            <div key={t.id} className="group/row flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-black/5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tagColor(t.color) }} />
-              <span className="flex-1 text-sm text-[var(--text-2)]">{t.name}</span>
+            <div
+              key={t.id}
+              className="group/row flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--bg-hover)]"
+            >
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tagColor(t.color) }} />
+              <span className="flex-1 text-body-sm text-[var(--text-2)]">{t.name}</span>
               <TagRowMenu
                 tag={t}
                 onChanged={() => { load(); onChange(); }}
@@ -81,7 +91,7 @@ export default function ManageTagsModal({ onClose, onChange }: Props) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

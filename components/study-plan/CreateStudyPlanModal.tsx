@@ -8,6 +8,13 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 interface Document { id: string; title: string; status: string }
 
@@ -54,13 +61,15 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 2);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
-      <div className="w-full max-w-md rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <h2 className="text-lg font-bold text-[var(--text-1)] mb-1">New Study Plan</h2>
-        <p className="text-xs text-[var(--text-3)] mb-5">AI will generate a day-by-day schedule for you.</p>
+    <Dialog open={open} onOpenChange={o => { if (!o && !creating) onClose(); }}>
+      <DialogContent>
+        <DialogHeader className="mb-5 gap-1">
+          <DialogTitle className="text-body-lg font-bold">New Study Plan</DialogTitle>
+          <DialogDescription className="text-xs text-[var(--text-3)]">
+            AI will generate a day-by-day schedule for you.
+          </DialogDescription>
+        </DialogHeader>
 
         {creating ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -186,7 +195,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
