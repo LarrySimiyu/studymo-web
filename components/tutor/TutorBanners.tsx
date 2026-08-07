@@ -1,6 +1,8 @@
 'use client';
 
 import type { NoteOffer } from '@/lib/api/tutor';
+import OutOfMessagesBanner from '@/components/tutor/OutOfMessagesBanner';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   offerSaved: boolean;
@@ -10,14 +12,18 @@ interface Props {
   offerSaving: boolean;
   onAcceptOffer: () => void;
   onDismissOffer: () => void;
+  outOfMessages?: boolean;
 }
 
 export default function TutorBanners({
   offerSaved, resolvedTopics, onClearResolved,
   noteOffer, offerSaving, onAcceptOffer, onDismissOffer,
+  outOfMessages,
 }: Props) {
   return (
     <>
+      {outOfMessages && <OutOfMessagesBanner />}
+
       {offerSaved && (
         <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center gap-2" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
@@ -29,13 +35,21 @@ export default function TutorBanners({
         <div className="mb-2 px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
           <div className="flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-            <span style={{ color: '#22C55E' }}>
+            <span style={{ color: 'var(--success-ink)' }}>
               {resolvedTopics.length === 1
                 ? `"${resolvedTopics[0]}" marked as understood`
                 : `${resolvedTopics.length} weak topics marked as understood`}
             </span>
           </div>
-          <button onClick={onClearResolved} className="opacity-50 hover:opacity-100 transition-opacity" style={{ color: '#22C55E' }}>×</button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={onClearResolved}
+            aria-label="Dismiss"
+            className="shrink-0 text-[var(--success-ink)] opacity-50 hover:bg-transparent hover:text-[var(--success-ink)] hover:opacity-100"
+          >
+            ×
+          </Button>
         </div>
       )}
 
@@ -49,21 +63,12 @@ export default function TutorBanners({
             <p className="text-xs text-[var(--text-3)] truncate">{noteOffer.content.slice(0, 80)}{noteOffer.content.length > 80 ? '…' : ''}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={onAcceptOffer}
-              disabled={offerSaving}
-              className="text-xs px-2.5 py-1 rounded-lg font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              style={{ backgroundColor: 'var(--brand)' }}
-            >
+            <Button variant="primary" size="xs" onClick={onAcceptOffer} disabled={offerSaving}>
               {offerSaving ? 'Saving…' : 'Add to notes'}
-            </button>
-            <button
-              onClick={onDismissOffer}
-              className="text-xs px-2 py-1 rounded-lg transition-colors"
-              style={{ color: 'var(--text-3)' }}
-            >
+            </Button>
+            <Button variant="ghost" size="xs" onClick={onDismissOffer}>
               Dismiss
-            </button>
+            </Button>
           </div>
         </div>
       )}

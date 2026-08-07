@@ -5,6 +5,7 @@ import { HelpCircle } from 'lucide-react';
 import { Document, Quiz } from '@/lib/api/documents';
 import QuizRunner from '@/components/quiz/QuizRunner';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 
 interface Props {
   doc: Document;
@@ -50,7 +51,7 @@ export default function QuizTab({ doc, quiz, onGenerate }: Props) {
           ))}
         </div>
         <Button
-          variant="brand"
+          variant="primary"
           size="sm"
           onClick={async () => { if (!types.length) return; setLoading(true); await onGenerate(types); setLoading(false); }}
           disabled={loading || !types.length}
@@ -58,6 +59,7 @@ export default function QuizTab({ doc, quiz, onGenerate }: Props) {
           {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {loading ? 'Generating…' : 'Generate Quiz'}
         </Button>
+        <UsageCounter limitKey="quizzes" className="-mt-3" />
       </div>
     );
   }

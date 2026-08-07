@@ -43,7 +43,7 @@ export default function BlankNoteForm({ onSuccess, onError }: Props) {
         <p className="text-body-sm text-[var(--text-1)]">Start with an empty note</p>
         <p className="mt-1 text-xs text-[var(--text-2)]">Write freely — no upload needed</p>
       </div>
-      <Button variant="brand" size="lg" className="w-full" onClick={handleCreate} disabled={loading}>
+      <Button variant="primary" size="lg" className="w-full" onClick={handleCreate} disabled={loading}>
         {loading ? 'Creating…' : 'Create Note'}
       </Button>
     </div>

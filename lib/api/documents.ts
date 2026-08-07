@@ -78,7 +78,6 @@ export interface QuizAttempt {
 }
 
 export const documentsApi = {
-  getCount: () => api.get<{ count: number }>('/documents/count'),
   uploadFile: (formData: FormData) => api.postForm<Document>('/documents/upload', formData),
   uploadVideo: (data: { url: string; title: string; folderId?: string }) =>
     api.post<Document>('/documents/video', data),

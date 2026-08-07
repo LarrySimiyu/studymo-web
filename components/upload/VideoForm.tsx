@@ -34,7 +34,7 @@ export default function VideoForm({ loading, onStart, onSuccess, onError }: Uplo
           placeholder="https://www.youtube.com/watch?v=..."
         />
       </div>
-      <Button variant="brand" size="lg" className="w-full" onClick={handleImport} disabled={!url || loading}>
+      <Button variant="primary" size="lg" className="w-full" onClick={handleImport} disabled={!url || loading}>
         {loading ? 'Importing…' : 'Import Video'}
       </Button>
     </div>

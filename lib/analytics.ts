@@ -151,7 +151,8 @@ export const analytics = {
     track('note_shared', { document_id: documentId }),
 
   // Conversion
-  paywallSeen: (trigger: 'upload_limit' | 'first_visit' | 'feature_gate') =>
+  // 'first_visit', a nav source, or the free-tier quota key that was hit
+  paywallSeen: (trigger: string) =>
     track('paywall_seen', { trigger }),
 
   subscriptionStarted: (plan: string) =>

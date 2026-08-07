@@ -1,24 +1,10 @@
 'use client';
 
+import { Pencil, Trash2 } from 'lucide-react';
 import { Task } from '@/lib/api/tasks';
+import { cn } from '@/lib/utils';
 import { TagBadge } from '@/components/ui/badge';
-
-function EditIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-}
-function TrashIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-    </svg>
-  );
-}
+import { Button } from '@/components/ui/Button';
 
 function isOverdue(dueDate: string) {
   const d = new Date(dueDate);
@@ -51,10 +37,7 @@ export default function TaskItem({ task, compact, onToggle, onEdit, onDelete }: 
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-xl transition-colors ${compact ? 'px-3 py-2.5' : 'px-4 py-3'} ${task.completed ? 'opacity-50' : ''}`}
-      style={{ backgroundColor: 'var(--bg-card)' }}
-      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+      className={cn(`group flex items-center gap-3 rounded-xl transition-colors ${compact ? 'px-3 py-2.5' : 'px-4 py-3'} ${task.completed ? 'opacity-50' : ''}`, 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]')}
     >
       {/* Checkbox — centered against full item height */}
       <button
@@ -91,7 +74,7 @@ export default function TaskItem({ task, compact, onToggle, onEdit, onDelete }: 
           {/* Due date */}
           {dueDateStr && (
             <span
-              className="text-[10px] font-medium shrink-0"
+              className="text-2xs font-medium shrink-0"
               style={{ color: overdue ? '#EF4444' : today ? '#F59E0B' : 'var(--text-3)' }}
             >
               {dueDateStr}
@@ -101,24 +84,26 @@ export default function TaskItem({ task, compact, onToggle, onEdit, onDelete }: 
           {/* Actions */}
           <div className="flex items-center gap-0.5 max-w-0 overflow-hidden group-hover:max-w-[52px] transition-all duration-200 shrink-0">
             {onEdit && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Edit task"
                 onClick={() => onEdit(task)}
-                className="p-1 rounded-lg transition-colors text-[var(--text-3)] hover:text-[var(--text-1)]"
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                className="text-[var(--text-3)]"
               >
-                <EditIcon />
-              </button>
+                <Pencil size={12} />
+              </Button>
             )}
             {onDelete && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Delete task"
                 onClick={() => onDelete(task.id)}
-                className="p-1 rounded-lg transition-colors text-[var(--text-3)] hover:text-red-400"
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                className="text-[var(--text-3)] hover:text-[var(--danger-ink)]"
               >
-                <TrashIcon />
-              </button>
+                <Trash2 size={12} />
+              </Button>
             )}
           </div>
         </div>

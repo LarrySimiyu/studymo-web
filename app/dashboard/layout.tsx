@@ -13,7 +13,9 @@ import { TutorSessionsProvider } from '@/context/TutorSessionsContext';
 import PaywallModal from '@/components/pricing/PaywallModal';
 import PendingUploadHandler from '@/components/dashboard/PendingUploadHandler';
 import { analytics } from '@/lib/analytics';
+import { onShowPaywall } from '@/lib/paywall';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
+import { Button } from '@/components/ui/Button';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -56,53 +58,40 @@ function PastDueBanner() {
 
   return (
     <div className="flex items-center justify-between px-6 py-2.5 text-body shrink-0" style={{ backgroundColor: 'var(--danger-subtle)', borderBottom: '1px solid var(--danger-border)' }}>
-      <span style={{ color: 'var(--danger)' }}>
+      <span style={{ color: 'var(--danger-ink)' }}>
         Your payment failed. Please update your payment method to keep access.
       </span>
-      <button
+      <Button
+        variant="danger"
+        size="xs"
         onClick={handleUpdatePayment}
         disabled={portalLoading}
-        className="btn btn-sm ml-4 shrink-0"
-        style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
+        className="ml-4 shrink-0"
       >
         {portalLoading ? 'Loading…' : 'Update Payment'}
-      </button>
+      </Button>
     </div>
   );
 }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { currentUser, loading, subscriptionStatus, refreshSubscription } = useAuth();
+  const { currentUser, loading, refreshSubscription } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [refreshing, setRefreshing] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Listen for paywall trigger from upload gate or nav buttons
-  useEffect(() => {
-    const handler = (e: Event) => {
-      setShowPaywall(true);
-      const trigger = (e as CustomEvent).detail?.trigger ?? 'feature_gate';
-      analytics.paywallSeen(trigger);
-    };
-    window.addEventListener('app:show-paywall', handler);
-    return () => window.removeEventListener('app:show-paywall', handler);
-  }, []);
+  // Listen for paywall triggers — nav buttons, and any free-tier 403 raised by lib/api
+  useEffect(() => onShowPaywall(trigger => {
+    setShowPaywall(true);
+    analytics.paywallSeen(trigger);
+  }), []);
 
-  // Show paywall on first dashboard visit if user has no access
-  useEffect(() => {
-    if (loading || !currentUser || subscriptionStatus === null) return;
-    if (subscriptionStatus?.hasAccess) return;
-    const key = `paywall_shown_${currentUser.uid}`;
-    if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, '1');
-      setShowPaywall(true);
-      analytics.paywallSeen('first_visit');
-    }
-  }, [loading, currentUser, subscriptionStatus]);
+  // Nothing opens the paywall on arrival. It only appears once the user asks for it
+  // (an upgrade button) or hits a free-tier 403 — never in front of a first session.
 
   // After Stripe checkout, session_id lands in the URL. Refresh subscription
-  // status before deciding whether to bounce the user back to /subscribe.
+  // status before deciding whether to bounce the user back to /pricing.
   useEffect(() => {
     if (loading || !currentUser) return;
     const sessionId = searchParams.get('session_id');
@@ -151,7 +140,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--brand)' }} />
-        {refreshing && <p className="text-sm text-gray-500">Activating your subscription…</p>}
+        {refreshing && <p className="text-body-sm text-[var(--text-2)]">Activating your subscription…</p>}
       </div>
     );
   }

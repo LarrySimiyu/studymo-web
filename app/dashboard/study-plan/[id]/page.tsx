@@ -3,6 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
+import { ArrowLeft, ChevronLeft, ChevronRight, CalendarDays, List, Check } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import PageShell from '@/components/dashboard/PageShell';
+import { cn } from '@/lib/utils';
 
 type ViewMode = 'calendar' | 'list';
 
@@ -65,18 +69,18 @@ export default function StudyPlanDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-2">
-        <div className="h-8 w-64 rounded-lg animate-pulse mb-4" style={{ backgroundColor: 'var(--bg-card)' }} />
-        <div className="h-96 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--bg-card)' }} />
-      </div>
+      <PageShell width="lg" center>
+        <div className="mb-4 h-8 w-64 animate-pulse rounded-lg bg-[var(--bg-card)]" />
+        <div className="h-96 animate-pulse rounded-xl bg-[var(--bg-card)]" />
+      </PageShell>
     );
   }
 
   if (!plan) {
     return (
-      <div className="max-w-4xl mx-auto py-2 text-center py-20">
-        <p className="text-[var(--text-2)]">Plan not found.</p>
-      </div>
+      <PageShell width="lg" center className="py-20 text-center">
+        <p className="text-body-sm text-[var(--text-2)]">Plan not found.</p>
+      </PageShell>
     );
   }
 
@@ -100,27 +104,29 @@ export default function StudyPlanDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-6">
+    <PageShell width="lg" center>
       {/* Header */}
       <div className="mb-6">
-        <button onClick={() => router.push('/dashboard/study-plan')} className="text-xs text-[var(--text-2)] hover:text-[var(--text-1)] mb-3 flex items-center gap-1">
-          ← Back to plans
-        </button>
+        <Button
+          variant="link"
+          size="link"
+          className="mb-3 text-xs"
+          onClick={() => router.push('/dashboard/study-plan')}
+        >
+          <ArrowLeft size={12} />
+          Back to plans
+        </Button>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-[var(--text-1)] truncate">{plan.title}</h1>
-            <p className="text-[var(--text-2)] text-sm mt-0.5">
+            <h1 className="truncate text-heading-sm md:text-heading text-[var(--text-1)]">{plan.title}</h1>
+            <p className="mt-0.5 text-body-sm text-[var(--text-2)]">
               Test date: {new Date(plan.testDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              {days >= 0 && <span className="ml-2 font-medium" style={{ color: days <= 3 ? '#EF4444' : days <= 7 ? '#F59E0B' : '#22C55E' }}>({days === 0 ? 'Today!' : `${days} days left`})</span>}
+              {days >= 0 && <span className="ml-2 font-medium" style={{ color: days <= 3 ? 'var(--danger-ink)' : days <= 7 ? 'var(--warning-ink)' : 'var(--success-ink)' }}>({days === 0 ? 'Today!' : `${days} days left`})</span>}
             </p>
           </div>
-          <button
-            onClick={handleDelete}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 hover:bg-black/5"
-            style={{ color: '#EF4444', border: '1px solid var(--danger-border)' }}
-          >
+          <Button variant="danger" size="xs" className="shrink-0" onClick={handleDelete}>
             Delete Plan
-          </button>
+          </Button>
         </div>
 
         {/* Progress */}
@@ -141,10 +147,15 @@ export default function StudyPlanDetailPage() {
           <button
             key={v}
             onClick={() => setView(v)}
-            className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize"
-            style={view === v ? { backgroundColor: 'var(--brand)', color: 'white' } : { color: 'var(--text-2)' }}
+            aria-selected={view === v}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-4 py-1.5 text-body-sm font-medium capitalize transition-colors',
+              view === v
+                ? 'bg-[var(--bg-card)] text-[var(--text-1)] shadow-[var(--shadow-card)]'
+                : 'text-[var(--text-3)] hover:text-[var(--text-1)]'
+            )}
           >
-            {v === 'calendar' ? '📅 Calendar' : '📋 List'}
+            {v === 'calendar' ? <><CalendarDays size={13} />Calendar</> : <><List size={13} />List</>}
           </button>
         ))}
       </div>
@@ -156,19 +167,23 @@ export default function StudyPlanDetailPage() {
             <div className="rounded-xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
               {/* Month nav */}
               <div className="flex items-center justify-between mb-4">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Previous month"
                   onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-black/5 transition-colors"
                 >
-                  ‹
-                </button>
-                <span className="text-sm font-semibold text-[var(--text-1)]">{MONTHS[month]} {year}</span>
-                <button
+                  <ChevronLeft size={16} />
+                </Button>
+                <span className="text-body-sm font-semibold text-[var(--text-1)]">{MONTHS[month]} {year}</span>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Next month"
                   onClick={() => setCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-2)] hover:text-[var(--text-1)] hover:bg-black/5 transition-colors"
                 >
-                  ›
-                </button>
+                  <ChevronRight size={16} />
+                </Button>
               </div>
 
               {/* Day headers */}
@@ -192,7 +207,7 @@ export default function StudyPlanDetailPage() {
                     <button
                       key={dayNum}
                       onClick={() => entry && setSelectedDay(entry)}
-                      className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${entry ? 'cursor-pointer hover:bg-black/8' : 'cursor-default'}`}
+                      className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-xs transition-colors ${entry ? 'cursor-pointer hover:bg-[var(--bg-hover)]' : 'cursor-default'}`}
                       style={{
                         backgroundColor: isSelected ? 'var(--brand)' : isToday ? 'var(--bg-input)' : 'transparent',
                         color: isSelected ? 'white' : entry ? 'var(--text-1)' : 'var(--text-3)',
@@ -200,7 +215,7 @@ export default function StudyPlanDetailPage() {
                     >
                       {dayNum}
                       {entry && (
-                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ backgroundColor: entry.completed ? '#22C55E' : isSelected ? 'white' : 'var(--brand)' }} />
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ backgroundColor: entry.completed ? 'var(--success-ink)' : isSelected ? 'white' : 'var(--brand)' }} />
                       )}
                     </button>
                   );
@@ -213,7 +228,7 @@ export default function StudyPlanDetailPage() {
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--brand)' }} /> Scheduled
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-[var(--text-2)]">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#22C55E' }} /> Completed
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--success)' }} /> Completed
                 </div>
               </div>
             </div>
@@ -232,7 +247,7 @@ export default function StudyPlanDetailPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold"
-                      style={{ backgroundColor: day.completed ? 'var(--success-subtle)' : 'var(--bg-input)', color: day.completed ? '#22C55E' : 'var(--brand)' }}
+                      style={{ backgroundColor: day.completed ? 'var(--success-subtle)' : 'var(--bg-input)', color: day.completed ? 'var(--success-ink)' : 'var(--brand-ink)' }}
                     >
                       {day.dayNumber}
                     </div>
@@ -240,7 +255,11 @@ export default function StudyPlanDetailPage() {
                       <p className="text-sm font-medium text-[var(--text-1)] truncate">{day.title}</p>
                       <p className="text-xs text-[var(--text-2)]">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                     </div>
-                    {day.completed && <span className="text-xs text-green-400 shrink-0">✓ Done</span>}
+                    {day.completed && (
+                      <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--success-ink)]">
+                        <Check size={12} />Done
+                      </span>
+                    )}
                   </div>
                 </button>
               ))}
@@ -257,19 +276,21 @@ export default function StudyPlanDetailPage() {
                   <p className="text-xs text-[var(--text-2)] mb-0.5">
                     Day {selectedDay.dayNumber} · {new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                   </p>
-                  <h3 className="text-base font-semibold text-[var(--text-1)]">{selectedDay.title}</h3>
+                  <h3 className="text-body-lg font-semibold text-[var(--text-1)]">{selectedDay.title}</h3>
                 </div>
-                <button
+                <Button
+                  variant={selectedDay.completed ? 'success' : 'primary'}
+                  size="xs"
+                  className="shrink-0"
                   onClick={() => toggleDay(selectedDay)}
                   disabled={toggling === selectedDay.id}
-                  className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-                  style={selectedDay.completed
-                    ? { backgroundColor: 'var(--success-subtle)', color: '#22C55E', border: '1px solid var(--success-border)' }
-                    : { backgroundColor: 'var(--brand)', color: 'white' }
-                  }
                 >
-                  {toggling === selectedDay.id ? '...' : selectedDay.completed ? '✓ Completed' : 'Mark Complete'}
-                </button>
+                  {toggling === selectedDay.id
+                    ? '…'
+                    : selectedDay.completed
+                      ? <><Check size={12} />Completed</>
+                      : 'Mark Complete'}
+                </Button>
               </div>
 
               {selectedDay.completedAt && (
@@ -295,6 +316,6 @@ export default function StudyPlanDetailPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

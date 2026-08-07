@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react';
-import { tutorApi, TutorSessionSummary } from '@/lib/api/tutor';
+import { tutorApi, TutorSession, TutorSessionSummary } from '@/lib/api/tutor';
 import { invalidatePrefix } from '@/lib/api';
 
 interface TutorSessionsContextValue {
@@ -9,7 +9,7 @@ interface TutorSessionsContextValue {
   loading: boolean;
   creating: boolean;
   refetch: () => Promise<void>;
-  createSession: () => Promise<string | null>;
+  createSession: () => Promise<TutorSession | null>;
   renameSession: (id: string, title: string) => Promise<void>;
   removeSession: (id: string) => Promise<void>;
   touchSession: (id: string, lastMessage: string) => void;
@@ -46,17 +46,20 @@ export function TutorSessionsProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await tutorApi.createSession({ mode: 'casual' });
       if (!data) return null;
+      // The create response carries no messages array — normalise it so callers can
+      // open the session straight from here instead of re-fetching it.
+      const session: TutorSession = { ...data, messages: data.messages ?? [] };
       setSessions(prev => [{
-        id: data.id,
-        title: data.title,
-        mode: data.mode,
-        noteIds: data.noteIds,
+        id: session.id,
+        title: session.title,
+        mode: session.mode,
+        noteIds: session.noteIds,
         messageCount: 0,
         lastMessage: null,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
       }, ...prev]);
-      return data.id;
+      return session;
     } finally {
       setCreating(false);
     }

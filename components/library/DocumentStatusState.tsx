@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface Props {
   status: string;
@@ -39,13 +40,9 @@ export default function DocumentStatusState({ status, errorMessage, onDelete }: 
           Nothing was generated from it. Upload the file again to retry.
         </p>
       </div>
-      <button
-        onClick={onDelete}
-        className="mt-1 text-xs px-3 py-1.5 rounded-xl transition-colors hover:bg-[var(--bg-hover)]"
-        style={{ color: 'var(--danger-ink)', border: '1px solid var(--border-md)' }}
-      >
+      <Button variant="outline" size="xs" onClick={onDelete} className="mt-1 text-[var(--danger-ink)]">
         Delete this upload
-      </button>
+      </Button>
     </div>
   );
 }

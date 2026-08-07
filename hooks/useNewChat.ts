@@ -16,8 +16,8 @@ export function useNewChat() {
       router.push(`/dashboard/tutor/${active.id}`);
       return;
     }
-    const id = await createSession();
-    if (id) router.push(`/dashboard/tutor/${id}`);
+    const session = await createSession();
+    if (session) router.push(`/dashboard/tutor/${session.id}`);
   }
 
   return { startNewChat, creating };

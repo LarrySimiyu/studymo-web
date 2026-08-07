@@ -54,7 +54,7 @@ export default function LandingHero({ segment, utmCampaign, h1, subheadline, scr
         <div className="mt-10 flex flex-col items-center gap-3 w-full">
           <Suspense
             fallback={
-              <Button asChild variant="brand" size="lg" className="rounded-full px-10 w-full max-w-[280px]">
+              <Button asChild variant="primary" size="lg" className="rounded-full px-10 w-full max-w-[280px]">
                 <Link href="/sign-up">Start For Free</Link>
               </Button>
             }

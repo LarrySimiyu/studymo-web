@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { Paperclip, Globe, Lightbulb, Sparkles, ArrowUp, X, type LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { ACCEPTED_UPLOAD, validateUploadFile } from '@/lib/upload/fileValidation';
 
@@ -114,7 +115,7 @@ export default function AiPromptBox({
         )}
 
         {fileError && (
-          <p className="mt-2 text-sm" style={{ color: '#EF4444' }}>{fileError}</p>
+          <p className="mt-2 text-body-sm text-[var(--danger-ink)]">{fileError}</p>
         )}
 
         <div className="mt-2.5 sm:mt-3 flex items-center gap-2">
@@ -152,16 +153,17 @@ export default function AiPromptBox({
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="icon"
               onClick={submit}
               disabled={!value.trim() && !file}
               aria-label="Send"
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full text-white transition-all hover:scale-105 disabled:opacity-40 disabled:hover:scale-100"
-              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+              className="rounded-full transition-transform hover:scale-105 disabled:hover:scale-100"
             >
               <ArrowUp size={17} strokeWidth={2.5} />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

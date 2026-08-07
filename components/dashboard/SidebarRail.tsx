@@ -2,11 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, PanelLeft, Zap, Sun, Moon, LucideIcon } from 'lucide-react';
+import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, PanelLeft, Zap, LucideIcon } from 'lucide-react';
 import studymoLogo from '@/assets/studymo_logo.png';
-import { useTheme } from '@/components/ui/ThemeProvider';
 import { useNewChat } from '@/hooks/useNewChat';
 import { cn } from '@/lib/utils';
+import { showPaywall } from '@/lib/paywall';
+import { Button } from '@/components/ui/Button';
 import type { SectionKey } from './SidebarNavPrimitives';
 
 interface RailItem {
@@ -38,10 +39,12 @@ const ITEMS: RailItem[] = [
 function RailButton({ icon: Icon, label, active, href, onClick }: {
   icon: LucideIcon; label: string; active?: boolean; href?: string; onClick?: () => void;
 }) {
+  // Same active rule as the expanded sidebar — lift to --text-1 on --bg-hover.
+  // The brand accent bar is the only orange, since the rail has no labels.
   const className = cn(
     'relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors',
     active
-      ? 'bg-[var(--bg-hover)] text-[var(--brand)]'
+      ? 'bg-[var(--bg-hover)] text-[var(--text-1)]'
       : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
   );
 
@@ -67,7 +70,6 @@ interface Props {
 }
 
 export default function SidebarRail({ pathname, initials, hasAccess, onExpand }: Props) {
-  const { theme, toggle } = useTheme();
   const { startNewChat, creating } = useNewChat();
 
   function isActive(item: RailItem) {
@@ -91,18 +93,18 @@ export default function SidebarRail({ pathname, initials, hasAccess, onExpand }:
         <PanelLeft size={18} strokeWidth={1.75} className="absolute opacity-0 transition-opacity group-hover:opacity-100 text-[var(--text-2)]" />
       </button>
 
-      <button
+      <Button
+        variant="primary"
         onClick={startNewChat}
         disabled={creating}
         title="New Chat"
         aria-label="New Chat"
-        className="flex items-center justify-center w-10 h-10 rounded-xl text-white transition-all duration-200 hover:brightness-110 disabled:opacity-60"
-        style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+        className="h-10 w-10 rounded-xl p-0"
       >
         {creating
           ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           : <CirclePlus size={18} strokeWidth={2} />}
-      </button>
+      </Button>
 
       {ITEMS.map(item => (
         <RailButton
@@ -117,22 +119,16 @@ export default function SidebarRail({ pathname, initials, hasAccess, onExpand }:
 
       <div className="flex-1" />
 
-      <RailButton
-        icon={theme === 'dark' ? Sun : Moon}
-        label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-        onClick={toggle}
-      />
-
       {!hasAccess && (
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
+        <Button
+          variant="upgrade"
+          onClick={() => showPaywall('sidebar_rail')}
           title="Get Unlimited"
           aria-label="Get Unlimited"
-          className="flex items-center justify-center w-10 h-10 rounded-xl transition-opacity hover:opacity-90"
-          style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+          className="h-10 w-10 rounded-xl p-0"
         >
-          <Zap size={16} className="text-white" />
-        </button>
+          <Zap size={16} />
+        </Button>
       )}
 
       <Link
@@ -141,10 +137,7 @@ export default function SidebarRail({ pathname, initials, hasAccess, onExpand }:
         aria-label="Settings"
         className="flex items-center justify-center w-10 h-10 rounded-xl transition-colors hover:bg-[var(--bg-hover)]"
       >
-        <span
-          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold"
-          style={{ backgroundColor: 'var(--brand)' }}
-        >
+        <span className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--brand)] text-white text-2xs font-semibold">
           {initials}
         </span>
       </Link>

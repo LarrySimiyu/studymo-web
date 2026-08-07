@@ -1,206 +1,83 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { documentsApi, docTagsApi, Document } from '@/lib/api/documents';
-import TagDropdown from '@/components/ui/TagDropdown';
-import { TagBadge } from '@/components/ui/badge';
-import { TAG_COLORS } from '@/lib/tagColors';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ReactNode, useState } from 'react';
+import { ArrowLeft, FileText, Trash2 } from 'lucide-react';
+import { documentsApi, Document } from '@/lib/api/documents';
+import { Button } from '@/components/ui/Button';
+import RowActionsMenu, { RowAction } from '@/components/ui/RowActionsMenu';
 
 interface Props {
   doc: Document;
   id: string;
   embedded?: boolean;
-  editableTitle: string;
-  onTitleChange: (val: string) => void;
-  titleDebounceRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  onRename: (next: string) => void;
   onBack?: () => void;
-  onShowTutorPanel: () => void;
-  showNote: boolean;
-  allDocTags: { id: string; name: string; color: string | null }[];
-  setAllDocTags: (tags: { id: string; name: string; color: string | null }[]) => void;
-  onRefetch: () => void;
-  onLoadSideData: () => void;
   onDeleteConfirm: () => void;
+  /** Rendered as a second row under the title, inside the same pinned container. */
+  toolbar?: ReactNode;
 }
 
 export default function NoteHeader({
-  doc, id, embedded, editableTitle, onTitleChange, titleDebounceRef,
-  onBack, onShowTutorPanel, showNote, allDocTags, onRefetch, onLoadSideData, onDeleteConfirm,
+  doc, id, embedded, onRename, onBack, onDeleteConfirm, toolbar,
 }: Props) {
-  const [showDotsMenu, setShowDotsMenu] = useState(false);
-  const [showCreateTagModal, setShowCreateTagModal] = useState(false);
-  const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
-  const dotsMenuRef = useRef<HTMLDivElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
 
-  useEffect(() => {
-    if (!showDotsMenu) return;
-    const h = (e: MouseEvent) => {
-      if (dotsMenuRef.current && !dotsMenuRef.current.contains(e.target as Node)) setShowDotsMenu(false);
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, [showDotsMenu]);
+  function save() {
+    setEditing(false);
+    const next = draft.trim();
+    if (next && next !== doc.title) onRename(next);
+  }
+
+  const rowActions: RowAction[] = [
+    ...(doc.fileUrl ? [{
+      label: 'View original',
+      icon: FileText,
+      onSelect: async () => {
+        const { data } = await documentsApi.getFileUrl(id);
+        if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+      },
+    }] : []),
+    { label: 'Delete', icon: Trash2, danger: true, onSelect: onDeleteConfirm },
+  ];
 
   return (
-    <>
-      {/* Top bar */}
-      <div className="flex items-center gap-2 mb-4">
+    <div
+      className="relative z-20 shrink-0"
+      style={{ borderBottom: '1px solid var(--border)' }}
+    >
+      <div className="flex h-14 items-center gap-3 px-4 sm:px-5">
         {!embedded && (
-          <button onClick={() => onBack?.()} className="text-[var(--text-2)] hover:text-[var(--text-1)] transition-colors text-xs">
-            ← Back
-          </button>
+          <Button variant="ghost" size="icon-sm" onClick={() => onBack?.()} aria-label="Back">
+            <ArrowLeft size={16} />
+          </Button>
         )}
-        <span className="text-xs text-[var(--text-1)] truncate flex-1">{doc.title}</span>
-        <div className="flex items-center gap-2 shrink-0">
-          {showNote && (
-            <button
-              onClick={onShowTutorPanel}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #FF6500 0%, #FF9A3C 100%)' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="none">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-              AI Tutor
-            </button>
-          )}
-          <div className="relative" ref={dotsMenuRef}>
-            <button
-              onClick={() => setShowDotsMenu(v => !v)}
-              className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-[var(--bg-hover)] text-[var(--text-2)]"
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <circle cx="8" cy="3" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="8" cy="13" r="1.2"/>
-              </svg>
-            </button>
-            {showDotsMenu && (
-              <div
-                className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl py-1 min-w-[140px]"
-                style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-              >
-                {doc.fileUrl && (
-                  <button
-                    onClick={async () => {
-                      setShowDotsMenu(false);
-                      const { data } = await documentsApi.getFileUrl(id);
-                      if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer');
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
-                    style={{ color: 'var(--text-1)' }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    View original
-                  </button>
-                )}
-                <button
-                  onClick={() => { setShowDotsMenu(false); onDeleteConfirm(); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
-                  style={{ color: 'var(--danger)' }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                  </svg>
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Editable title */}
-      <input
-        value={editableTitle}
-        onChange={e => {
-          const val = e.target.value;
-          onTitleChange(val);
-          if (titleDebounceRef.current) clearTimeout(titleDebounceRef.current);
-          titleDebounceRef.current = setTimeout(async () => {
-            if (val.trim()) {
-              await documentsApi.rename(id, val.trim());
-              window.dispatchEvent(new CustomEvent('library:refetch'));
-            }
-          }, 600);
-        }}
-        placeholder="Untitled"
-        className="w-full bg-transparent border-none outline-none text-heading-sm md:text-heading font-semibold text-[var(--text-1)] placeholder-[var(--text-3)] mb-3"
-      />
-
-      {/* Tags row */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-6">
-        {(doc.tags ?? []).map(dt => (
-          <TagBadge
-            key={dt.tagId}
-            color={dt.tag.color}
-            onRemove={async () => { await documentsApi.removeTag(id, dt.tagId); onRefetch(); }}
-            removeLabel={`Remove ${dt.tag.name}`}
-          >
-            {dt.tag.name}
-          </TagBadge>
-        ))}
-        <TagDropdown
-          tags={allDocTags}
-          variant="add-tag"
-          selectedIds={new Set((doc.tags ?? []).map(dt => dt.tagId))}
-          onChange={async tagId => {
-            const isApplied = (doc.tags ?? []).some(dt => dt.tagId === tagId);
-            if (isApplied) { await documentsApi.removeTag(id, tagId); } else { await documentsApi.addTag(id, tagId); }
-            onRefetch();
-          }}
-          onManageTags={() => setShowCreateTagModal(true)}
-          onTagsChanged={onRefetch}
-        />
-      </div>
-
-      <Dialog
-        open={showCreateTagModal}
-        onOpenChange={o => { if (!o) { setShowCreateTagModal(false); setNewTagName(''); } }}
-      >
-        <DialogContent size="sm" className="flex max-w-xs flex-col gap-3 p-5 sm:p-5">
-          <DialogHeader className="mb-0">
-            <DialogTitle className="text-body-sm">New tag</DialogTitle>
-          </DialogHeader>
+        {editing ? (
           <input
             autoFocus
-            value={newTagName}
-            onChange={e => setNewTagName(e.target.value)}
-            placeholder="Tag name"
-            className="w-full rounded-lg px-3 py-2 text-xs text-[var(--text-1)] outline-none placeholder-[var(--text-3)]"
-            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)' }}
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={save}
+            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
+            placeholder="Untitled"
+            className="min-w-0 flex-1 border-b bg-transparent text-body-sm font-semibold text-[var(--text-1)] placeholder-[var(--text-3)] focus:outline-none"
+            style={{ borderColor: 'var(--brand)' }}
           />
-          <div className="flex flex-wrap items-center gap-2">
-            {TAG_COLORS.map(c => (
-              <button key={c} onClick={() => setNewTagColor(c)}
-                aria-label={`Colour ${c}`}
-                className="h-5 w-5 rounded-full transition-transform hover:scale-110"
-                style={{ backgroundColor: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }}
-              />
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => { setShowCreateTagModal(false); setNewTagName(''); }}
-              className="flex-1 rounded-lg py-2 text-xs text-[var(--text-2)] transition-colors hover:bg-[var(--bg-hover)]">
-              Cancel
-            </button>
-            <button
-              onClick={async () => {
-                if (!newTagName.trim()) return;
-                const { data } = await docTagsApi.create({ name: newTagName.trim(), color: newTagColor });
-                if (data) { await documentsApi.addTag(id, data.id); onRefetch(); onLoadSideData(); window.dispatchEvent(new CustomEvent('library:refetch')); }
-                setShowCreateTagModal(false); setNewTagName('');
-              }}
-              className="flex-1 rounded-lg py-2 text-xs text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'var(--brand)' }}
-            >
-              Create
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        ) : (
+          <button
+            onClick={() => { setDraft(doc.title); setEditing(true); }}
+            title="Click to rename"
+            className="min-w-0 flex-1 truncate text-left text-body-sm font-semibold text-[var(--text-1)] transition-colors hover:text-[var(--text-2)]"
+          >
+            {doc.title || 'Untitled'}
+          </button>
+        )}
+
+        <RowActionsMenu actions={rowActions} className="shrink-0 text-[var(--text-2)]" />
+      </div>
+
+      {toolbar && <div className="px-2.5 pb-1.5 sm:px-3.5 sm:pb-2">{toolbar}</div>}
+    </div>
   );
 }

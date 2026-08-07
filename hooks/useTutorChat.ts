@@ -6,11 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import {
   tutorApi,
   streamTutorChat,
+  FreeLimitError,
   TutorSession,
   TutorMessage,
   NoteOffer,
 } from '@/lib/api/tutor';
 import { documentsApi, notesApi } from '@/lib/api/documents';
+import { invalidatePrefix } from '@/lib/api';
 import { useTutorSessions } from '@/context/TutorSessionsContext';
 import { useEmptyChatCleanup } from '@/hooks/useEmptyChatCleanup';
 import { TutorMode } from '@/components/tutor/TutorModeDropdown';
@@ -45,9 +47,14 @@ export function useTutorChat(sessionParam: string | null) {
   const [offerSaving, setOfferSaving] = useState(false);
   const [offerSaved, setOfferSaved] = useState(false);
   const [resolvedTopics, setResolvedTopics] = useState<string[]>([]);
+  const [outOfMessages, setOutOfMessages] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  /** Which chat this view has claimed. A ref, not state, so a claim is visible to the
+   *  route effect in the same tick it is made rather than a render later. */
+  const openSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
     notesApi.getAll().then(({ data }) => {
@@ -61,12 +68,15 @@ export function useTutorChat(sessionParam: string | null) {
   // The [sessionId] route segment is the source of truth for what's open
   useEffect(() => {
     if (!sessionParam) {
+      openSessionRef.current = null;
       setActiveSession(null);
       setMessages([]);
       setSuggestions([]);
       return;
     }
-    if (activeSession?.id === sessionParam) return;
+    // startWithMessage claims the chat it creates before it navigates, so the send
+    // already streaming into it is never reloaded — and blanked — out from under it.
+    if (openSessionRef.current === sessionParam) return;
     loadSession(sessionParam);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionParam]);
@@ -75,16 +85,29 @@ export function useTutorChat(sessionParam: string | null) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEmptyChatCleanup({ sessionId: sessionParam, loadedId: activeSession?.id ?? null, messageCount: messages.length, busy: isStreaming || creating });
+  useEmptyChatCleanup({
+    sessionId: sessionParam,
+    loadedId: activeSession?.id ?? null,
+    messageCount: messages.length,
+    busy: isStreaming || creating || starting,
+  });
 
   async function loadSession(id: string) {
-    const { data } = await tutorApi.getSession(id);
-    if (!data) return;
-    setActiveSession(data);
-    setMessages(data.messages);
+    openSessionRef.current = id;
+    setMessages([]);
     setSuggestions([]);
-    if (data.messages.length === 0) {
+    const { data } = await tutorApi.getSession(id);
+    // A newer chat claimed the view while this was in flight.
+    if (openSessionRef.current !== id) return;
+    if (!data) {
+      openSessionRef.current = null;
+      return;
+    }
+    setActiveSession(data);
+    setMessages(data.messages ?? []);
+    if ((data.messages ?? []).length === 0) {
       tutorApi.getSuggestions(id).then(({ data: s }) => {
+        if (openSessionRef.current !== id) return;
         if (s?.suggestions) setSuggestions(s.suggestions);
       }).catch(() => {});
     }
@@ -95,20 +118,27 @@ export function useTutorChat(sessionParam: string | null) {
    * First message on the welcome screen creates the session and sends in one go.
    * The new session is passed straight to sendMessage — waiting on the route
    * round trip would drop the text the student already typed.
+   *
+   * `starting` stays true for the whole create → send handshake so the chat is never
+   * momentarily "idle and empty" between the two, which is what the cleanup hook reads.
    */
   async function startWithMessage() {
     const text = input.trim();
-    if (!text || creating || isStreaming) return;
-    const id = await createTutorSession();
-    if (!id) return;
-    const { data } = await tutorApi.getSession(id);
-    if (!data) return;
-    setActiveSession(data);
-    setMessages([]);
-    setSuggestions([]);
-    router.push(`/dashboard/tutor/${id}`);
-    setTimeout(() => inputRef.current?.focus(), 100);
-    await sendMessage(text, data);
+    if (!text || creating || starting || isStreaming || outOfMessages) return;
+    setStarting(true);
+    try {
+      const session = await createTutorSession();
+      if (!session) return;
+      openSessionRef.current = session.id;
+      setActiveSession(session);
+      setMessages([]);
+      setSuggestions([]);
+      router.push(`/dashboard/tutor/${session.id}`);
+      setTimeout(() => inputRef.current?.focus(), 100);
+      await sendMessage(text, session);
+    } finally {
+      setStarting(false);
+    }
   }
 
   async function changeMode(mode: TutorMode) {
@@ -120,7 +150,7 @@ export function useTutorChat(sessionParam: string | null) {
   async function sendMessage(override?: string, sessionOverride?: TutorSession) {
     const session = sessionOverride ?? activeSession;
     const text = (override ?? input).trim();
-    if (!text || isStreaming || !session || !currentUser) return;
+    if (!text || isStreaming || !session || !currentUser || outOfMessages) return;
     setInput('');
     setSuggestions([]);
     setNoteOffer(null);
@@ -129,11 +159,18 @@ export function useTutorChat(sessionParam: string | null) {
     setRevealAnswer(false);
     setIsStreaming(true);
 
+    let limitHit = false;
+
     // What the student sees — no tag
     const userMsg: UIMessage = { id: nextId(), role: 'user', content: text };
     const assistantId = nextId();
     const assistantMsg: UIMessage = { id: assistantId, role: 'assistant', content: '', isStreaming: true };
     setMessages(prev => [...prev, userMsg, assistantMsg]);
+
+    // streamTutorChat bypasses lib/api, so nothing clears this session's cached GET on
+    // its own. Drop it up front too: the server stores the student's message before it
+    // starts generating, so a reload mid-stream must not read back the pre-send copy.
+    invalidatePrefix(`/tutor/${session.id}`);
 
     // What gets sent to the API — append reveal tag if toggled
     const apiMessage = wasReveal
@@ -153,24 +190,39 @@ export function useTutorChat(sessionParam: string | null) {
         offer => setNoteOffer(offer),
         resolved => setResolvedTopics(prev => [...prev, resolved.topic])
       );
-    } catch {
-      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
+    } catch (err) {
+      if (err instanceof FreeLimitError) {
+        // Nothing was sent, so leave no trace of it — pull both bubbles back out
+        // and hand the student their text so they don't have to retype it.
+        limitHit = true;
+        setOutOfMessages(true);
+        setMessages(prev => prev.filter(m => m.id !== userMsg.id && m.id !== assistantId));
+        setInput(text);
+        setRevealAnswer(wasReveal);
+      } else {
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
+      }
     } finally {
-      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
-      touchSession(session.id, text);
-      // The server generates the session title from the first message fire-and-forget,
-      // so an immediate refetch usually still returns the placeholder. Poll once more.
-      // `messages` is the pre-send closure value, so the first message sees zero.
-      const isFirstMessage = messages.filter(m => m.role === 'user').length === 0;
-      if (isFirstMessage) {
-        refetch().catch(() => {});
-        setTimeout(() => {
-          refetch().then(() => {
-            tutorApi.getSession(session.id).then(({ data }) => {
-              if (data) setActiveSession(prev => prev?.id === data.id ? { ...prev, title: data.title } : prev);
-            });
-          }).catch(() => {});
-        }, 2500);
+      // A rejected message never reached the session, so it must not touch the
+      // session preview or trigger the first-message title poll.
+      if (!limitHit) {
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
+        touchSession(session.id, text);
+        invalidatePrefix(`/tutor/${session.id}`);
+        // The server generates the session title from the first message fire-and-forget,
+        // so an immediate refetch usually still returns the placeholder. Poll once more.
+        // `messages` is the pre-send closure value, so the first message sees zero.
+        const isFirstMessage = messages.filter(m => m.role === 'user').length === 0;
+        if (isFirstMessage) {
+          refetch().catch(() => {});
+          setTimeout(() => {
+            refetch().then(() => {
+              tutorApi.getSession(session.id).then(({ data }) => {
+                if (data) setActiveSession(prev => prev?.id === data.id ? { ...prev, title: data.title } : prev);
+              });
+            }).catch(() => {});
+          }, 2500);
+        }
       }
       setIsStreaming(false);
     }
@@ -236,9 +288,9 @@ export function useTutorChat(sessionParam: string | null) {
   });
 
   return {
-    activeSession, messages, input, setInput, isStreaming, creating,
+    activeSession, messages, input, setInput, isStreaming, creating: creating || starting,
     allNotes, sources, availableNotes, noteSearch, setNoteSearch, maxNotes: MAX_NOTES,
-    revealAnswer, setRevealAnswer, suggestions,
+    revealAnswer, setRevealAnswer, suggestions, outOfMessages,
     noteOffer, setNoteOffer, offerSaving, offerSaved, resolvedTopics, setResolvedTopics,
     bottomRef, inputRef,
     startWithMessage, changeMode, sendMessage, saveTitle,

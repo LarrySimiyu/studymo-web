@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { docTagsApi } from '@/lib/api/documents';
 import TagRowMenu from '@/components/ui/tagRowMenu';
+import { Button } from '@/components/ui/Button';
 import { TAG_COLORS, tagColor } from '@/lib/tagColors';
 import {
   Dialog,
@@ -66,13 +67,9 @@ export default function ManageTagsModal({ open, onClose, onChange }: Props) {
                 />
               ))}
             </div>
-            <button
-              onClick={create}
-              disabled={saving || !newName.trim()}
-              className="rounded-lg bg-[var(--brand)] px-3 py-1 text-xs text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
+            <Button variant="primary" size="xs" onClick={create} disabled={saving || !newName.trim()}>
               Add
-            </button>
+            </Button>
           </div>
         </div>
         <div className="max-h-48 space-y-1 overflow-y-auto">

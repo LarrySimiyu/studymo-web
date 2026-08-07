@@ -30,9 +30,12 @@ export function useEmptyChatCleanup({ sessionId, loadedId, messageCount, busy, o
   const { sessions, removeSession } = useTutorSessions();
 
   const summary = sessions.find(s => s.id === sessionId);
-  const isEmpty = !busy && !!sessionId && (
-    loadedId === sessionId ? messageCount === 0 : summary?.messageCount === 0
-  );
+  const knownEmpty = loadedId === sessionId ? messageCount === 0 : summary?.messageCount === 0;
+  // The summary is the one count that outlives a reload of the view, so it gets a veto:
+  // a locally-empty chat the list has already counted a message for is stale data, not
+  // an unused chat. Without this a stale read deletes a conversation that exists.
+  const counted = (summary?.messageCount ?? 0) > 0;
+  const isEmpty = !busy && !!sessionId && knownEmpty && !counted;
 
   const tracked = useRef<{ id: string; empty: boolean } | null>(null);
   const discardRef = useRef<(id: string) => void>(() => {});

@@ -78,7 +78,7 @@ export default function FolderModal({ open, folder, onClose, onSave }: Props) {
 
           <div className="flex flex-col items-center gap-2 pt-1">
             <Button
-              variant="brand"
+              variant="primary"
               size="lg"
               onClick={submit}
               disabled={!name.trim()}
@@ -86,14 +86,9 @@ export default function FolderModal({ open, folder, onClose, onSave }: Props) {
             >
               {folder ? 'Save Changes' : 'Create Collection'}
             </Button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-xs transition-opacity hover:opacity-60"
-              style={{ color: 'var(--text-3)' }}
-            >
+            <Button type="button" variant="link" size="link" className="text-xs" onClick={onClose}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </DialogContent>

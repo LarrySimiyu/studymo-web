@@ -4,15 +4,18 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Zap, Sun, Moon, PanelLeft } from 'lucide-react';
-import { useTheme } from '@/components/ui/ThemeProvider';
+import { House, CirclePlus, Folder as FolderIcon, Library, Wrench, Layers, Heart, ClipboardList, Mic, TriangleAlert, CheckSquare, CalendarDays, Zap, Plus, PanelLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDisplayName } from '@/hooks/useGreeting';
 import { useNewChat } from '@/hooks/useNewChat';
 import { useSidebarCounts, SidebarCounts } from '@/hooks/useSidebarCounts';
 import { cn } from '@/lib/utils';
+import { showPaywall } from '@/lib/paywall';
+import { Button } from '@/components/ui/Button';
+import FreeUsageStrip from './FreeUsageStrip';
 import { Folder } from '@/lib/api/organization';
 import { flattenFolders } from '@/components/library/libraryUtils';
-import { CountBadge, SectionHeader, NavLink, sectionMotion, SectionKey } from './SidebarNavPrimitives';
+import { CountBadge, SectionHeader, NavLink, sectionMotion, SectionKey, subItemRow, subItemIdle, subItemActive } from './SidebarNavPrimitives';
 import SidebarChatHistory from './SidebarChatHistory';
 import SidebarRail from './SidebarRail';
 
@@ -44,7 +47,6 @@ function SidebarContent({
   subscriptionStatus,
 }: SidebarContentProps) {
   const flat = flattenFolders(folders);
-  const { theme, toggle } = useTheme();
   const { startNewChat, creating } = useNewChat();
 
   function isActive(href: string, exact = false) {
@@ -64,31 +66,33 @@ function SidebarContent({
     <>
       {/* Logo + collapse */}
       <div className="flex items-center justify-between px-3 py-3.5 shrink-0">
-        <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-1)' }}>StudyMo</span>
+        <span className="text-body-sm font-bold tracking-tight text-[var(--text-1)]">StudyMo</span>
         {toggleCollapsed && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={toggleCollapsed}
-            className="flex items-center justify-center w-7 h-7 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
             title="Collapse sidebar"
             aria-label="Collapse sidebar"
           >
-            <PanelLeft size={16} strokeWidth={1.75} style={{ color: 'var(--text-3)' }} />
-          </button>
+            <PanelLeft size={16} strokeWidth={1.75} />
+          </Button>
         )}
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-1.5 py-2 overflow-y-auto overflow-x-hidden space-y-1">
-        <button
+        <Button
+          variant="ghost"
           onClick={startNewChat}
           disabled={creating}
-          className="group w-full flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-semibold text-[var(--brand)] disabled:opacity-60"
+          className="w-full justify-start px-2.5 text-[var(--brand-ink)] hover:text-[var(--brand-ink)]"
         >
           {creating
             ? <span className="w-4 h-4 shrink-0 border-2 border-current border-t-transparent rounded-full animate-spin" />
             : <CirclePlus size={14} className="shrink-0" strokeWidth={2} />}
           <span className="truncate flex-1 text-left">New Chat</span>
-        </button>
+        </Button>
         <NavLink href="/dashboard/home" icon={<House size={14} />} label="Home" isActive={isActive('/dashboard/home', true)} />
 
         {/* ── NOTES ── */}
@@ -101,10 +105,8 @@ function SidebarContent({
                 <Link
                   href="/dashboard/library"
                   className={cn(
-                    'flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors',
-                    isLibraryActive && selectedFolder === 'all'
-                      ? 'text-[var(--text-1)] bg-[var(--bg-hover)]'
-                      : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
+                    subItemRow,
+                    isLibraryActive && selectedFolder === 'all' ? subItemActive : subItemIdle
                   )}
                 >
                   <span className="truncate flex-1">All Notes</span>
@@ -114,12 +116,7 @@ function SidebarContent({
                   <Link
                     key={f.id}
                     href={folderHref(f.id)}
-                    className={cn(
-                      'flex items-center gap-2 py-1 rounded-md text-xs transition-colors',
-                      isFolderActive(f.id)
-                        ? 'text-[var(--brand)] bg-[var(--bg-hover)]'
-                        : 'text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]'
-                    )}
+                    className={cn(subItemRow, 'px-0', isFolderActive(f.id) ? subItemActive : subItemIdle)}
                     style={{ paddingLeft: `${8 + f.depth * 10}px`, paddingRight: '8px' }}
                   >
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color ?? 'var(--brand)' }} />
@@ -130,9 +127,9 @@ function SidebarContent({
 
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('library:new-folder'))}
-                  className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs transition-colors text-[var(--text-2)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
+                  className={cn(subItemRow, subItemIdle, 'w-full')}
                 >
-                  <span className="text-xs opacity-60">+</span>
+                  <Plus size={12} className="shrink-0" />
                   <span>New Collection</span>
                 </button>
               </div>
@@ -174,47 +171,19 @@ function SidebarContent({
         />
       </nav>
 
-      {/* Theme toggle */}
-      <div className="px-1.5 pb-1">
-        <div className="flex items-center gap-2 px-2.5 py-2">
-          <button
-            onClick={toggle}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
-            style={{ backgroundColor: '#FF6500' }}
-          >
-            {/* track icons */}
-            <Sun size={11} className="absolute left-1.5 top-1/2 -translate-y-1/2 text-white" />
-            <Moon size={11} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-white" />
-            {/* thumb */}
-            <span
-              className={cn(
-                'absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 flex items-center justify-center',
-                theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
-              )}
-            >
-              {theme === 'dark'
-                ? <Moon size={11} className="text-[#FF6500]" />
-                : <Sun size={11} className="text-[#FF6500]" />}
-            </span>
-          </button>
-          <span className="text-xs" style={{ color: 'var(--text-2)' }}>
-            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-          </span>
-        </div>
-      </div>
-
-      {/* Get Unlimited banner (free users only) */}
+      {/* Free-tier usage + Get Unlimited banner — the one gradient in the app */}
       {!subscriptionStatus?.hasAccess && (
-        <div className="px-1.5 pb-1">
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('app:show-paywall'))}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+        <div className="flex flex-col gap-1.5 px-1.5 pb-1">
+          <FreeUsageStrip />
+          <Button
+            variant="upgrade"
+            size="lg"
+            onClick={() => showPaywall('sidebar')}
+            className="w-full justify-start"
           >
-            <Zap size={14} className="text-white shrink-0" />
-            <span className="text-xs font-semibold text-white">Get Unlimited</span>
-          </button>
+            <Zap size={14} className="shrink-0" />
+            Get Unlimited
+          </Button>
         </div>
       )}
 
@@ -224,13 +193,10 @@ function SidebarContent({
           href="/dashboard/settings"
           className="flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
         >
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-semibold shrink-0"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
+          <div className="w-6 h-6 rounded-full flex items-center justify-center bg-[var(--brand)] text-white text-2xs font-semibold shrink-0">
             {initials}
           </div>
-          <p className="text-xs font-medium truncate flex-1 min-w-0" style={{ color: 'var(--text-1)' }}>
+          <p className="text-xs font-medium truncate flex-1 min-w-0 text-[var(--text-1)]">
             {displayName}
           </p>
         </Link>
@@ -240,7 +206,8 @@ function SidebarContent({
 }
 
 export default function Sidebar() {
-  const { currentUser, dbUser, subscriptionStatus } = useAuth();
+  const { subscriptionStatus } = useAuth();
+  const displayName = useDisplayName();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -306,7 +273,6 @@ export default function Sidebar() {
     };
   }, [isSmall]);
 
-  const displayName = dbUser?.name ?? currentUser?.displayName ?? currentUser?.email?.split('@')[0] ?? 'User';
   const initials = displayName.slice(0, 2).toUpperCase();
 
   const sharedProps = {

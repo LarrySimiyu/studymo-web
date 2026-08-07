@@ -68,10 +68,8 @@ export default function RecommendedSection() {
           {/* New Note */}
           <button
             onClick={() => setShowTypePicker(true)}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
             style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
               <span className="md:hidden"><FileText size={18} color="#FF6500" /></span>
@@ -86,10 +84,8 @@ export default function RecommendedSection() {
           {/* Study Plan */}
           <button
             onClick={() => setShowPlanModal(true)}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
             style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
               <span className="md:hidden"><CalendarDays size={18} color="#3B82F6" /></span>
@@ -104,10 +100,7 @@ export default function RecommendedSection() {
           {/* Quiz */}
           <Link
             href="/dashboard/quizzes"
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(236,72,153,0.12)' }}>
               <span className="md:hidden"><Heart size={18} color="#EC4899" fill="#EC4899" /></span>
@@ -122,10 +115,7 @@ export default function RecommendedSection() {
           {/* Practice Exam */}
           <button
             onClick={handlePracticeExamClick}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
               <span className="md:hidden"><ClipboardList size={18} color="#8B5CF6" /></span>
@@ -151,10 +141,8 @@ export default function RecommendedSection() {
               <button
                 key={type}
                 onClick={() => handleSelectType(type)}
-                className="flex flex-col items-start gap-3 rounded-xl p-4 text-left transition-colors"
+                className="flex flex-col items-start gap-3 rounded-xl p-4 text-left transition-colors bg-[var(--bg-input)] hover:bg-[var(--bg-hover)]"
                 style={{ backgroundColor: 'var(--bg-input)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: ICON_BG[type] }}>
                   {icon}

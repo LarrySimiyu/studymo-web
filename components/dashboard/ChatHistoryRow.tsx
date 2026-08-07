@@ -144,19 +144,15 @@ export default function ChatHistoryRow({ session, active, onSelect, onDeleted, v
         >
           <button
             onClick={startRename}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-[var(--text-1)] transition-colors"
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs text-[var(--text-1)] transition-colors bg-transparent hover:bg-[var(--bg-hover)]"
           >
             <Pencil size={13} style={{ color: 'var(--text-3)' }} />
             Rename
           </button>
           <button
             onClick={() => { setMenuPos(null); setConfirming(true); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors"
-            style={{ color: '#EF4444' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors bg-transparent hover:bg-[var(--bg-hover)]"
+            style={{ color: 'var(--danger-ink)' }}
           >
             <Trash2 size={13} />
             Delete

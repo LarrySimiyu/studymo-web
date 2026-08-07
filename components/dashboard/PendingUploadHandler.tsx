@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { getPendingUpload, clearPendingUpload } from '@/lib/upload/pendingUpload';
 import { uploadDocumentFile } from '@/lib/upload/uploadDocument';
 import { resolveMimeType } from '@/lib/upload/fileValidation';
@@ -77,7 +78,7 @@ export default function PendingUploadHandler() {
       >
         <span className="mt-0.5 shrink-0">
           {busy && <Loader2 size={18} className="animate-spin" style={{ color: '#FF6500' }} />}
-          {phase === 'failed' && <AlertCircle size={18} style={{ color: '#EF4444' }} />}
+          {phase === 'failed' && <AlertCircle size={18} style={{ color: 'var(--danger-ink)' }} />}
         </span>
         <div className="min-w-0">
           <p className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>
@@ -90,15 +91,15 @@ export default function PendingUploadHandler() {
           </p>
         </div>
         {phase === 'failed' && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label="Dismiss"
             onClick={() => setPhase('complete')}
-            className="shrink-0 rounded-full p-0.5 transition-colors hover:[background-color:var(--bg-hover)]"
-            style={{ color: 'var(--text-2)' }}
+            className="shrink-0"
           >
             <X size={16} />
-          </button>
+          </Button>
         )}
       </div>
     </div>

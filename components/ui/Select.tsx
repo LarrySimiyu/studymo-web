@@ -86,7 +86,7 @@ export default function Select({
                   <div className="flex flex-col min-w-0">
                     <RadixSelect.ItemText>{opt.label}</RadixSelect.ItemText>
                     {opt.description && (
-                      <span className="text-[10px] leading-tight mt-0.5" style={{ color: 'var(--text-3)' }}>
+                      <span className="text-2xs leading-tight mt-0.5" style={{ color: 'var(--text-3)' }}>
                         {opt.description}
                       </span>
                     )}

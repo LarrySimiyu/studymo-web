@@ -52,6 +52,7 @@ export default function TutorSurface({ sessionId }: { sessionId: string | null }
                 offerSaving={t.offerSaving}
                 onAcceptOffer={t.acceptOffer}
                 onDismissOffer={() => t.setNoteOffer(null)}
+                outOfMessages={t.outOfMessages}
               />
 
               <ContextPicker
@@ -70,8 +71,12 @@ export default function TutorSurface({ sessionId }: { sessionId: string | null }
                 value={t.input}
                 onChange={t.setInput}
                 onSend={t.sendMessage}
-                disabled={t.isStreaming}
-                placeholder={t.isStreaming ? 'Thinking…' : 'Message your tutor…'}
+                disabled={t.isStreaming || t.outOfMessages}
+                placeholder={
+                  t.outOfMessages
+                    ? 'Out of free messages — upgrade to keep chatting'
+                    : t.isStreaming ? 'Thinking…' : 'Write a message…'
+                }
                 contextNotes={contextNotes}
                 onAddContext={() => setShowContextPicker(v => !v)}
                 contextPillClassName="lg:hidden"

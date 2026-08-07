@@ -244,7 +244,7 @@ function SetupPanel({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {error && <p className="text-red-400 text-xs">{error}</p>}
+        {error && <p className="text-[var(--danger-ink)] text-xs">{error}</p>}
       </div>
 
       <div className="p-4 border-t" style={{ borderColor: 'var(--border)' }}>
@@ -283,7 +283,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
         <span className="text-sm text-[var(--text-2)]">🍅 Pomodoro</span>
-        <button onClick={onEndRequest} className="text-xs text-red-400 hover:text-red-300">End Session</button>
+        <button onClick={onEndRequest} className="text-xs text-[var(--danger-ink)] hover:text-[var(--danger-ink)]">End Session</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -331,7 +331,7 @@ function PomodoroPanel({ onEndRequest }: { onEndRequest: () => void }) {
                   className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
                   style={{ borderColor: entry.completed ? '#4ade80' : 'var(--border-md)', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
                 >
-                  {entry.completed && <span className="text-green-400 text-xs">✓</span>}
+                  {entry.completed && <span className="text-[var(--success-ink)] text-xs">✓</span>}
                 </button>
                 {entry.task.tags[0]?.tag && (
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.tags[0]?.tag.color }} />
@@ -408,7 +408,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
         <span className="text-sm text-[var(--text-2)]">⏱ Time Block</span>
-        <button onClick={onEndRequest} className="text-xs text-red-400 hover:text-red-300">End Session</button>
+        <button onClick={onEndRequest} className="text-xs text-[var(--danger-ink)] hover:text-[var(--danger-ink)]">End Session</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -448,7 +448,7 @@ function TimeBlockPanel({ onEndRequest }: { onEndRequest: () => void }) {
                     className="w-4 h-4 rounded border flex items-center justify-center shrink-0"
                     style={{ borderColor: entry.completed ? '#4ade80' : 'var(--border-md)', backgroundColor: entry.completed ? '#4ade8020' : 'transparent' }}
                   >
-                    {entry.completed && <span className="text-green-400 text-xs">✓</span>}
+                    {entry.completed && <span className="text-[var(--success-ink)] text-xs">✓</span>}
                   </button>
                   {entry.task.tags[0]?.tag && (
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.task.tags[0]?.tag.color }} />

@@ -86,7 +86,7 @@ export default function FileUploadForm({ loading, onStart, onSuccess, onError }:
         <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" />
       </div>
       {loading && <UploadProgress progress={uploadProgress} color="var(--brand)" />}
-      <Button variant="brand" size="lg" className="w-full" onClick={handleUpload} disabled={!file || loading}>
+      <Button variant="primary" size="lg" className="w-full" onClick={handleUpload} disabled={!file || loading}>
         {loading ? 'Uploading…' : 'Upload'}
       </Button>
     </div>

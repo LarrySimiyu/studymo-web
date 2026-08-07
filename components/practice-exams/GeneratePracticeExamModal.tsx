@@ -9,6 +9,9 @@ import {
 } from '@/components/ui/dialog';
 import { ChevronDown, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
+import { cn } from '@/lib/utils';
 
 const QUESTION_TYPES = [
   { value: 'multiple_choice', label: 'Multiple Choice' },
@@ -129,13 +132,16 @@ export default function GeneratePracticeExamModal({ open, onClose, onGenerate, d
                   <button
                     key={value}
                     onClick={() => setDuration(value)}
-                    className="p-2 rounded-lg text-center transition-colors"
-                    style={{ backgroundColor: active ? 'rgba(255,101,0,0.15)' : 'var(--bg-input)' }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'var(--bg-input)'; }}
+                    aria-pressed={active}
+                    className={cn(
+                      'rounded-lg p-2 text-center transition-colors',
+                      active
+                        ? 'bg-[var(--brand-subtle)] ring-1 ring-inset ring-[var(--brand-border)]'
+                        : 'bg-[var(--bg-input)] hover:bg-[var(--bg-hover)]'
+                    )}
                   >
-                    <p className="text-xs font-medium" style={{ color: active ? '#fff' : 'var(--text-2)' }}>{label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: active ? 'rgba(255,255,255,0.7)' : 'var(--text-3)' }}>{sub}</p>
+                    <p className={cn('text-xs font-medium', active ? 'text-[var(--brand-ink)]' : 'text-[var(--text-2)]')}>{label}</p>
+                    <p className={cn('mt-0.5 text-xs', active ? 'text-[var(--brand-ink)] opacity-70' : 'text-[var(--text-3)]')}>{sub}</p>
                   </button>
                 );
               })}
@@ -147,14 +153,11 @@ export default function GeneratePracticeExamModal({ open, onClose, onGenerate, d
             <label className="text-xs text-[var(--text-1)] mb-1.5 block">Select Notes</label>
             <button
               onClick={() => setNotesOpen(o => !o)}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors"
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-md)',
-                color: docIds.length ? 'var(--text-1)' : 'var(--text-3)',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-md)')}
+              aria-expanded={notesOpen}
+              className={cn(
+                'flex w-full items-center justify-between rounded-xl border border-[var(--border-md)] bg-[var(--bg-card)] px-3 py-2 text-body-sm transition-colors hover:border-[var(--brand)]',
+                docIds.length ? 'text-[var(--text-1)]' : 'text-[var(--text-3)]'
+              )}
             >
               <span>
                 {docIds.length === 0 ? 'Select notes…' : `${docIds.length} note${docIds.length !== 1 ? 's' : ''} selected`}
@@ -175,10 +178,7 @@ export default function GeneratePracticeExamModal({ open, onClose, onGenerate, d
                       <button
                         key={d.id}
                         onClick={() => toggleDoc(d.id)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors"
-                        style={{ color: 'var(--text-1)', backgroundColor: 'transparent' }}
-                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-body-sm text-[var(--text-1)] transition-colors hover:bg-[var(--bg-hover)]"
                       >
                         <span
                           className="w-4 h-4 rounded shrink-0 flex items-center justify-center transition-colors"
@@ -211,24 +211,24 @@ export default function GeneratePracticeExamModal({ open, onClose, onGenerate, d
 
         {/* Actions */}
         <div className="mt-6 flex flex-col items-center gap-3">
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
             onClick={handleGenerate}
             disabled={generating || !title.trim() || !docIds.length || !questionTypes.length}
-            className="w-full py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
           >
             {generating ? 'Generating…' : 'Generate Exam'}
-          </button>
-          <button
+          </Button>
+          <UsageCounter limitKey="practiceExams" />
+          <Button
+            variant="link"
+            size="link"
             onClick={() => { if (!generating) onClose(); }}
             disabled={generating}
-            className="text-sm transition-colors disabled:opacity-40"
-            style={{ color: 'var(--text-3)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

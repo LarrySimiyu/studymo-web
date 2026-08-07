@@ -3,6 +3,7 @@
 import { RefObject } from 'react';
 import UserBubble from '@/components/tutor/UserBubble';
 import AssistantMessage from '@/components/tutor/AssistantMessage';
+import { useGreeting } from '@/hooks/useGreeting';
 import type { UIMessage } from '@/hooks/useTutorChat';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export default function TutorMessages({ messages, isStreaming, bottomRef }: Props) {
+  const greeting = useGreeting();
+
   return (
     <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
       {messages.length === 0 && (
@@ -20,8 +23,8 @@ export default function TutorMessages({ messages, isStreaming, bottomRef }: Prop
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.75"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-[var(--text-1)]">Add your notes and I&apos;ll help you study</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Ask me anything or attach a note from Sources</p>
+            <p className="text-sm font-semibold text-[var(--text-1)]">{greeting}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Add a note and I&apos;ll help you study</p>
           </div>
         </div>
       )}

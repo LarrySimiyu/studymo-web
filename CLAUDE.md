@@ -2,7 +2,7 @@
 
 ## Project Overview
 Studymo is a study/ed-tech SaaS. This is the Next.js 14 App Router frontend.
-The backend API lives at `/Users/larrysimiyu/Desktop/coding/studymo-api` — check its CLAUDE.md for endpoint details, schema, and service logic.
+The backend API lives at `../studymo-api` — check its CLAUDE.md for endpoint details, schema, service logic, and the free-tier quota rules.
 
 ## Tech Stack
 - **Framework**: Next.js 14 App Router (`'use client'` where needed)
@@ -24,7 +24,24 @@ var(--border)   — border color
 var(--brand)    — brand orange #FF6500
 ```
 
-Accent colors for icons, badges, status:
+The dashboard ships **dark-only** for now. Light mode is fully built in `.light`
+in globals.css but switched off by `THEME_ENABLED = false` in `ThemeProvider`,
+and the sidebar toggle is removed. Keep writing token-correct styles so it can
+be switched back on with one line.
+
+### Semantic colour — use the `-ink` tokens for text
+`--brand` / `--danger` / `--success` / `--warning` are **fill** colours. For
+anything that renders as text or an icon, use `--brand-ink` / `--danger-ink` /
+`--success-ink` / `--warning-ink`. The raw accents sit at 1.9–2.2:1 on white and
+fail AA in light mode; the `-ink` values are darkened to clear it.
+
+Soft buttons pair `--x-subtle` (rest) with `--x-subtle-hover` (hover) — tinted
+buttons can't hover via opacity without washing out the label.
+
+### Accent palette — icons and identity only
+For per-item colour (note icons, upload types, plan cards) import `PALETTE` /
+`getPalette` from `components/dashboard/PlanCard`. **Never redefine the array
+locally.** These are decorative, not semantic — don't use them for state.
 - Orange `#FF6500` / `rgba(255,101,0,0.12)`
 - Green `#22C55E` / `rgba(34,197,94,0.12)`
 - Amber `#F59E0B` / `rgba(245,158,11,0.12)`
@@ -34,12 +51,67 @@ Accent colors for icons, badges, status:
 - Purple `#8B5CF6` / `rgba(139,92,246,0.12)`
 - Teal `#14B8A6` / `rgba(20,184,166,0.12)`
 
+## Typography — use the scale, not raw sizes
+Declared in `tailwind.config.ts`. Raw `text-sm` / `text-2xl` / `text-[10px]` are
+what made ten pages render the same rank at five different sizes.
+
+| token | size | use |
+|---|---|---|
+| `text-2xs` | 11px | count badges, timestamps, source pills. Nothing goes below this |
+| `text-xs` | 12px | meta, chips, dense rows |
+| `text-body-sm` | 14px | body copy, list rows, secondary text |
+| `text-body` / `text-body-lg` | 16 / 18px | prose, card titles |
+| `text-heading-sm` / `text-heading` | 20 / 24px | page title (via `PageHeader`), section headers |
+| `text-title` / `text-display` | 28 / 36px | stat readouts, scores |
+
+Headings carry their own weight — don't add `font-bold` on top of `text-heading`.
+
+Page title = `PageHeader`. Block heading = `SectionHeading` (from the same file).
+
+## Hover states are CSS, not JS
+Use `hover:bg-[var(--bg-hover)]`. Never `onMouseEnter={e => e.currentTarget.style…}`
+— it has no keyboard-focus equivalent and an inline style silently beats the class.
+
 ## Reusable Components — Check These Before Building Anything New
 Duplicate implementations cause visual inconsistency. Always import from here first.
 
 ### `components/ui/Button`
-Primary action button. Variants: `brand` (orange gradient), `outline`, `ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`.
-Use `variant="brand" size="lg"` for primary modal/form actions. Never use a raw `<button>` with a hardcoded background color for a CTA.
+**The only button in the app.** shadcn/cva. Never write a raw `<button>` with a hardcoded background, padding, and radius — that is how this codebase ended up with four parallel button systems.
+
+Variants:
+
+| variant | use |
+|---|---|
+| `primary` | solid brand — the one main action in a view |
+| `secondary` | neutral filled — secondary actions, toolbars |
+| `outline` | bordered neutral — pairs with primary in modal footers |
+| `ghost` | transparent until hover — icon buttons, menu rows, dismissals |
+| `link` | inline text action. Pair with `size="link"` |
+| `danger` / `success` / `warning` / `brandSoft` | soft semantic fills, `-ink` label |
+| `upgrade` | **the only gradient left in the app.** Paywall / Get Unlimited only |
+| `pill` | card-surface chip — tutor context chips |
+
+Sizes: `xs` (h-7) · `sm` (h-8) · `default` (h-9) · `lg` (h-11, 44px touch target) · `icon` · `icon-sm` · `icon-xs` · `pill` · `link`. Every button is `rounded-full` and presses in on `active:scale-[0.97]` — don't override either. Horizontal padding is deliberately tight for the pill shape; don't pad individual call sites back out.
+
+Use `variant="primary" size="lg"` for primary modal/form actions.
+
+**What counts as a button.** A raw `<button>` is correct only when the element isn't shaped like one. Use `Button` for: labelled actions, icon actions (close, dismiss, back, send, delete), and inline text actions (`variant="link" size="link"`). Keep a raw `<button>` for: dropdown/menu rows, clickable cards and list rows, tab and toggle groups (use `SegmentedTabs` / `SlidingTabs`), checkboxes and radios, colour swatches, calendar day cells, quiz answer options, and purpose-built transport controls (the podcast player, the recorder). The test is whether a pill with a press animation would look right there.
+
+### `components/dashboard/PageShell`
+The container every dashboard page sits in. Owns the gutter (`px-4 sm:px-5`, matching `PageHeader`'s) so pages stop inventing their own. `width`: `sm` (2xl) · `md` (3xl, default) · `lg` (4xl) · `xl` (5xl) · `full` (uncapped).
+
+The column is **anchored to the sidebar, not centred** — a centred column on a wide screen leaves a canyon between the nav and the content. Pass `center` only on focus views that read better in the middle of the screen: settings, a quiz run, an exam, a plan detail.
+
+Pass the page's `PageHeader` as the `header` prop, not as a child — the shell renders it outside the content column so the bar spans the full pane.
+
+### `components/dashboard/EmptyState`
+The one empty state — icon, title, description, optional action. Takes `accent` / `accentBg` for the icon tint. Don't hand-roll another.
+
+### `components/ui/RowActionsMenu`
+The three-dot row menu, on Radix `dropdownMenu`. Takes `actions: RowAction[]` (`label`, `icon`, `onSelect` or `href`, `danger`). Replaced three hand-rolled hover-timer popovers that had no focus trap, Escape, or keyboard access.
+
+### `components/ui/SegmentedTabs`
+Pill-in-a-track switch for two or three peer views. Distinct from `SlidingTabs`, which is the underlined bar for navigating sections of a page.
 
 ### `components/ui/Input`
 Styled text input. Use for every form field — never use a raw `<input>` with custom styling.
@@ -86,7 +158,7 @@ The single upload modal for all content types. Takes a `type` prop: `'blank' | '
 Split by responsibility: `UploadDialog.tsx` is the Dialog shell + type routing; `useUploadFlow.ts` owns the upload → processing → complete/failed state machine and the status-watch teardown; one form component per type (`BlankNoteForm`, `FileUploadForm`, `RecordForm`, `VideoForm`, `WebpageForm`), all sharing the `UploadFormProps` contract in `uploadTypes.ts`. `UploadProgress.tsx` is the shared progress bar.
 
 ### `components/dashboard/PageHeader`
-Page title + optional action button. Use at the top of every dashboard page.
+The page's top bar — sticky, `h-14`, bottom border, title left and actions right. Same shape as the tutor's `TutorTopBar`, so chat and the rest of the app share one piece of chrome. `subtitle` sits inline next to the title and is hidden below `sm`. Pass it to `PageShell`'s `header` prop; don't render it inside the content column.
 
 ### `components/dashboard/PlanCard`
 Study plan card. Also exports `PALETTE`, `getPalette(id)`, `daysColor`, `DayRow`. **Import `PALETTE` and `getPalette` from here whenever you need consistent icon/card colors — never define a local palette array.**
@@ -108,6 +180,52 @@ Modal to configure and trigger podcast generation (length, voice).
 
 ### `components/podcast/PodcastPlayer`
 Audio player for a generated podcast MP3.
+
+### `components/dashboard/UsageCounter`
+"2 of 2 free quizzes used" under a generate button. Takes a `limitKey`; renders nothing for
+subscribers. Put one under every action that spends a free quota — don't hand-roll the copy.
+
+### `components/dashboard/FreeUsageStrip`
+The free-plan meter in the sidebar (uploads, notes, tutor messages). Hidden for subscribers.
+
+### `components/tutor/OutOfMessagesBanner`
+Shown above the tutor input when a free user's messages run out. Shared by the full tutor
+page and the in-document panel.
+
+---
+
+## Free Tier
+
+Non-subscribers get fixed, lifetime quotas — 5 uploads · 5 notes · 10 tutor messages · 2
+each of decks, quizzes, exams and podcasts · 3 weak topics · 1 study plan · 5 tasks. The
+server owns enforcement; see `../studymo-api/CLAUDE.md` for the authoritative table.
+
+Three rules for the client:
+
+1. **Never gate a feature by hand.** `lib/api.ts` turns any `403 free_limit_reached` into
+   the paywall for you, and rewrites the error string into something a user can read. Any
+   call going through `lib/api` is already covered.
+2. **Read counts from `hooks/useUsage`** — `used`, `limit`, `remaining`, `atLimit`, `isFree`.
+   It refreshes on every write via the `usage:changed` event in `lib/contentEvents`.
+   Never count rows client-side to infer a quota.
+3. **Raise the paywall with `showPaywall(trigger)`** from `lib/paywall`, never a raw
+   `dispatchEvent`. `app/dashboard/layout.tsx` owns the modal and logs the trigger.
+
+The tutor is the one exception to rule 1: `streamTutorChat` bypasses `lib/api`, so it
+throws a typed `FreeLimitError` and the surface shows `OutOfMessagesBanner` inline instead
+of throwing a modal over the conversation.
+
+**Signup never touches Stripe.** Every account starts free, and the only moment a card is
+asked for is when a free quota runs out and the paywall opens on a plan the user picked
+deliberately. That is why every CTA on `/pricing` reads "Start free" and why a signed-out
+visitor clicking *any* column — including a paid one — goes to `/sign-up` and nowhere else.
+Don't reintroduce a plan hand-off through signup or onboarding; it puts a card form in
+front of someone who hasn't used the product yet.
+
+The API returns four plans — Free, Weekly, Monthly, Yearly. Free is a synthetic `$0` entry
+with a null `priceId`, so any CTA handler must branch on `plan.id === 'free'` before
+reaching for Stripe. `/pricing` shows all four; `PaywallModal` shows the three paid ones,
+since it only ever opens for a user already on Free.
 
 ---
 
@@ -284,6 +402,11 @@ Profile management and Stripe subscription portal.
 
 - **Profile**: `app/dashboard/settings/page.tsx` — `lib/api/profile.ts`
 - **Billing**: `app/dashboard/settings/billing/page.tsx` — `lib/api/billing.ts`
+- **Plans**: `app/pricing/page.tsx` and `components/pricing/PaywallModal.tsx` both render
+  `PricingGrid`, differing only by `includeFree` and `ctaLabel`. Copy, prices, and the
+  savings maths live in `components/pricing/pricingContent.ts`; CTA behaviour lives in
+  `hooks/usePlanCheckout.ts`. Keep changes there, not in one of the two surfaces.
+  Never hardcode a price — read it from `billingApi.getPlans()`, which is live from Stripe.
 
 ---
 
@@ -294,14 +417,18 @@ components/
   ui/                   — shared primitives (dialog, alertDialog, Button, Input, SlidingTabs, QuestionCard, etc.)
   dashboard/            — dashboard-wide components (Sidebar, PageHeader, PlanCard, WeakTopicItem, etc.)
   library/              — document viewer (DocumentDetail, TutorPanel, DeleteConfirmModal)
-  pricing/              — PlanSelector, PlanCard, PaywallModal (fullscreen dialog)
+  pricing/              — PricingGrid + PlanColumn, pricingContent (copy/maths), PaywallModal
   upload/               — UploadDialog shell + useUploadFlow + one form per upload type
   flashcards/           — FlipCard
   quiz/                 — QuizRunner
   podcast/              — GeneratePodcastModal, PodcastPlayer
   tasks/                — TaskItem, TaskModal, TasksPanel
-  tutor/                — chat input/bubbles/context picker
+  tutor/                — chat input/bubbles/context picker, OutOfMessagesBanner
   timer/                — StudyTimerPanel
+lib/
+  api.ts                — the fetch client: auth header, GET cache, free-limit interceptor
+  paywall.ts            — showPaywall / onShowPaywall
+  contentEvents.ts      — content:changed (sidebar totals) + usage:changed (free-tier counters)
 lib/api/                — one file per API domain
   documents.ts          — documentsApi, notesApi, flashcardsApi, quizzesApi
   studyPlan.ts          — studyPlansApi, weakTopicsApi
@@ -309,10 +436,32 @@ lib/api/                — one file per API domain
   tasks.ts              — tasksApi
   organization.ts       — foldersApi, practiceExamsApi
   podcasts.ts           — podcastsApi
-  billing.ts / profile.ts / tutor.ts
+  billing.ts            — plans, status, usage, checkout, portal
+  profile.ts / tutor.ts
 hooks/
-  useAuth.ts            — Firebase auth state
+  useAuth.ts            — Firebase auth state + subscriptionStatus
+  useUsage.ts           — free-tier limits, usage, atLimit/remaining
+  useTutorChat.ts       — the tutor page's chat state machine
+  usePlanCheckout.ts    — plan list + CTA routing for /pricing and PaywallModal
 ```
+
+## Environment Variables
+```
+NEXT_PUBLIC_API_URL                    # Backend URL (e.g. https://your-api.railway.app)
+NEXT_PUBLIC_FIREBASE_API_KEY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+NEXT_PUBLIC_FIREBASE_PROJECT_ID
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+NEXT_PUBLIC_FIREBASE_APP_ID
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+NEXT_PUBLIC_GA_MEASUREMENT_ID
+NEXT_PUBLIC_MIXPANEL_TOKEN
+```
+
+Stripe checkout is entirely the API's job — it creates the session and returns a URL the
+browser redirects to. The web app never talks to Stripe directly, and the Stripe webhook
+is handled by the API, not a Next route handler.
 
 ## Component Architecture
 - **Always extract reusable UI into its own component file** before a page file gets long. If a section of a page could reasonably appear elsewhere, it belongs in `components/`.
@@ -337,6 +486,9 @@ Rules:
 - Master-detail screens use a route group: `layout.tsx` holds the list, `page.tsx` the empty state, `[id]/page.tsx` the detail — see `app/dashboard/library/`. Carry the existing query string across those navigations so filters survive.
 - All API calls go through `lib/api/` — never call `fetch` directly
 - GET responses are cached 5 min — call `invalidatePrefix('/resource')` after mutations if needed
+- Free-tier limits are the server's job. Don't gate a feature client-side — let the 403 come
+  back and `lib/api.ts` will raise the paywall. Read counts from `useUsage`, never by counting
+  rows. See the Free Tier section above
 - Use `api.postForm` for file/recording uploads
 - **Modals: import `Dialog` from `components/ui/dialog`. Never hand-roll an overlay.** A raw `fixed inset-0` wrapper has no focus trap, no Escape key, no body scroll lock, and no `aria-modal`. Use `AlertDialog` from `components/ui/alertDialog` for destructive confirms. No bottom-sheet behavior.
 - Stacking scale (also documented at the top of `globals.css`) — nothing may exceed `z-[70]`:

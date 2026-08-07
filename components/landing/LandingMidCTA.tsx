@@ -27,7 +27,7 @@ export default function LandingMidCTA({ segment, utmCampaign, midCTACopy }: Prop
         </p>
         <Suspense
           fallback={
-            <Button asChild variant="brand" size="lg" className="rounded-full px-10">
+            <Button asChild variant="primary" size="lg" className="rounded-full px-10">
               <Link href="/sign-up">Start For Free</Link>
             </Button>
           }

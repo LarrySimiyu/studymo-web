@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { billingApi } from '@/lib/api/billing';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   School, GraduationCap, BookOpen, Briefcase, Globe,
@@ -236,12 +235,9 @@ export default function OnboardingPage() {
 
 function OnboardingContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const priceId = searchParams.get('priceId');
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [data, setData] = useState(defaultOnboardingData);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     setData(getOnboardingData());
@@ -565,28 +561,15 @@ function OnboardingContent() {
               </p>
             </div>
             <Button
-              variant="brand"
+              variant="primary"
               size="lg"
               className="w-full sm:max-w-xs"
-              disabled={checkoutLoading}
-              onClick={async () => {
+              onClick={() => {
                 analytics.onboardingCompleted();
-                if (priceId) {
-                  setCheckoutLoading(true);
-                  const { data } = await billingApi.createCheckout(priceId);
-                  if (data?.url) {
-                    analytics.subscriptionStarted(priceId);
-                    window.location.href = data.url;
-                  } else {
-                    setCheckoutLoading(false);
-                    router.push('/dashboard');
-                  }
-                } else {
-                  router.push('/dashboard');
-                }
+                router.push('/dashboard');
               }}
             >
-              {checkoutLoading ? 'Loading…' : 'Get Started'}
+              Get Started
             </Button>
           </div>
         );
@@ -663,7 +646,7 @@ function StepWrapper({ heading, sub, children }: { heading: string; sub?: string
 
 function ContinueBtn({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <Button variant="brand" size="lg" className="mt-2 w-full sm:max-w-xs" onClick={onClick} disabled={disabled}>
+    <Button variant="primary" size="lg" className="mt-2 w-full sm:max-w-xs" onClick={onClick} disabled={disabled}>
       Continue
     </Button>
   );

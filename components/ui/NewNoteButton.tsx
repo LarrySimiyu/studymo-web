@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 
 export default function NewNoteButton() {
   return (
-    <Button variant="brand" size="sm" asChild>
+    <Button variant="primary" size="sm" asChild>
       <Link href="/dashboard/library">
         <Plus size={14} />
         New Note

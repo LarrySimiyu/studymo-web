@@ -1,27 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { podcastsApi, Podcast } from '@/lib/api/podcasts';
 import PodcastPlayer from '@/components/podcast/PodcastPlayer';
-import Link from 'next/link';
-import { Mic, Clock, Star, Play } from 'lucide-react';
+import { Mic, Clock, Star, Pause, Play, Download, Trash2 } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { PageHeader } from '@/components/dashboard/PageHeader';
-
-const PALETTE: [string, string][] = [
-  ['#FF6500', 'rgba(255,101,0,0.12)'],
-  ['#22C55E', 'rgba(34,197,94,0.12)'],
-  ['#3B82F6', 'rgba(59,130,246,0.12)'],
-  ['#F59E0B', 'rgba(245,158,11,0.12)'],
-  ['#EC4899', 'rgba(236,72,153,0.12)'],
-  ['#8B5CF6', 'rgba(139,92,246,0.12)'],
-  ['#14B8A6', 'rgba(20,184,166,0.12)'],
-];
-
-function getPalette(id: string): [string, string] {
-  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return PALETTE[hash % PALETTE.length];
-}
+import PageShell from '@/components/dashboard/PageShell';
+import EmptyState from '@/components/dashboard/EmptyState';
+import RowActionsMenu, { RowAction } from '@/components/ui/RowActionsMenu';
+import { getPalette } from '@/components/dashboard/PlanCard';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -29,88 +18,23 @@ function formatDate(iso: string) {
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'generating') return (
-    <span className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
-      <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse" />
+    <span className="flex items-center gap-1 rounded-full bg-[var(--warning-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--warning-ink)]">
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--warning)]" />
       Generating
     </span>
   );
   if (status === 'failed') return (
-    <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>
+    <span className="rounded-full bg-[var(--danger-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--danger-ink)]">
       Failed
     </span>
   );
   return null;
 }
 
-function ThreeDotsMenu({ audioUrl, title, onDelete }: { audioUrl?: string; title: string; onDelete: () => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleMouseEnter() {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  }
-
-  function handleMouseLeave() {
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  }
-
-  return (
-    <div className="absolute top-3 right-3" ref={ref} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button
-        className="p-1.5 rounded-lg transition-colors"
-        style={{ color: 'var(--text-3)' }}
-        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-3)')}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
-        </svg>
-      </button>
-
-      {open && (
-        <div
-          className="absolute right-0 top-full mt-1 z-[70] rounded-xl shadow-xl py-1 min-w-[130px]"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-        >
-          {audioUrl && (
-            <a
-              href={audioUrl}
-              download={`${title}.mp3`}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[var(--text-1)] transition-colors"
-              style={{ backgroundColor: 'transparent' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-              onClick={() => setOpen(false)}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Download
-            </a>
-          )}
-          <button
-            onClick={() => { setOpen(false); onDelete(); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors"
-            style={{ backgroundColor: 'transparent', color: '#f87171' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-            </svg>
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function PodcastsPage() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   async function load() {
     const { data } = await podcastsApi.getAll();
@@ -131,81 +55,94 @@ export default function PodcastsPage() {
 
   async function handleDelete(id: string) {
     await podcastsApi.delete(id);
+    setOpenId(prev => (prev === id ? null : prev));
     setPodcasts(prev => prev.filter(p => p.id !== id));
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--brand)' }} />
-      </div>
+      <PageShell width="xl">
+        <LoadingSpinner size="lg" />
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-6">
-      <PageHeader
-        title="Podcasts"
-        action={{ label: 'New Podcast', href: '/dashboard/library' }}
-      />
+    <PageShell
+      width="xl"
+      header={<PageHeader title="Podcasts" action={{ label: 'New Podcast', href: '/dashboard/library' }} />}
+    >
 
       {podcasts.length === 0 ? (
-        <div className="flex items-center gap-6 p-8 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
-            <Mic size={40} style={{ color: '#FF6500' }} />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-[var(--text-1)]">No Podcasts</h3>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-3)' }}>Turn your notes into audio lectures you can listen to anywhere.</p>
-            <Link
-              href="/dashboard/library"
-              className="mt-4 inline-block px-4 py-2 rounded-xl text-sm font-medium text-white hover:opacity-90 transition-opacity"
-              style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
-            >
-              Go to Notes
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          icon={Mic}
+          title="No Podcasts"
+          description="Turn your notes into audio lectures you can listen to anywhere."
+          action={{ label: 'Go to Notes', href: '/dashboard/library' }}
+        />
       ) : (
         <div className="space-y-2">
           {podcasts.map(podcast => {
             const [iconColor, iconBg] = getPalette(podcast.id);
+            const playable = podcast.status === 'complete' && Boolean(podcast.audioUrl);
+            const isOpen = playable && openId === podcast.id;
+            const hasBody = isOpen || podcast.status === 'generating' || podcast.status === 'failed';
+            const toggle = () => setOpenId(isOpen ? null : podcast.id);
+            const actions: RowAction[] = [
+              ...(podcast.audioUrl
+                ? [{ label: 'Download', icon: Download, href: podcast.audioUrl, download: `${podcast.title}.mp3` }]
+                : []),
+              { label: 'Delete', icon: Trash2, danger: true, onSelect: () => handleDelete(podcast.id) },
+            ];
+
             return (
               <div
                 key={podcast.id}
-                className="relative rounded-xl p-3 transition-colors"
-                style={{ backgroundColor: 'var(--bg-card)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+                className="relative rounded-xl bg-[var(--bg-card)] p-3 transition-colors hover:bg-[var(--bg-hover)]"
               >
-                <ThreeDotsMenu
-                  audioUrl={podcast.audioUrl ?? undefined}
-                  title={podcast.title}
-                  onDelete={() => handleDelete(podcast.id)}
-                />
+                <div className="absolute right-3 top-3">
+                  <RowActionsMenu actions={actions} />
+                </div>
 
-                <div className="flex items-start gap-3 mb-3">
+                <div
+                  className={`group/row flex items-start gap-3 ${hasBody ? 'mb-3' : ''} ${playable ? 'cursor-pointer' : ''}`}
+                  onClick={playable ? toggle : undefined}
+                >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 group/icon"
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
                     style={{ backgroundColor: iconBg }}
                   >
-                    <Mic size={18} className="group-hover/icon:hidden" style={{ color: iconColor }} />
-                    <Play size={15} className="hidden group-hover/icon:block" fill={iconColor} style={{ color: iconColor }} />
+                    {isOpen ? (
+                      <Pause size={15} fill={iconColor} style={{ color: iconColor }} />
+                    ) : (
+                      <>
+                        <Mic
+                          size={18}
+                          className={playable ? 'group-hover/row:hidden' : ''}
+                          style={{ color: iconColor }}
+                        />
+                        {playable && (
+                          <Play
+                            size={15}
+                            className="hidden group-hover/row:block"
+                            fill={iconColor}
+                            style={{ color: iconColor }}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <p className="text-[var(--text-1)] font-semibold text-sm truncate">{podcast.title}</p>
+                      <p className="truncate text-body-sm font-semibold text-[var(--text-1)]">{podcast.title}</p>
                       <StatusBadge status={podcast.status} />
                     </div>
                     {podcast.document && (
-                      <span
-                        className="inline-block text-xs px-2 py-0.5 rounded-full truncate max-w-[200px]"
-                        style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}
-                      >
+                      <span className="inline-block max-w-[200px] truncate rounded-full bg-[var(--bg-input)] px-2 py-0.5 text-xs text-[var(--text-2)]">
                         {podcast.document.title}
                       </span>
                     )}
-                    <div className="flex items-center gap-3 text-xs mt-1.5" style={{ color: 'var(--text-3)' }}>
+                    <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--text-3)]">
                       <span className="flex items-center gap-1">
                         <Clock size={10} />
                         {podcast.lengthMins} min
@@ -220,26 +157,40 @@ export default function PodcastsPage() {
                 </div>
 
                 {podcast.status === 'generating' && (
-                  <div className="flex items-center gap-2 text-xs mt-4 py-2 px-3 rounded-lg" style={{ backgroundColor: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#F59E0B] shrink-0" />
+                  <div className="mt-4 flex items-center gap-2 rounded-lg bg-[var(--warning-subtle)] px-3 py-2 text-xs text-[var(--warning-ink)]">
+                    <div className="h-3 w-3 shrink-0 animate-spin rounded-full border-b-2 border-current" />
                     Generating audio… this takes a minute
                   </div>
                 )}
                 {podcast.status === 'failed' && (
-                  <p className="text-xs mt-4 py-2 px-3 rounded-lg" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444' }}>
+                  <p className="mt-4 rounded-lg bg-[var(--danger-subtle)] px-3 py-2 text-xs text-[var(--danger-ink)]">
                     Generation failed. Open the note in your library to try again.
                   </p>
                 )}
-                {podcast.status === 'complete' && podcast.audioUrl && (
-                  <div className="mt-4">
-                    <PodcastPlayer audioUrl={podcast.audioUrl} title={podcast.title} />
-                  </div>
-                )}
+                <AnimatePresence initial={false}>
+                  {isOpen && podcast.audioUrl && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="overflow-hidden"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <PodcastPlayer
+                        podcastId={podcast.id}
+                        audioUrl={podcast.audioUrl}
+                        durationSecs={podcast.durationSecs}
+                        autoPlay
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
