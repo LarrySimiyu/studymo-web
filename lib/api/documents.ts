@@ -152,11 +152,11 @@ const STATUS_POLL_INTERVAL_MS = 10_000;
 export function watchDocumentStatus(
   docId: string,
   onStatus: (status: 'complete' | 'failed', errorMessage?: string) => void,
-  onTimeout?: () => void,
 ): () => void {
   let cancelled = false;
   let settled = false;
-  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  const controller = new AbortController();
 
   const settle = (status: 'complete' | 'failed', errorMessage?: string) => {
     if (settled || cancelled) return;
@@ -178,10 +178,13 @@ export function watchDocumentStatus(
       const headers = await authHeader();
       if (!headers || cancelled) return;
 
-      const response = await fetch(`${API_URL}/documents/${docId}/status-stream`, { headers });
+      const response = await fetch(`${API_URL}/documents/${docId}/status-stream`, {
+        headers,
+        signal: controller.signal,
+      });
       if (!response.ok || !response.body || cancelled) return;
 
-      reader = response.body.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
 
@@ -213,12 +216,18 @@ export function watchDocumentStatus(
   // `processing` response for the life of the poll.
   const pollUntilSettled = async () => {
     while (!cancelled && !settled) {
-      await new Promise((resolve) => setTimeout(resolve, STATUS_POLL_INTERVAL_MS));
+      await new Promise<void>((resolve) => {
+        pollTimer = setTimeout(resolve, STATUS_POLL_INTERVAL_MS);
+      });
+      pollTimer = null;
       if (cancelled || settled) return;
       try {
         const headers = await authHeader();
         if (!headers) return;
-        const res = await fetch(`${API_URL}/documents/${docId}`, { headers });
+        const res = await fetch(`${API_URL}/documents/${docId}`, {
+          headers,
+          signal: controller.signal,
+        });
         if (!res.ok) continue;
         const doc = (await res.json()) as { status: string; errorMessage?: string };
         if (doc.status === 'complete' || doc.status === 'failed') {
@@ -234,8 +243,9 @@ export function watchDocumentStatus(
   pollUntilSettled();
 
   return () => {
-    if (timer) clearTimeout(timer);
-    stop();
+    cancelled = true;
+    if (pollTimer) clearTimeout(pollTimer);
+    controller.abort();
   };
 }
 
