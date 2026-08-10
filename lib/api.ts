@@ -3,7 +3,7 @@ import { cacheGet, cacheSet, invalidatePrefix } from './apiCache';
 import { emitContentChanged, emitUsageChanged } from './contentEvents';
 import { showPaywall } from './paywall';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 // Mutating any of these changes a number the sidebar shows.
 const CONTENT_PREFIXES = new Set([

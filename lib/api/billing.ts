@@ -1,6 +1,6 @@
 import { api } from '@/lib/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export interface SubscriptionStatus {
   status: string; // 'none' | 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete'

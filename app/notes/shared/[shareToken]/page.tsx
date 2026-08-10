@@ -11,7 +11,7 @@ import Color from '@tiptap/extension-color';
 import { Note } from '@/lib/api/documents';
 import { convertNoteToHTML, NOTE_CONTENT_CLASS } from '@/lib/notes/noteHtml';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export default function SharedNotePage() {
   const { shareToken } = useParams<{ shareToken: string }>();
