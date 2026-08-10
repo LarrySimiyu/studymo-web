@@ -2,7 +2,7 @@ import { api } from '@/lib/api';
 import { auth } from '@/lib/firebase';
 import { emitContentChanged } from '@/lib/contentEvents';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
 export interface DocumentTag {
   documentId: string;
@@ -152,6 +152,7 @@ const STATUS_POLL_INTERVAL_MS = 10_000;
 export function watchDocumentStatus(
   docId: string,
   onStatus: (status: 'complete' | 'failed', errorMessage?: string) => void,
+  onTimeout?: () => void,
 ): () => void {
   let cancelled = false;
   let settled = false;
@@ -233,8 +234,8 @@ export function watchDocumentStatus(
   pollUntilSettled();
 
   return () => {
-    cancelled = true;
-    reader?.cancel().catch(() => {});
+    if (timer) clearTimeout(timer);
+    stop();
   };
 }
 
