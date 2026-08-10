@@ -9,9 +9,13 @@ import TopNav from '@/components/dashboard/TopNav';
 // import StudyTimerPanel from '@/components/timer/StudyTimerPanel';
 import { billingApi } from '@/lib/api/billing';
 import { LibraryProvider } from '@/context/LibraryContext';
-import PaywallModal from '@/components/ui/PaywallModal';
+import { TutorSessionsProvider } from '@/context/TutorSessionsContext';
+import PaywallModal from '@/components/pricing/PaywallModal';
+import PendingUploadHandler from '@/components/dashboard/PendingUploadHandler';
 import { analytics } from '@/lib/analytics';
+import { onShowPaywall } from '@/lib/paywall';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
+import { Button } from '@/components/ui/Button';
 // import { AssistantProvider, useAssistant } from '@/context/AssistantContext';
 // import AssistantPanel from '@/components/assistant/AssistantPanel';
 
@@ -22,7 +26,7 @@ import { ThemeProvider } from '@/components/ui/ThemeProvider';
 //       <button
 //         onClick={openAssistant}
 //         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-//         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#9747FF' }}
+//         style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: 'var(--brand)' }}
 //       >
 //         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
 //           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -54,53 +58,40 @@ function PastDueBanner() {
 
   return (
     <div className="flex items-center justify-between px-6 py-2.5 text-body shrink-0" style={{ backgroundColor: 'var(--danger-subtle)', borderBottom: '1px solid var(--danger-border)' }}>
-      <span style={{ color: 'var(--danger)' }}>
+      <span style={{ color: 'var(--danger-ink)' }}>
         Your payment failed. Please update your payment method to keep access.
       </span>
-      <button
+      <Button
+        variant="danger"
+        size="xs"
         onClick={handleUpdatePayment}
         disabled={portalLoading}
-        className="btn btn-sm ml-4 shrink-0"
-        style={{ backgroundColor: 'var(--danger)', color: '#fff' }}
+        className="ml-4 shrink-0"
       >
         {portalLoading ? 'Loading…' : 'Update Payment'}
-      </button>
+      </Button>
     </div>
   );
 }
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { currentUser, loading, subscriptionStatus, refreshSubscription } = useAuth();
+  const { currentUser, loading, refreshSubscription } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [refreshing, setRefreshing] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Listen for paywall trigger from upload gate or nav buttons
-  useEffect(() => {
-    const handler = (e: Event) => {
-      setShowPaywall(true);
-      const trigger = (e as CustomEvent).detail?.trigger ?? 'feature_gate';
-      analytics.paywallSeen(trigger);
-    };
-    window.addEventListener('app:show-paywall', handler);
-    return () => window.removeEventListener('app:show-paywall', handler);
-  }, []);
+  // Listen for paywall triggers — nav buttons, and any free-tier 403 raised by lib/api
+  useEffect(() => onShowPaywall(trigger => {
+    setShowPaywall(true);
+    analytics.paywallSeen(trigger);
+  }), []);
 
-  // Show paywall on first dashboard visit if user has no access
-  useEffect(() => {
-    if (loading || !currentUser || subscriptionStatus === null) return;
-    if (subscriptionStatus?.hasAccess) return;
-    const key = `paywall_shown_${currentUser.uid}`;
-    if (!localStorage.getItem(key)) {
-      localStorage.setItem(key, '1');
-      setShowPaywall(true);
-      analytics.paywallSeen('first_visit');
-    }
-  }, [loading, currentUser, subscriptionStatus]);
+  // Nothing opens the paywall on arrival. It only appears once the user asks for it
+  // (an upgrade button) or hits a free-tier 403 — never in front of a first session.
 
   // After Stripe checkout, session_id lands in the URL. Refresh subscription
-  // status before deciding whether to bounce the user back to /subscribe.
+  // status before deciding whether to bounce the user back to /pricing.
   useEffect(() => {
     if (loading || !currentUser) return;
     const sessionId = searchParams.get('session_id');
@@ -148,8 +139,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (loading || refreshing) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#9747FF' }} />
-        {refreshing && <p className="text-sm text-gray-500">Activating your subscription…</p>}
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--brand)' }} />
+        {refreshing && <p className="text-body-sm text-[var(--text-2)]">Activating your subscription…</p>}
       </div>
     );
   }
@@ -157,19 +148,22 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   if (!currentUser) return null;
 
   return (
-    <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
-      <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <TopNav />
-        <PastDueBanner />
-        <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
-          <LibraryProvider>{children}</LibraryProvider>
-        </main>
+    <TutorSessionsProvider>
+      <div className="flex w-full h-screen overflow-hidden" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <TopNav />
+          <PastDueBanner />
+          <main className="flex-1 overflow-auto scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+            <LibraryProvider>{children}</LibraryProvider>
+          </main>
+        </div>
+
+        <PaywallModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+
+        <PendingUploadHandler />
       </div>
-
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
-
-    </div>
+    </TutorSessionsProvider>
   );
 }
 

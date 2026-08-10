@@ -34,9 +34,9 @@ export default function PlanCalendar({ entries, compact }: { entries: StudyPlanD
       {selectedEntry && (
         <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <p className="text-xs font-medium text-[var(--text-1)]">{selectedEntry.title}</p>
-          <p className="text-[10px] text-[var(--text-3)] mt-0.5">
+          <p className="text-2xs text-[var(--text-3)] mt-0.5">
             {new Date(selectedEntry.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-            {selectedEntry.completed && <span className="ml-2" style={{ color: '#22C55E' }}>· Completed</span>}
+            {selectedEntry.completed && <span className="ml-2" style={{ color: 'var(--success-ink)' }}>· Completed</span>}
           </p>
         </div>
       )}

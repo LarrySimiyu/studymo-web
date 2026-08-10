@@ -40,6 +40,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
     try {
       invalidatePrefix('/documents');
       invalidatePrefix('/notes');
+      invalidatePrefix('/tags');
       const [docsRes, foldersRes, tagsRes, notesRes] = await Promise.all([
         documentsApi.getAll(),
         foldersApi.getAll(),

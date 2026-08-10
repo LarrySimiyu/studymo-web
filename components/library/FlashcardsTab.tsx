@@ -5,6 +5,7 @@ import { Layers } from 'lucide-react';
 import { Flashcard } from '@/lib/api/documents';
 import FlipCard from '@/components/flashcards/FlipCard';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 
 interface Props {
   flashcards: Flashcard[];
@@ -26,7 +27,7 @@ export default function FlashcardsTab({ flashcards, onGenerate }: Props) {
           <p className="text-[var(--text-2)] text-sm mt-1 max-w-xs">Create a set of flashcards from your notes to help you memorize key concepts.</p>
         </div>
         <Button
-          variant="brand"
+          variant="primary"
           size="sm"
           onClick={async () => { setLoading(true); await onGenerate(); setLoading(false); }}
           disabled={loading}
@@ -34,6 +35,7 @@ export default function FlashcardsTab({ flashcards, onGenerate }: Props) {
           {loading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
           {loading ? 'Generating…' : 'Generate Flashcards'}
         </Button>
+        <UsageCounter limitKey="flashcardDecks" className="-mt-2" />
       </div>
     );
   }

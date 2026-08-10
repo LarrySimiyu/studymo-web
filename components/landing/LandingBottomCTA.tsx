@@ -23,7 +23,7 @@ export default function LandingBottomCTA({ segment, utmCampaign, bottomCTACopy }
         </h2>
         <Suspense
           fallback={
-            <Button asChild variant="brand" size="lg" className="rounded-full px-10">
+            <Button asChild variant="primary" size="lg" className="rounded-full px-10">
               <Link href="/sign-up">Start For Free</Link>
             </Button>
           }

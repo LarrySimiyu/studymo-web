@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FileText } from 'lucide-react';
-import { PageHeader } from '@/components/dashboard/PageHeader';
+import { FileText, CircleCheck } from 'lucide-react';
+import { PageHeader, SectionHeading } from '@/components/dashboard/PageHeader';
+import PageShell from '@/components/dashboard/PageShell';
+import EmptyState from '@/components/dashboard/EmptyState';
 import { weakTopicsApi, WeakTopic } from '@/lib/api/studyPlan';
 import WeakTopicItem from '@/components/dashboard/WeakTopicItem';
 import Select from '@/components/ui/Select';
@@ -42,20 +44,24 @@ export default function WeakTopicsPage() {
   const unresolvedCount = topics.filter(t => !t.resolved).length;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-6">
-      <PageHeader
-        title="Weak Topics"
-        subtitle={
-          <span className="flex items-center gap-2">
-            Topics you&apos;ve consistently missed on quizzes
-            {unresolvedCount > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--danger-subtle)', color: '#EF4444', border: '1px solid var(--danger-border)' }}>
-                {unresolvedCount} to review
-              </span>
-            )}
-          </span>
-        }
-      />
+    <PageShell
+      width="lg"
+      header={
+        <PageHeader
+          title="Weak Topics"
+          subtitle={
+            <span className="flex items-center gap-2">
+              Topics you&apos;ve consistently missed on quizzes
+              {unresolvedCount > 0 && (
+                <span className="rounded-full border border-[var(--danger-border)] bg-[var(--danger-subtle)] px-2 py-0.5 text-2xs font-medium text-[var(--danger-ink)]">
+                  {unresolvedCount} to review
+                </span>
+              )}
+            </span>
+          }
+        />
+      }
+    >
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -78,29 +84,32 @@ export default function WeakTopicsPage() {
           ))}
         </div>
       ) : Object.keys(grouped).length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ backgroundColor: 'var(--success-subtle)' }}>🎉</div>
-          <h2 className="text-body-lg font-semibold text-[var(--text-1)] mb-1">
-            {unresolvedCount === 0 ? 'No weak topics!' : 'No topics match'}
-          </h2>
-          <p className="text-body-sm max-w-xs" style={{ color: 'var(--text-2)' }}>
-            {unresolvedCount === 0
-              ? 'Take quizzes to identify areas that need more review'
-              : 'Try adjusting your filters'}
-          </p>
-        </div>
+        <EmptyState
+          icon={CircleCheck}
+          accent="var(--success-ink)"
+          accentBg="var(--success-subtle)"
+          title={unresolvedCount === 0 ? 'No weak topics' : 'No topics match'}
+          description={unresolvedCount === 0
+            ? 'Take quizzes to identify areas that need more review.'
+            : 'Try adjusting your filters.'}
+        />
       ) : (
         <div className="space-y-8">
           {Object.entries(grouped).map(([docId, group]) => (
             <div key={docId}>
               {/* Group header */}
-              <div className="flex items-center gap-2 mb-3">
-                <FileText size={14} style={{ color: 'var(--text-3)' }} />
-                <h2 className="text-body-sm font-semibold text-[var(--text-1)]">{group.title}</h2>
-                <span className="ml-auto text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-2)' }}>
-                  {group.topics.length} topic{group.topics.length !== 1 ? 's' : ''}
+              <SectionHeading
+                action={
+                  <span className="rounded-full bg-[var(--bg-input)] px-2 py-0.5 text-xs text-[var(--text-2)]">
+                    {group.topics.length} topic{group.topics.length !== 1 ? 's' : ''}
+                  </span>
+                }
+              >
+                <span className="flex items-center gap-2">
+                  <FileText size={14} className="shrink-0 text-[var(--text-3)]" />
+                  {group.title}
                 </span>
-              </div>
+              </SectionHeading>
 
               {/* Grid of cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -117,6 +126,6 @@ export default function WeakTopicsPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

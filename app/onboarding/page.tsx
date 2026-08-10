@@ -1,8 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { billingApi } from '@/lib/api/billing';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   School, GraduationCap, BookOpen, Briefcase, Globe,
@@ -29,8 +28,8 @@ const GRADE_OPTIONS = [
 
 const PRESET_SUBJECTS = [
   'Mathematics','Biology','Chemistry','Physics','History',
-  'English / Literature','Computer Science','Economics','Psychology',
-  'Law','Medicine / Nursing','Engineering',
+  'English','Computer Science','Economics','Psychology',
+  'Law','Medicine','Engineering',
   'Coding','Personal Finance','Language Learning','Business',
   'Design','Marketing','Philosophy','Music Theory',
 ];
@@ -136,12 +135,12 @@ function OptionCard({
       onClick={onClick}
       className="flex items-center gap-3 sm:flex-col sm:items-center sm:gap-3 p-4 sm:p-5 rounded-2xl transition-all text-left sm:text-center w-full"
       style={{
-        backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
-        border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+        backgroundColor: selected ? 'var(--brand-subtle)' : 'var(--bg-card)',
+        border: `1.5px solid ${selected ? 'var(--brand-border)' : 'var(--border)'}`,
       }}
     >
       <IconBadge Icon={Icon} color={color} bg={bg} size={22} />
-      <span className="text-sm font-medium text-white leading-snug">{label}</span>
+      <span className="text-sm font-medium leading-snug" style={{ color: 'var(--text-1)' }}>{label}</span>
     </button>
   );
 }
@@ -154,12 +153,12 @@ function RowCard({
       onClick={onClick}
       className="flex items-center gap-3 p-4 rounded-2xl transition-all text-left w-full"
       style={{
-        backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
-        border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+        backgroundColor: selected ? 'var(--brand-subtle)' : 'var(--bg-card)',
+        border: `1.5px solid ${selected ? 'var(--brand-border)' : 'var(--border)'}`,
       }}
     >
       <IconBadge Icon={Icon} color={color} bg={bg} size={20} />
-      <span className="text-sm font-medium text-white leading-snug flex-1 text-left">{label}</span>
+      <span className="text-sm font-medium leading-snug flex-1 text-left" style={{ color: 'var(--text-1)' }}>{label}</span>
     </button>
   );
 }
@@ -172,9 +171,9 @@ function Pill({
       onClick={onClick}
       className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
       style={{
-        backgroundColor: selected ? 'rgba(255,101,0,0.1)' : '#1A1A1A',
-        border: `1px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
-        color: selected ? '#FF6500' : '#9CA3AF',
+        backgroundColor: selected ? 'var(--brand-subtle)' : 'var(--bg-card)',
+        border: `1px solid ${selected ? 'var(--brand-border)' : 'var(--border)'}`,
+        color: selected ? 'var(--brand)' : 'var(--text-2)',
       }}
     >
       {label}
@@ -183,7 +182,7 @@ function Pill({
 }
 
 function GpaSelector({
-  label, value, onChange, valueColor = '#ffffff',
+  label, value, onChange, valueColor = 'var(--text-1)',
 }: {
   label: string;
   value: number;
@@ -192,13 +191,13 @@ function GpaSelector({
 }) {
   return (
     <div className="flex flex-col gap-2 items-center">
-      <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--text-2)' }}>{label}</span>
       <div className="flex items-center gap-4">
         <button
           onClick={() => onChange(clamp(+(value - 0.1).toFixed(1), 0, 4))}
           disabled={value <= 0}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#ffffff' }}
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
         >−</button>
 
         <div className="w-16 text-center overflow-hidden">
@@ -221,7 +220,7 @@ function GpaSelector({
           onClick={() => onChange(clamp(+(value + 0.1).toFixed(1), 0, 4))}
           disabled={value >= 4}
           className="w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold transition-colors disabled:opacity-30"
-          style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', color: '#ffffff' }}
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
         >+</button>
       </div>
     </div>
@@ -236,12 +235,9 @@ export default function OnboardingPage() {
 
 function OnboardingContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const priceId = searchParams.get('priceId');
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [data, setData] = useState(defaultOnboardingData);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     setData(getOnboardingData());
@@ -365,7 +361,7 @@ function OnboardingContent() {
 
       // ── Step 3: Goal GPA (high school / undergrad only) ──────────────────
       case 3: {
-        const goalColor = data.goalGpa > data.gpa ? '#22C55E' : '#ffffff';
+        const goalColor = data.goalGpa > data.gpa ? '#22C55E' : 'var(--text-1)';
         return (
           <StepWrapper heading="What GPA are you aiming for?" sub="We'll track your progress toward this goal">
             <div className="flex flex-col gap-8 items-center w-full max-w-xs">
@@ -407,13 +403,13 @@ function OnboardingContent() {
                     onChange={e => setCustomSubject(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') addCustomSubject(); if (e.key === 'Escape') setShowCustomInput(false); }}
                     placeholder="Subject name…"
-                    className="px-3 py-1.5 rounded-full text-sm text-white focus:outline-none"
-                    style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,101,0,0.5)', width: 160 }}
+                    className="px-3 py-1.5 rounded-full text-sm focus:outline-none"
+                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--brand-border)', color: 'var(--text-1)', width: 160 }}
                   />
                   <button
                     onClick={addCustomSubject}
                     className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: '#FF6500' }}
+                    style={{ backgroundColor: 'var(--brand)' }}
                   >
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="white">
                       <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
@@ -424,7 +420,7 @@ function OnboardingContent() {
                 <button
                   onClick={() => { setShowCustomInput(true); setTimeout(() => customInputRef.current?.focus(), 50); }}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm transition-colors"
-                  style={{ backgroundColor: '#1A1A1A', border: '1px dashed #2A2A2A', color: '#6B7280' }}
+                  style={{ backgroundColor: 'var(--bg-card)', border: '1px dashed var(--border-md)', color: 'var(--text-3)' }}
                 >
                   + Add your own
                 </button>
@@ -470,7 +466,7 @@ function OnboardingContent() {
             <div className="w-full max-w-lg flex flex-col gap-5">
               {STRUGGLE_GROUPS.map(group => (
                 <div key={group.category} className="flex flex-col gap-2">
-                  <p className="text-xs uppercase tracking-widest font-semibold text-left px-1" style={{ color: '#4B5563' }}>
+                  <p className="text-xs uppercase tracking-widest font-semibold text-left px-1" style={{ color: 'var(--text-3)' }}>
                     {group.category}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -482,8 +478,8 @@ function OnboardingContent() {
                           onClick={() => toggleStruggle(o.id)}
                           className="flex items-center gap-3 p-4 rounded-xl text-left transition-all min-h-[56px]"
                           style={{
-                            backgroundColor: selected ? 'rgba(255,101,0,0.06)' : '#1A1A1A',
-                            border: `1.5px solid ${selected ? 'rgba(255,101,0,0.5)' : '#2A2A2A'}`,
+                            backgroundColor: selected ? 'var(--brand-subtle)' : 'var(--bg-card)',
+                            border: `1.5px solid ${selected ? 'var(--brand-border)' : 'var(--border)'}`,
                           }}
                         >
                           <div
@@ -492,7 +488,7 @@ function OnboardingContent() {
                           >
                             <o.Icon size={17} style={{ color: o.color }} />
                           </div>
-                          <span className="text-sm font-medium leading-snug" style={{ color: selected ? '#ffffff' : '#9CA3AF' }}>
+                          <span className="text-sm font-medium leading-snug" style={{ color: selected ? 'var(--text-1)' : 'var(--text-2)' }}>
                             {o.label}
                           </span>
                         </button>
@@ -555,38 +551,25 @@ function OnboardingContent() {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight" style={{ color: '#111111' }}>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight" style={{ color: 'var(--text-1)' }}>
                 Students increase their average test grade by{' '}
                 <span style={{ color: '#22C55E' }}>14%</span>{' '}
                 using Studymo
               </h1>
-              <p className="text-sm sm:text-base" style={{ color: '#6B7280' }}>
+              <p className="text-sm sm:text-base" style={{ color: 'var(--text-2)' }}>
                 Join thousands of students already studying smarter
               </p>
             </div>
             <Button
-              variant="brand"
+              variant="primary"
               size="lg"
               className="w-full sm:max-w-xs"
-              disabled={checkoutLoading}
-              onClick={async () => {
+              onClick={() => {
                 analytics.onboardingCompleted();
-                if (priceId) {
-                  setCheckoutLoading(true);
-                  const { data } = await billingApi.createCheckout(priceId);
-                  if (data?.url) {
-                    analytics.subscriptionStarted(priceId);
-                    window.location.href = data.url;
-                  } else {
-                    setCheckoutLoading(false);
-                    router.push('/dashboard');
-                  }
-                } else {
-                  router.push('/dashboard');
-                }
+                router.push('/dashboard');
               }}
             >
-              {checkoutLoading ? 'Loading…' : 'Get Started'}
+              Get Started
             </Button>
           </div>
         );
@@ -597,10 +580,10 @@ function OnboardingContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ backgroundColor: step === 9 ? '#ffffff' : '#111111' }}>
+    <div className="light min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Progress bar */}
-      <div className="h-1 w-full" style={{ backgroundColor: step === 9 ? '#E5E7EB' : '#1A1A1A' }}>
-        <div className="h-1 transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: '#FF6500' }} />
+      <div className="h-1 w-full" style={{ backgroundColor: 'var(--border)' }}>
+        <div className="h-1 transition-all duration-500" style={{ width: `${progress}%`, backgroundColor: 'var(--brand)' }} />
       </div>
 
       {/* Top bar */}
@@ -608,15 +591,15 @@ function OnboardingContent() {
         <button
           onClick={back}
           className="transition-colors p-1 -ml-1"
-          style={{ color: step === 9 ? '#6B7280' : '#6B7280' }}
+          style={{ color: 'var(--text-2)' }}
         >
           <ArrowLeft size={20} />
         </button>
 
-        <span className="text-xs" style={{ color: step === 9 ? '#9CA3AF' : '#4B5563' }}>{step} of {TOTAL_STEPS}</span>
+        <span className="text-xs" style={{ color: 'var(--text-3)' }}>{step} of {TOTAL_STEPS}</span>
 
         {skippable.includes(step) ? (
-          <button onClick={() => next(step + 1)} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+          <button onClick={() => next(step + 1)} className="text-xs transition-opacity hover:opacity-70" style={{ color: 'var(--text-2)' }}>
             Skip
           </button>
         ) : (
@@ -653,8 +636,8 @@ function StepWrapper({ heading, sub, children }: { heading: string; sub?: string
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-xl text-center">
       <div className="flex flex-col gap-2 px-2">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white leading-tight">{heading}</h1>
-        {sub && <p className="text-sm sm:text-base text-gray-500">{sub}</p>}
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-tight" style={{ color: 'var(--text-1)' }}>{heading}</h1>
+        {sub && <p className="text-sm sm:text-base" style={{ color: 'var(--text-2)' }}>{sub}</p>}
       </div>
       {children}
     </div>
@@ -663,7 +646,7 @@ function StepWrapper({ heading, sub, children }: { heading: string; sub?: string
 
 function ContinueBtn({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <Button variant="brand" size="lg" className="mt-2 w-full sm:max-w-xs" onClick={onClick} disabled={disabled}>
+    <Button variant="primary" size="lg" className="mt-2 w-full sm:max-w-xs" onClick={onClick} disabled={disabled}>
       Continue
     </Button>
   );

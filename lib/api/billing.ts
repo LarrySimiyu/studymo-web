@@ -16,13 +16,32 @@ export interface SubscriptionStatus {
 }
 
 export interface Plan {
-  id: 'weekly' | 'monthly' | 'yearly';
+  id: 'free' | 'weekly' | 'monthly' | 'yearly';
   label: string;
   price: string;
   sub: string;
-  priceId: string;
+  priceId: string | null;
   trialDays: number | null;
   badge: string | null;
+}
+
+/** Mirrors FREE_LIMITS in studymo-api/src/lib/freeTier.ts */
+export type FreeLimitKey =
+  | 'uploads'
+  | 'notes'
+  | 'flashcardDecks'
+  | 'quizzes'
+  | 'practiceExams'
+  | 'podcasts'
+  | 'studyPlans'
+  | 'tasks'
+  | 'weakTopics'
+  | 'aiMessages';
+
+export interface UsageResponse {
+  isFree: boolean;
+  limits: Record<FreeLimitKey, number>;
+  usage: Record<FreeLimitKey, number>;
 }
 
 export const billingApi = {
@@ -38,7 +57,10 @@ export const billingApi = {
     }
   },
   getStatus: () => api.get<SubscriptionStatus>('/billing/status'),
+  getUsage: () => api.get<UsageResponse>('/billing/usage'),
   createCheckout: (priceId: string) =>
     api.post<{ url: string }>('/billing/checkout', { priceId }),
-  createPortal: () => api.post<{ url: string }>('/billing/portal', {}),
+  /** `flow: 'update'` deep-links to the portal's plan picker instead of its home screen. */
+  createPortal: (flow?: 'update') =>
+    api.post<{ url: string }>('/billing/portal', flow ? { flow } : {}),
 };

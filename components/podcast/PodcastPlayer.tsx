@@ -1,165 +1,148 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
+import AudioWaveform from '@/components/ui/AudioWaveform';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { formatClock } from '@/lib/audio/formatClock';
+import { pseudoWave } from '@/lib/audio/pseudoWave';
+import { cn } from '@/lib/utils';
+
+const SPEEDS = [1, 1.25, 1.5, 2, 0.75];
+const SKIP_SECS = 15;
 
 interface Props {
+  podcastId: string;
   audioUrl: string;
-  title: string;
+  durationSecs?: number | null;
+  autoPlay?: boolean;
   onFirstPlay?: () => void;
 }
 
-function fmtTime(secs: number): string {
-  if (!isFinite(secs)) return '0:00';
-  const m = Math.floor(secs / 60);
-  const s = Math.floor(secs % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
-
-export default function PodcastPlayer({ audioUrl, onFirstPlay }: Props) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
+export default function PodcastPlayer({
+  podcastId,
+  audioUrl,
+  durationSecs,
+  autoPlay,
+  onFirstPlay,
+}: Props) {
+  const player = useAudioPlayer(audioUrl, durationSecs ?? 0);
+  const [speedIndex, setSpeedIndex] = useState(0);
   const hasPlayedRef = useRef(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [speed, setSpeed] = useState(1);
+  const samples = useMemo(() => pseudoWave(podcastId), [podcastId]);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onDurationChange = () => setDuration(audio.duration);
-    const onEnded = () => setPlaying(false);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('durationchange', onDurationChange);
-    audio.addEventListener('loadedmetadata', onDurationChange);
-    audio.addEventListener('ended', onEnded);
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('durationchange', onDurationChange);
-      audio.removeEventListener('loadedmetadata', onDurationChange);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, []);
-
-  function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) { audio.pause(); setPlaying(false); }
-    else {
-      audio.play(); setPlaying(true);
-      if (!hasPlayedRef.current) { hasPlayedRef.current = true; onFirstPlay?.(); }
+  function play() {
+    player.toggle();
+    if (!hasPlayedRef.current) {
+      hasPlayedRef.current = true;
+      onFirstPlay?.();
     }
   }
 
-  function skip(secs: number) {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.currentTime = Math.min(Math.max(audio.currentTime + secs, 0), duration);
+  const playRef = useRef(play);
+  playRef.current = play;
+
+  useEffect(() => {
+    if (autoPlay) playRef.current();
+  }, [autoPlay]);
+
+  function skip(delta: number) {
+    if (!player.total) return;
+    player.seek(Math.min(1, Math.max(0, (player.currentTime + delta) / player.total)));
   }
 
-  function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
-    const audio = audioRef.current;
-    if (!audio || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    audio.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+  function cycleSpeed() {
+    const next = (speedIndex + 1) % SPEEDS.length;
+    setSpeedIndex(next);
+    if (player.audioRef.current) player.audioRef.current.playbackRate = SPEEDS[next];
   }
 
-  function handleSpeedChange(s: number) {
-    setSpeed(s);
-    if (audioRef.current) audioRef.current.playbackRate = s;
-  }
-
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const speed = SPEEDS[speedIndex];
 
   return (
-    <div className="space-y-2">
-      <audio ref={audioRef} src={audioUrl} preload="metadata" />
-
-      {/* Row 1: seek bar + times */}
-      <div>
-        <div
-          className="w-full rounded-full cursor-pointer mb-1"
-          style={{ backgroundColor: 'var(--bg-input)', height: 4 }}
-          onClick={handleSeek}
-        >
-          <div className="rounded-full h-full" style={{ width: `${progress}%`, backgroundColor: '#FF6500' }} />
-        </div>
-        <div className="flex justify-between">
-          <span className="text-xs tabular-nums" style={{ color: 'var(--text-3)' }}>{fmtTime(currentTime)}</span>
-          <span className="text-xs tabular-nums" style={{ color: 'var(--text-3)' }}>{fmtTime(duration)}</span>
-        </div>
+    <div
+      className="rounded-xl border border-[var(--border)] p-3 sm:p-4"
+      style={{ backgroundColor: 'var(--bg-page)' }}
+    >
+      <div className="mb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em]">
+        <span className="flex items-center gap-2 text-[var(--text-3)]">
+          {player.playing && (
+            <span
+              className="h-1.5 w-1.5 animate-pulse rounded-full"
+              style={{ backgroundColor: 'var(--brand)' }}
+            />
+          )}
+          {player.playing ? 'Now playing' : 'Podcast'}
+        </span>
+        <span className="tabular-nums text-[var(--text-2)]">
+          {formatClock(player.currentTime)} / {formatClock(player.total)}
+        </span>
       </div>
 
-      {/* Row 2: controls + speed */}
-      <div className="flex items-center justify-between">
+      <AudioWaveform
+        samples={samples}
+        mode="playback"
+        progress={player.progress}
+        onSeek={player.seek}
+        height={56}
+      />
 
-        {/* Skip back 15 | Play | Skip forward 15 */}
-        <div className="flex items-center gap-3">
+      <div className="mt-3 grid grid-cols-3 items-center">
+        <div />
+
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           <button
-            onClick={() => skip(-15)}
-            className="flex items-center justify-center w-7 h-7 rounded-full transition-colors"
-            style={{ color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
+            onClick={() => skip(-SKIP_SECS)}
+            aria-label="Back 15 seconds"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-2)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 4v6h6" />
-              <path d="M3.51 15a9 9 0 1 0 .49-3.27" />
-            </svg>
+            <RotateCcw size={16} />
           </button>
 
           <button
-            onClick={togglePlay}
-            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #FF9A3C)' }}
+            onClick={play}
+            aria-label={player.playing ? 'Pause' : 'Play'}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand)] transition-all hover:bg-[var(--brand-hover)] hover:scale-105 active:scale-95"
           >
-            {playing ? (
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="white">
-                <rect x="2" y="1" width="4" height="12" rx="1" />
-                <rect x="8" y="1" width="4" height="12" rx="1" />
-              </svg>
+            {player.playing ? (
+              <Pause size={18} fill="white" className="text-white" />
             ) : (
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="white">
-                <path d="M3 1.5l10 5.5-10 5.5V1.5z" />
-              </svg>
+              <Play size={18} fill="white" className="translate-x-[1px] text-white" />
             )}
           </button>
 
           <button
-            onClick={() => skip(15)}
-            className="flex items-center justify-center w-7 h-7 rounded-full transition-colors"
-            style={{ color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
+            onClick={() => skip(SKIP_SECS)}
+            aria-label="Forward 15 seconds"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-2)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 4v6h-6" />
-              <path d="M20.49 15a9 9 0 1 1-.49-3.27" />
-            </svg>
+            <RotateCw size={16} />
           </button>
         </div>
 
-        {/* Speed buttons */}
-        <div className="flex items-center gap-1">
-          {SPEEDS.map(s => (
-            <button
-              key={s}
-              onClick={() => handleSpeedChange(s)}
-              className="px-2 py-1 rounded-lg text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: speed === s ? 'rgba(255,101,0,0.12)' : 'var(--bg-input)',
-                color: speed === s ? '#FF6500' : 'var(--text-3)',
-              }}
-              onMouseEnter={e => { if (speed !== s) e.currentTarget.style.backgroundColor = 'var(--bg-hover)'; }}
-              onMouseLeave={e => { if (speed !== s) e.currentTarget.style.backgroundColor = 'var(--bg-input)'; }}
-            >
-              {s}x
-            </button>
-          ))}
+        <div className="flex justify-end">
+          <button
+            onClick={cycleSpeed}
+            aria-label={`Playback speed ${speed}x`}
+            className={cn(
+              'h-11 rounded-lg px-3 font-mono text-xs tabular-nums transition-colors sm:h-8',
+              speed === 1
+                ? 'bg-[var(--bg-input)] text-[var(--text-3)] hover:text-[var(--text-1)]'
+                : 'bg-[var(--brand-subtle)] text-[var(--brand-ink)]'
+            )}
+          >
+            {speed}×
+          </button>
         </div>
       </div>
+
+      <audio
+        ref={player.audioRef}
+        src={audioUrl}
+        onEnded={player.onEnded}
+        preload="metadata"
+        className="hidden"
+      />
     </div>
   );
 }

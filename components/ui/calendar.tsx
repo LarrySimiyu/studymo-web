@@ -2,6 +2,9 @@
 
 import * as React from 'react';
 import { DayPicker, type DayPickerProps, useDayPicker, type MonthCaptionProps } from 'react-day-picker';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 function CalendarHeader({ calendarMonth, compact }: MonthCaptionProps & { compact?: boolean }) {
   const { goToMonth, nextMonth, previousMonth } = useDayPicker();
@@ -9,22 +12,28 @@ function CalendarHeader({ calendarMonth, compact }: MonthCaptionProps & { compac
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-      <span style={{ fontWeight: 700, fontSize: compact ? '0.8rem' : '0.9375rem', color: 'var(--text-1)' }}>{label}</span>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button
+      <span className={cn('font-semibold text-[var(--text-1)]', compact ? 'text-xs' : 'text-body-sm')}>{label}</span>
+      <div className="flex gap-1">
+        <Button
+          variant="ghost"
+          size={compact ? 'icon-xs' : 'icon-sm'}
           onClick={() => previousMonth && goToMonth(previousMonth)}
           disabled={!previousMonth}
-          style={{ width: compact ? 24 : 30, height: compact ? 24 : 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-1)', opacity: previousMonth ? 1 : 0.3, fontSize: compact ? 14 : 16 }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >‹</button>
-        <button
+          aria-label="Previous month"
+          className="text-[var(--text-1)] disabled:opacity-30"
+        >
+          <ChevronLeft size={compact ? 14 : 16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size={compact ? 'icon-xs' : 'icon-sm'}
           onClick={() => nextMonth && goToMonth(nextMonth)}
           disabled={!nextMonth}
-          style={{ width: compact ? 24 : 30, height: compact ? 24 : 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-1)', opacity: nextMonth ? 1 : 0.3, fontSize: compact ? 14 : 16 }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >›</button>
+          aria-label="Next month"
+          className="text-[var(--text-1)] disabled:opacity-30"
+        >
+          <ChevronRight size={compact ? 14 : 16} />
+        </Button>
       </div>
     </div>
   );

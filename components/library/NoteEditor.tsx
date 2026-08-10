@@ -10,11 +10,11 @@ interface Props {
 export default function NoteEditor({ editor, saveStatus }: Props) {
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <p className="text-xs text-[var(--text-2)]">
-          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'unsaved' ? 'Unsaved changes' : ''}
+      {saveStatus && (
+        <p className="md:hidden text-xs mb-2 text-[var(--text-2)]">
+          {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Unsaved changes'}
         </p>
-      </div>
+      )}
       <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--bg-page)' }}>
         <EditorContent editor={editor} />
       </div>

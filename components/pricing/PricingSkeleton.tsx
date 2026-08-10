@@ -1,24 +1,30 @@
-export default function PricingSkeleton() {
+import { gridColumns } from './pricingContent';
+
+export default function PricingSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="w-full flex flex-col gap-6 items-center animate-pulse">
-      <div className="h-10 w-64 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-      <div className="w-full rounded-3xl p-6 flex flex-col gap-5" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.06)' }}>
-        <div className="h-11 w-11 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-        <div className="flex flex-col gap-2">
-          <div className="h-5 w-32 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-          <div className="h-4 w-48 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} />
+    <div className={`grid w-full animate-pulse gap-4 sm:gap-5 ${gridColumns(count)}`}>
+      {[...Array(count)].map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col rounded-xl p-5 sm:p-6"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <div className="h-6" />
+          <div className="mt-3 h-4 w-16 rounded-md" style={{ backgroundColor: 'var(--bg-input)' }} />
+          <div className="mt-2 h-9 w-28 rounded-lg" style={{ backgroundColor: 'var(--bg-hover)' }} />
+          <div className="mt-2.5 h-4" />
+          <div className="mt-5 h-11 w-full rounded-full" style={{ backgroundColor: 'var(--bg-hover)' }} />
+          <div className="mt-6 h-4 w-32 rounded-md" style={{ backgroundColor: 'var(--bg-input)' }} />
+          <div className="mt-3 flex flex-col gap-2.5">
+            {[...Array(5)].map((__, j) => (
+              <div key={j} className="flex items-center gap-2.5">
+                <div className="h-5 w-5 shrink-0 rounded-md" style={{ backgroundColor: 'var(--bg-input)' }} />
+                <div className="h-4 flex-1 rounded-md" style={{ backgroundColor: 'var(--bg-input)' }} />
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="h-14 w-40 rounded-xl" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-        <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }} />
-              <div className="h-4 flex-1 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />
-            </div>
-          ))}
-        </div>
-        <div className="h-14 w-full rounded-2xl" style={{ backgroundColor: 'rgba(255,101,0,0.2)' }} />
-      </div>
+      ))}
     </div>
   );
 }

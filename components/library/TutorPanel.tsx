@@ -1,43 +1,46 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { marked } from 'marked';
 import {
   tutorApi,
   streamTutorChat,
+  FreeLimitError,
   TutorMessage,
   TutorSession,
   TutorNoteMeta,
 } from '@/lib/api/tutor';
 import { notesApi } from '@/lib/api/documents';
 import { invalidatePrefix } from '@/lib/api';
+import { useTutorSessions } from '@/context/TutorSessionsContext';
 import TutorModeDropdown, { TutorMode } from '@/components/tutor/TutorModeDropdown';
 import { useAuth } from '@/hooks/useAuth';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { useEmptyChatCleanup } from '@/hooks/useEmptyChatCleanup';
 import TutorInput from '@/components/tutor/TutorInput';
 import UserBubble from '@/components/tutor/UserBubble';
+import AssistantMessage from '@/components/tutor/AssistantMessage';
 import ContextPicker from '@/components/tutor/ContextPicker';
+import OutOfMessagesBanner from '@/components/tutor/OutOfMessagesBanner';
 
 interface Props {
   noteId: string;
   sessionId: string | null;
-  onSessionCreated: (id: string) => void;
+  onSessionCreated: (id: string | null) => void;
   onClose: () => void;
   initialMessage?: string;
+  initialReveal?: boolean;
   onInitialMessageConsumed?: () => void;
 }
 
 type UIMessage = TutorMessage & { isStreaming?: boolean };
 
-function renderMarkdown(text: string): string {
-  const collapsed = text.replace(/\n{3,}/g, '\n\n');
-  return marked.parse(collapsed, { breaks: true }) as string;
-}
-
 let msgIdCounter = 0;
 function nextId() { return `local-${++msgIdCounter}`; }
 
-export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, onInitialMessageConsumed }: Props) {
+export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClose, initialMessage, initialReveal, onInitialMessageConsumed }: Props) {
   const { currentUser } = useAuth();
+  const { refetch: refetchSessions } = useTutorSessions();
   const [session, setSession] = useState<TutorSession | null>(null);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState('');
@@ -47,6 +50,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   const [revealAnswer, setRevealAnswer] = useState(false);
   const [noteSearch, setNoteSearch] = useState('');
   const [resolvedTopics, setResolvedTopics] = useState<string[]>([]);
+  const [outOfMessages, setOutOfMessages] = useState(false);
   const [allNotes, setAllNotes] = useState<{ id: string; summary: string | null; document: { title: string } }[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,6 +60,15 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // A pending initialMessage counts as busy — it sends on a short delay after init.
+  useEmptyChatCleanup({
+    sessionId: session?.id ?? null,
+    loadedId: session?.id ?? null,
+    messageCount: messages.length,
+    busy: isStreaming || loading || !!initialMessage,
+    onDiscarded: () => onSessionCreated(null),
+  });
 
   useEffect(() => {
     notesApi.getAll().then(({ data }) => {
@@ -77,7 +90,12 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           if (data) { setSession(data); setMessages(data.messages ?? []); onSessionCreated(data.id); }
         } else {
           const { data } = await tutorApi.createSession({ noteIds: [noteId], mode: 'tutor' });
-          if (data) { setSession(data); setMessages(data.messages ?? []); onSessionCreated(data.id); }
+          if (data) {
+            setSession(data);
+            setMessages(data.messages ?? []);
+            onSessionCreated(data.id);
+            refetchSessions();
+          }
         }
       }
       setLoading(false);
@@ -88,7 +106,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
   }, [noteId]);
 
   const sendText = useCallback(async (text: string, withReveal = false) => {
-    if (!text || isStreaming || !session || !currentUser) return;
+    if (!text || isStreaming || !session || !currentUser || outOfMessages) return;
 
     const token = await currentUser.getIdToken();
     setRevealAnswer(false);
@@ -111,8 +129,14 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
         undefined,
         resolved => setResolvedTopics(prev => [...prev, resolved.topic])
       );
-    } catch {
-      setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
+    } catch (err) {
+      if (err instanceof FreeLimitError) {
+        setOutOfMessages(true);
+        setMessages(prev => prev.filter(m => m.id !== userMsg.id && m.id !== assistantId));
+        setInput(text);
+      } else {
+        setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: 'Something went wrong. Please try again.', isStreaming: false } : m));
+      }
     } finally {
       setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, isStreaming: false } : m));
       setIsStreaming(false);
@@ -120,7 +144,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
       // so the next panel open fetches fresh session data with all messages
       invalidatePrefix('/tutor');
     }
-  }, [isStreaming, session, currentUser]);
+  }, [isStreaming, session, currentUser, outOfMessages]);
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -145,7 +169,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
     if (!loading && session && initialMessage && !initialMessageSentRef.current) {
       initialMessageSentRef.current = true;
       setTimeout(() => {
-        sendText(initialMessage).then(() => onInitialMessageConsumed?.());
+        sendText(initialMessage, initialReveal).then(() => onInitialMessageConsumed?.());
       }, 150);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,7 +200,9 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
               onChange={changeMode}
             />
           )}
-          <button onClick={onClose} className="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors leading-none text-lg">×</button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close tutor">
+            <X size={15} />
+          </Button>
         </div>
       </div>
 
@@ -191,13 +217,7 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           msg.role === 'user' ? (
             <UserBubble key={msg.id} content={msg.content} />
           ) : (
-            <div
-              key={msg.id}
-              className="tutor-message text-sm text-[var(--text-1)] leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: renderMarkdown(msg.content) + (msg.isStreaming ? '<span class="tutor-cursor"></span>' : ''),
-              }}
-            />
+            <AssistantMessage key={msg.id} content={msg.content} isStreaming={msg.isStreaming} />
           )
         ))}
         {messages.length === 0 && !loading && (
@@ -220,11 +240,11 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
           <div className="mb-2 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
             <div className="flex items-center gap-1.5">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-              <span style={{ color: '#22C55E' }}>
+              <span style={{ color: 'var(--success-ink)' }}>
                 {resolvedTopics.length === 1 ? `"${resolvedTopics[0]}" understood` : `${resolvedTopics.length} weak topics understood`}
               </span>
             </div>
-            <button onClick={() => setResolvedTopics([])} className="opacity-50 hover:opacity-100" style={{ color: '#22C55E' }}>×</button>
+            <button onClick={() => setResolvedTopics([])} className="opacity-50 hover:opacity-100" style={{ color: 'var(--success-ink)' }}>×</button>
           </div>
         )}
         {session && (
@@ -239,12 +259,13 @@ export default function TutorPanel({ noteId, sessionId, onSessionCreated, onClos
             onClose={() => setShowContextPanel(false)}
           />
         )}
+        {outOfMessages && <OutOfMessagesBanner />}
         <TutorInput
           value={input}
           onChange={setInput}
           onSend={send}
-          disabled={isStreaming}
-          placeholder="Ask your tutor…"
+          disabled={isStreaming || outOfMessages}
+          placeholder={outOfMessages ? 'Out of free messages — upgrade to keep chatting' : 'Write a message…'}
           contextNotes={session?.notes.map((n: TutorNoteMeta) => ({ id: n.id, title: n.document.title })) ?? []}
           onAddContext={() => setShowContextPanel(v => !v)}
           onRemoveContext={removeNote}

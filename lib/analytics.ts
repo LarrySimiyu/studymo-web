@@ -46,17 +46,21 @@ export function resetAnalytics() {
 
 function pageEventName(path: string): string {
   if (path === '/') return 'landing_viewed';
-  if (path === '/dashboard') return 'dashboard_viewed';
+  if (path === '/dashboard' || path === '/dashboard/home') return 'dashboard_viewed';
   if (path === '/dashboard/library') return 'library_viewed';
   if (path.startsWith('/dashboard/library/')) return 'document_viewed';
   if (path === '/dashboard/flashcards') return 'flashcards_page_viewed';
+  if (path.startsWith('/dashboard/flashcards/')) return 'flashcard_deck_viewed';
   if (path === '/dashboard/quizzes') return 'quizzes_viewed';
+  if (path.startsWith('/dashboard/quizzes/')) return 'quiz_viewed';
   if (path === '/dashboard/practice-exams') return 'practice_exams_viewed';
   if (path.startsWith('/dashboard/practice-exams/')) return 'practice_exam_viewed';
   if (path === '/dashboard/study-plan') return 'study_plans_viewed';
   if (path.startsWith('/dashboard/study-plan/')) return 'study_plan_viewed';
   if (path === '/dashboard/tasks') return 'tasks_viewed';
   if (path === '/dashboard/tutor') return 'tutor_viewed';
+  if (path === '/dashboard/tutor/history') return 'tutor_history_viewed';
+  if (path.startsWith('/dashboard/tutor/')) return 'tutor_session_viewed';
   if (path === '/dashboard/analytics') return 'analytics_viewed';
   if (path === '/dashboard/podcasts') return 'podcasts_viewed';
   if (path === '/dashboard/weak-topics') return 'weak_topics_viewed';
@@ -147,7 +151,8 @@ export const analytics = {
     track('note_shared', { document_id: documentId }),
 
   // Conversion
-  paywallSeen: (trigger: 'upload_limit' | 'first_visit' | 'feature_gate') =>
+  // 'first_visit', a nav source, or the free-tier quota key that was hit
+  paywallSeen: (trigger: string) =>
     track('paywall_seen', { trigger }),
 
   subscriptionStarted: (plan: string) =>

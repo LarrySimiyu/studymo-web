@@ -1,7 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ArrowUp, FileText, Lightbulb, MessageSquare, Plus, X } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/Button';
+import { TogglePill } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export interface ContextNote { id: string; title: string }
 
@@ -11,106 +14,135 @@ interface Props {
   onSend: () => void;
   disabled?: boolean;
   placeholder?: string;
-  contextNotes: ContextNote[];
-  onAddContext: () => void;
-  onRemoveContext: (id: string) => void;
-  revealAnswer: boolean;
-  onToggleReveal: () => void;
+  autoFocus?: boolean;
+  /** Omit to hide the "Just tell me" toggle. */
+  revealAnswer?: boolean;
+  onToggleReveal?: () => void;
+  /** Omit to hide the "Open chat" pill. */
+  onOpenChat?: () => void;
+  /** Omit to hide the "Add context" pill. */
+  onAddContext?: () => void;
+  contextPillClassName?: string;
+  contextNotes?: ContextNote[];
+  /** Omit to render context pills without a remove button. */
+  onRemoveContext?: (id: string) => void;
   inputRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
+const MAX_HEIGHT = 200;
+const MULTILINE_AT = 44;
+
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 export default function TutorInput({
-  value, onChange, onSend, disabled, placeholder,
-  contextNotes, onAddContext, onRemoveContext,
-  revealAnswer, onToggleReveal, inputRef: externalRef,
+  value, onChange, onSend, disabled, placeholder, autoFocus,
+  revealAnswer, onToggleReveal, onOpenChat,
+  onAddContext, contextPillClassName, contextNotes = [], onRemoveContext,
+  inputRef: externalRef,
 }: Props) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const ref = externalRef ?? internalRef;
+  const [multiline, setMultiline] = useState(false);
+
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const next = Math.min(el.scrollHeight, MAX_HEIGHT);
+    el.style.height = `${next}px`;
+    setMultiline(next > MULTILINE_AT);
+  }, [value, ref]);
+
+  const showPillRow = !!onToggleReveal || !!onAddContext || !!onOpenChat || contextNotes.length > 0;
 
   return (
     <div>
-      {/* Context chips */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-2">
-        <button
-          onClick={onAddContext}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-colors hover:opacity-80"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', color: 'var(--text-2)' }}
-        >
-          <span className="font-medium">+</span>
-          Add context
-        </button>
-        {contextNotes.map(n => (
-          <span
-            key={n.id}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)', color: 'var(--text-1)' }}
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0" style={{ color: 'var(--text-3)' }}>
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <span className="max-w-[140px] truncate">{n.title}</span>
-            <button
-              onClick={() => onRemoveContext(n.id)}
-              className="leading-none hover:text-[var(--text-1)] transition-colors ml-0.5"
-              style={{ color: 'var(--text-3)' }}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-      </div>
+      {showPillRow && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+          {onOpenChat && (
+            <Button variant="pill" size="pill" onClick={onOpenChat} title="Open the tutor conversation">
+              <MessageSquare size={12} />
+              Open chat
+            </Button>
+          )}
 
-      {/* Input box */}
+          {onToggleReveal && (
+            <TogglePill
+              pressed={revealAnswer}
+              onClick={onToggleReveal}
+              title="Get the direct answer with your next message"
+            >
+              <Lightbulb size={12} />
+              Just tell me
+            </TogglePill>
+          )}
+
+          {onAddContext && (
+            <Button variant="pill" size="pill" onClick={onAddContext} className={contextPillClassName}>
+              <Plus size={12} />
+              Add context
+            </Button>
+          )}
+
+          {contextNotes.map(n => (
+            <span
+              key={n.id}
+              className={cn(
+                buttonVariants({ variant: 'pill', size: 'pill' }),
+                'text-[var(--text-1)] hover:bg-[var(--bg-hover)]',
+                onRemoveContext && 'pr-2'
+              )}
+            >
+              <FileText size={12} className="shrink-0" style={{ color: 'var(--text-3)' }} />
+              <span className="max-w-[140px] truncate">{n.title}</span>
+              {onRemoveContext && (
+                <button
+                  onClick={() => onRemoveContext(n.id)}
+                  aria-label={`Remove ${n.title}`}
+                  className="shrink-0 rounded-full p-0.5 transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text-1)]"
+                  style={{ color: 'var(--text-3)' }}
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div
-        className="rounded-xl transition-shadow"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-md)' }}
+        className={cn(
+          'flex gap-2 p-2 pl-4 rounded-2xl border bg-[var(--bg-input)] border-[var(--border-md)]',
+          'shadow-field',
+          'transition-colors duration-150',
+          multiline ? 'items-end' : 'items-center'
+        )}
       >
         <textarea
           ref={ref}
           value={value}
+          rows={1}
+          autoFocus={autoFocus}
           onChange={e => onChange(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); }
           }}
-          onInput={e => {
-            const el = e.target as HTMLTextAreaElement;
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 160) + 'px';
-          }}
           disabled={disabled}
-          placeholder={placeholder ?? 'Ask your tutor…'}
-          rows={3}
-          className="w-full bg-transparent outline-none resize-none text-sm text-[var(--text-1)] placeholder-[var(--text-3)] leading-relaxed disabled:opacity-50 px-4 pt-3 pb-2"
-          style={{ minHeight: 72, maxHeight: 160 }}
+          placeholder={placeholder ?? 'Write a message…'}
+          className="flex-1 min-w-0 bg-transparent outline-none resize-none py-1.5 text-sm leading-relaxed text-[var(--text-1)] placeholder-[var(--text-3)] disabled:opacity-50"
+          style={{ maxHeight: MAX_HEIGHT }}
         />
 
-        {/* Bottom toolbar */}
-        <div className="flex items-center justify-between px-3 pb-2.5">
-          <button
-            onClick={onToggleReveal}
-            title="Get the direct answer with your next message"
-            className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs transition-all hover:opacity-80"
-            style={revealAnswer
-              ? { backgroundColor: '#F59E0B20', border: '1px solid #F59E0B60', color: '#F59E0B' }
-              : { color: 'var(--text-3)' }
-            }
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
-            </svg>
-            {revealAnswer && <span>Just tell me</span>}
-          </button>
-
-          <button
-            onClick={onSend}
-            disabled={!value.trim() || disabled}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-90"
-            style={{ backgroundColor: 'var(--brand)' }}
-          >
-            <ArrowUp size={15} color="white" strokeWidth={2.5} />
-          </button>
-        </div>
+        <Button
+          variant="primary"
+          size="icon"
+          onClick={onSend}
+          disabled={!value.trim() || disabled}
+          aria-label="Send"
+          className="shrink-0 disabled:opacity-30"
+        >
+          <ArrowUp size={16} strokeWidth={2.5} />
+        </Button>
       </div>
     </div>
   );

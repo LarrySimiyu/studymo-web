@@ -68,7 +68,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   };
 
   return (
-    <main className="min-h-screen flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
+    <main className="light min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-page)' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -97,7 +97,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           </div>
         )}
 
-        <h1 className="font-playfair text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4 leading-tight">
+        <h1
+          className="font-playfair text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight"
+          style={{ color: 'var(--text-1)' }}
+        >
           {meta.title}
         </h1>
 

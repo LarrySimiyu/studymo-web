@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TagBadge } from '@/components/ui/badge';
 
 const NOTES = [
   {
@@ -156,13 +157,9 @@ export default function ScreenshotPage() {
               {note.tags.length > 0 && (
                 <div className="flex items-center gap-1 mt-1.5">
                   {note.tags.map(t => (
-                    <span
-                      key={t.name}
-                      className="text-xs px-1.5 py-0.5 rounded-full"
-                      style={{ backgroundColor: t.color + '25', color: t.color }}
-                    >
+                    <TagBadge key={t.name} color={t.color} size="sm">
                       {t.name}
-                    </span>
+                    </TagBadge>
                   ))}
                 </div>
               )}

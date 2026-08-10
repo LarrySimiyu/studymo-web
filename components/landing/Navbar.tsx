@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import studymoLogo from '@/assets/studymo_logo.png';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Navbar() {
+  const router = useRouter();
+  const { currentUser, loading, signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -24,7 +28,7 @@ export default function Navbar() {
       style={{
         backgroundColor: scrolled ? 'var(--bg-page)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        borderBottom: scrolled ? '1px solid var(--border)' : '1px solid transparent',
+        borderBottom: scrolled ? '0.5px solid var(--border)' : '0.5px solid transparent',
       }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
@@ -36,15 +40,6 @@ export default function Navbar() {
         {/* Center nav links */}
         <div className="hidden sm:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
           <Link
-            href="/pricing"
-            className="text-sm font-medium transition-colors"
-            style={{ color: 'var(--text-2)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-          >
-            Pricing
-          </Link>
-          <Link
             href="/blog"
             className="text-sm font-medium transition-colors"
             style={{ color: 'var(--text-2)' }}
@@ -53,22 +48,49 @@ export default function Navbar() {
           >
             Blog
           </Link>
-        </div>
-
-        {/* Right auth buttons */}
-        <div className="flex items-center gap-3">
           <Link
-            href="/sign-in"
+            href="/pricing"
             className="text-sm font-medium transition-colors"
             style={{ color: 'var(--text-2)' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
             onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
           >
-            Login
+            Pricing
           </Link>
-          <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
-            Start Free
-          </Link>
+        </div>
+
+        {/* Right auth buttons — held blank until Firebase resolves, so a signed-in
+            visitor never sees "Login" flash before it swaps. */}
+        <div className="flex h-9 items-center gap-3">
+          {loading ? null : currentUser ? (
+            <>
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut();
+                  router.push('/');
+                }}
+                className="text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
+              >
+                Logout
+              </button>
+              <Link href="/dashboard" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
+                Dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text-1)]"
+              >
+                Login
+              </Link>
+              <Link href="/sign-up" className="try-free-btn text-sm font-semibold text-white px-5 py-2 rounded-full">
+                Start Free
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

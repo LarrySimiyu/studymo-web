@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Flame } from 'lucide-react';
 import { analyticsApi, activityApi, ActivityDay } from '@/lib/api/analytics';
 
 interface StreakData { currentStreak: number; longestStreak: number; }
@@ -145,8 +146,8 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
         >
           <div>
             <div className="flex items-center gap-1 mb-0.5">
-              <span className="text-xl leading-none">🔥</span>
-              <span className="text-2xl font-bold text-[var(--text-1)] leading-none">
+              <Flame size={18} className="shrink-0 text-[var(--brand-ink)]" />
+              <span className="text-heading text-[var(--text-1)] leading-none">
                 {streak.currentStreak}
               </span>
             </div>
@@ -165,7 +166,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
                   className="w-2.5 h-2.5 shrink-0"
                   style={{ backgroundColor: LEVEL_COLORS[lvl], borderRadius: 2 }}
                 />
-                <span className="text-[10px] text-[var(--text-3)]">
+                <span className="text-2xs text-[var(--text-3)]">
                   {lvl === 1 ? 'Visited' : lvl === 2 ? 'Uploaded' : 'Studied'}
                 </span>
               </div>
@@ -185,7 +186,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
               {monthCols.map(({ month, col }) => (
                 <span
                   key={month}
-                  className="absolute text-[10px] text-[var(--text-2)] font-medium"
+                  className="absolute text-2xs text-[var(--text-2)] font-medium"
                   style={{ left: col * (CELL + GAP) }}
                 >
                   {MONTH_NAMES[month]}
@@ -199,7 +200,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
                 <div key={dayIdx} className="flex items-center" style={{ gap: GAP }}>
                   {/* Day label */}
                   <div
-                    className="text-[10px] text-[var(--text-3)] text-right shrink-0"
+                    className="text-2xs text-[var(--text-3)] text-right shrink-0"
                     style={{ width: dayLabelWidth - GAP }}
                   >
                     {DAY_LABELS[dayIdx] ?? ''}
@@ -232,7 +233,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
                           height: CELL,
                           borderRadius: 2,
                           backgroundColor: LEVEL_COLORS[level],
-                          border: isToday ? `1.5px solid #9747FF` : '1px solid transparent',
+                          border: isToday ? `1.5px solid var(--brand)` : '1px solid transparent',
                           opacity: isFuture ? 0.3 : 1,
                         }}
                       />
@@ -261,7 +262,7 @@ export default function ActivityHeatmap({ streak: streakProp, recordVisit = fals
               className="text-xs font-medium px-2 py-1 rounded-md text-left transition-colors"
               style={
                 y === selectedYear
-                  ? { backgroundColor: '#9747FF', color: 'white' }
+                  ? { backgroundColor: 'var(--brand)', color: 'white' }
                   : { color: 'var(--text-2)', backgroundColor: 'transparent' }
               }
             >

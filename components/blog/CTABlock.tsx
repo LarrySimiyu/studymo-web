@@ -15,13 +15,15 @@ export default function CTABlock({
   return (
     <div
       className="mt-16 rounded-2xl p-6 sm:p-8 text-center border"
-      style={{ backgroundColor: '#141414', borderColor: 'rgba(255,255,255,0.07)' }}
+      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
-      <p className="text-lg font-semibold text-white mb-2">{headline}</p>
+      <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-1)' }}>
+        {headline}
+      </p>
       <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>
         {body}
       </p>
-      <Button variant="brand" size="lg" asChild className="rounded-full px-10">
+      <Button variant="primary" size="lg" asChild className="rounded-full px-10">
         <Link href="/sign-up">{label}</Link>
       </Button>
     </div>

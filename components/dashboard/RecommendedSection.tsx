@@ -9,6 +9,7 @@ import { practiceExamsApi } from '@/lib/api/organization';
 import GeneratePracticeExamModal from '@/components/practice-exams/GeneratePracticeExamModal';
 import UploadDialog, { UploadType } from '@/components/upload/UploadDialog';
 import CreateStudyPlanModal from '@/components/study-plan/CreateStudyPlanModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 const UPLOAD_OPTIONS: { type: UploadType; icon: React.ReactNode; label: string }[] = [
@@ -67,10 +68,8 @@ export default function RecommendedSection() {
           {/* New Note */}
           <button
             onClick={() => setShowTypePicker(true)}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
             style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(255,101,0,0.12)' }}>
               <span className="md:hidden"><FileText size={18} color="#FF6500" /></span>
@@ -85,10 +84,8 @@ export default function RecommendedSection() {
           {/* Study Plan */}
           <button
             onClick={() => setShowPlanModal(true)}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
             style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(59,130,246,0.12)' }}>
               <span className="md:hidden"><CalendarDays size={18} color="#3B82F6" /></span>
@@ -103,10 +100,7 @@ export default function RecommendedSection() {
           {/* Quiz */}
           <Link
             href="/dashboard/quizzes"
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(236,72,153,0.12)' }}>
               <span className="md:hidden"><Heart size={18} color="#EC4899" fill="#EC4899" /></span>
@@ -121,10 +115,7 @@ export default function RecommendedSection() {
           {/* Practice Exam */}
           <button
             onClick={handlePracticeExamClick}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl transition-colors md:flex-col md:items-start md:gap-3 md:px-6 md:py-4 text-left w-full bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
           >
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 md:w-14 md:h-14 md:rounded-2xl" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }}>
               <span className="md:hidden"><ClipboardList size={18} color="#8B5CF6" /></span>
@@ -140,43 +131,28 @@ export default function RecommendedSection() {
       </div>
 
       {/* Type picker */}
-      {showTypePicker && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowTypePicker(false); }}
-        >
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold text-[var(--text-1)]">New Note</h2>
+      <Dialog open={showTypePicker} onOpenChange={o => !o && setShowTypePicker(false)}>
+        <DialogContent size="sm" showClose>
+          <DialogHeader className="mb-5">
+            <DialogTitle>New Note</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            {UPLOAD_OPTIONS.map(({ type, icon, label }) => (
               <button
-                onClick={() => setShowTypePicker(false)}
-                className="text-xl leading-none transition-colors"
-                style={{ color: 'var(--text-2)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-1)')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-2)')}
-              >×</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {UPLOAD_OPTIONS.map(({ type, icon, label }) => (
-                <button
-                  key={type}
-                  onClick={() => handleSelectType(type)}
-                  className="flex flex-col items-start gap-3 p-4 rounded-xl text-left transition-colors"
-                  style={{ backgroundColor: 'var(--bg-input)' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-input)')}
-                >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: ICON_BG[type] }}>
-                    {icon}
-                  </div>
-                  <p className="text-sm font-medium text-[var(--text-1)]">{label}</p>
-                </button>
-              ))}
-            </div>
+                key={type}
+                onClick={() => handleSelectType(type)}
+                className="flex flex-col items-start gap-3 rounded-xl p-4 text-left transition-colors bg-[var(--bg-input)] hover:bg-[var(--bg-hover)]"
+                style={{ backgroundColor: 'var(--bg-input)' }}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: ICON_BG[type] }}>
+                  {icon}
+                </div>
+                <p className="text-body-sm font-medium text-[var(--text-1)]">{label}</p>
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {uploadType && (
         <UploadDialog

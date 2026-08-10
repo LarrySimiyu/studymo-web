@@ -42,6 +42,9 @@ const config: Config = {
         surface: 'var(--bg-card)',
       },
       fontSize: {
+        // Meta tier — count badges, timestamps, source pills. Nothing reads
+        // below this; it replaces the 60-odd ad-hoc text-[10px] in the app.
+        '2xs':        ['0.6875rem', { lineHeight: '0.875rem' }],
         'xs':         ['0.75rem',   { lineHeight: '1rem' }],
         'body-sm':    ['0.875rem',  { lineHeight: '1.25rem' }],
         'body':       ['1rem',      { lineHeight: '1.5rem' }],
@@ -57,10 +60,31 @@ const config: Config = {
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, #FF6500, #FF9A3C)',
       },
+      boxShadow: {
+        field: '0 1px 2px rgba(0,0,0,0.04), 0 6px 16px -4px rgba(0,0,0,0.08)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'overlay-in':  { from: { opacity: '0' }, to: { opacity: '1' } },
+        'overlay-out': { from: { opacity: '1' }, to: { opacity: '0' } },
+        'dialog-in': {
+          from: { opacity: '0', transform: 'scale(0.96)' },
+          to:   { opacity: '1', transform: 'scale(1)' },
+        },
+        'dialog-out': {
+          from: { opacity: '1', transform: 'scale(1)' },
+          to:   { opacity: '0', transform: 'scale(0.96)' },
+        },
+      },
+      animation: {
+        'overlay-in':  'overlay-in 150ms ease-out',
+        'overlay-out': 'overlay-out 120ms ease-in',
+        'dialog-in':   'dialog-in 150ms ease-out',
+        'dialog-out':  'dialog-out 120ms ease-in',
       },
     },
   },

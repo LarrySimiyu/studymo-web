@@ -6,8 +6,17 @@ import { api } from '@/lib/api';
 import { CalendarIcon, Check } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface Document { id: string; title: string; status: string }
 
@@ -54,13 +63,15 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 2);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
-      <div className="w-full max-w-md rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
-        <h2 className="text-lg font-bold text-[var(--text-1)] mb-1">New Study Plan</h2>
-        <p className="text-xs text-[var(--text-3)] mb-5">AI will generate a day-by-day schedule for you.</p>
+    <Dialog open={open} onOpenChange={o => { if (!o && !creating) onClose(); }}>
+      <DialogContent>
+        <DialogHeader className="mb-5 gap-1">
+          <DialogTitle className="text-body-lg font-bold">New Study Plan</DialogTitle>
+          <DialogDescription className="text-xs text-[var(--text-3)]">
+            AI will generate a day-by-day schedule for you.
+          </DialogDescription>
+        </DialogHeader>
 
         {creating ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -85,12 +96,10 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               <Popover.Root open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <Popover.Trigger asChild>
                   <button
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-colors"
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-md)',
-                      color: form.testDate ? 'var(--text-1)' : 'var(--text-3)',
-                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2.5 rounded-xl border border-[var(--border-md)] bg-[var(--bg-card)] px-3 py-2.5 text-left text-body-sm transition-colors hover:border-[var(--brand)]',
+                      form.testDate ? 'text-[var(--text-1)]' : 'text-[var(--text-3)]'
+                    )}
                   >
                     <CalendarIcon size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
                     {form.testDate
@@ -126,7 +135,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               <label className="block text-xs font-medium mb-2 text-[var(--text-1)]">
                 Study Materials
                 {form.documentIds.length > 0 && (
-                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-2xs" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
                     {form.documentIds.length} selected
                   </span>
                 )}
@@ -143,8 +152,8 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
                         onClick={() => toggleDoc(doc.id)}
                         className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs text-left transition-colors w-full"
                         style={sel ? {
-                          backgroundColor: '#ffffff',
-                          color: '#000000',
+                          backgroundColor: 'var(--brand-subtle)',
+                          color: 'var(--brand-ink)',
                         } : {
                           backgroundColor: 'var(--bg-input)',
                           color: 'var(--text-2)',
@@ -168,7 +177,7 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
 
             <div className="flex flex-col items-center gap-2 pt-1">
               <Button
-                variant="brand"
+                variant="primary"
                 size="lg"
                 onClick={handleCreate}
                 disabled={!form.title.trim() || !form.testDate || form.documentIds.length === 0}
@@ -176,17 +185,14 @@ export default function CreateStudyPlanModal({ open, onClose, onCreated }: Props
               >
                 Generate Plan
               </Button>
-              <button
-                onClick={onClose}
-                className="text-xs transition-opacity hover:opacity-60"
-                style={{ color: 'var(--text-3)' }}
-              >
+              <UsageCounter limitKey="studyPlans" />
+              <Button variant="link" size="link" className="text-xs" onClick={onClose}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

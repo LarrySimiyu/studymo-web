@@ -1,21 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { tasksApi, Task } from '@/lib/api/tasks';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import UsageCounter from '@/components/dashboard/UsageCounter';
 import { Calendar } from '@/components/ui/calendar';
 import * as Popover from '@radix-ui/react-popover';
 import { CalendarIcon } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface TaskModalProps {
+  open: boolean;
   task?: Task | null;
   defaultDueDate?: string;
   onClose: () => void;
   onSave: (task: Task) => void;
 }
 
-export default function TaskModal({ task, defaultDueDate, onClose, onSave }: TaskModalProps) {
+export default function TaskModal({ open, task, defaultDueDate, onClose, onSave }: TaskModalProps) {
   const [title, setTitle] = useState(task?.title ?? '');
   const [dueDate, setDueDate] = useState(
     task?.dueDate ? task.dueDate.split('T')[0] : (defaultDueDate ?? '')
@@ -23,6 +33,13 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle(task?.title ?? '');
+    setDueDate(task?.dueDate ? task.dueDate.split('T')[0] : (defaultDueDate ?? ''));
+    setError('');
+  }, [open, task, defaultDueDate]);
 
   // const [estimatedMins, setEstimatedMins] = useState(task?.estimatedMins ?? 45);
   // const [tagId, setTagId] = useState(task?.tags?.[0]?.tagId ?? '');
@@ -49,13 +66,14 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
   const minDate = new Date();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
-      <div className="w-full max-w-md rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg-card)' }}>
-
-        <div className="mb-1">
-          <h2 className="text-lg font-bold text-[var(--text-1)]">{task ? 'Edit Task' : 'New Task'}</h2>
-        </div>
-        <p className="text-xs text-[var(--text-3)] mb-5">{task ? 'Update your task details.' : 'Add a new task to your list.'}</p>
+    <Dialog open={open} onOpenChange={o => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader className="mb-5 gap-1">
+          <DialogTitle className="text-body-lg font-bold">{task ? 'Edit Task' : 'New Task'}</DialogTitle>
+          <DialogDescription className="text-xs text-[var(--text-3)]">
+            {task ? 'Update your task details.' : 'Add a new task to your list.'}
+          </DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -74,12 +92,10 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
               <Popover.Trigger asChild>
                 <button
                   type="button"
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-colors"
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-md)',
-                    color: dueDate ? 'var(--text-1)' : 'var(--text-3)',
-                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2.5 rounded-xl border border-[var(--border-md)] bg-[var(--bg-card)] px-3 py-2.5 text-left text-body-sm transition-colors hover:border-[var(--brand)]',
+                    dueDate ? 'text-[var(--text-1)]' : 'text-[var(--text-3)]'
+                  )}
                 >
                   <CalendarIcon size={14} style={{ color: 'var(--text-3)', flexShrink: 0 }} />
                   {dueDate
@@ -118,23 +134,19 @@ export default function TaskModal({ task, defaultDueDate, onClose, onSave }: Tas
             <select ...>...</select>
           </div> */}
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="text-[var(--danger-ink)] text-xs">{error}</p>}
 
           <div className="flex flex-col items-center gap-2 pt-1">
-            <Button variant="brand" size="lg" type="submit" disabled={saving} className="w-full">
+            <Button variant="primary" size="lg" type="submit" disabled={saving} className="w-full">
               {saving ? 'Saving…' : task ? 'Save Changes' : 'Add Task'}
             </Button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-xs transition-opacity hover:opacity-60"
-              style={{ color: 'var(--text-3)' }}
-            >
+            {!task && <UsageCounter limitKey="tasks" />}
+            <Button type="button" variant="link" size="link" className="text-xs" onClick={onClose}>
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

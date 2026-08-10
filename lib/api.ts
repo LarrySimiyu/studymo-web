@@ -1,12 +1,51 @@
 import { auth } from './firebase';
 import { cacheGet, cacheSet, invalidatePrefix } from './apiCache';
+import { emitContentChanged, emitUsageChanged } from './contentEvents';
+import { showPaywall } from './paywall';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
+
+// Mutating any of these changes a number the sidebar shows.
+const CONTENT_PREFIXES = new Set([
+  '/documents',
+  '/notes',
+  '/folders',
+  '/flashcards',
+  '/quizzes',
+  '/podcasts',
+  '/practice-exams',
+]);
+
+function afterMutation(path: string): void {
+  const basePath = '/' + path.split('?')[0].split('/')[1];
+  invalidatePrefix(basePath);
+  if (CONTENT_PREFIXES.has(basePath)) emitContentChanged();
+  invalidatePrefix('/billing');
+  emitUsageChanged();
+}
 
 type ApiResponse<T> = {
   data: T | null;
   error: string | null;
 };
+
+/** Every free-tier rejection shares one shape, so the paywall is raised here
+ *  once rather than at each of the dozen generate call sites. */
+function isFreeLimit(status: number, body: { error?: string }): boolean {
+  return status === 403 && body.error === 'free_limit_reached';
+}
+
+function raisePaywallOnLimit(status: number, body: { error?: string; limit?: string }): void {
+  if (!isFreeLimit(status, body)) return;
+  showPaywall(body.limit ?? 'free_limit');
+}
+
+/** The raw `free_limit_reached` code would otherwise render as the error line on
+ *  whichever form the user was in when the paywall opened over it. */
+function errorMessage(status: number, body: { error?: string }): string {
+  if (isFreeLimit(status, body)) return "You've hit your free plan limit — upgrade to keep going.";
+  return body.error ?? `HTTP ${status}`;
+}
 
 async function getIdToken(): Promise<string> {
   const user = auth.currentUser;
@@ -41,16 +80,13 @@ async function request<T>(
     });
 
     if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-      return { data: null, error: errorData.error ?? `HTTP ${response.status}` };
+      const errorData = (await response.json().catch(() => ({}))) as { error?: string; limit?: string };
+      raisePaywallOnLimit(response.status, errorData);
+      return { data: null, error: errorMessage(response.status, errorData) };
     }
 
     // Invalidate related GET cache on mutations before reading body
-    if (!isGet) {
-      const segments = path.split('?')[0].split('/');
-      const basePath = '/' + segments[1];
-      invalidatePrefix(basePath);
-    }
+    if (!isGet) afterMutation(path);
 
     // 204/205 — no body, nothing to parse
     if (response.status === 204 || response.status === 205) {
@@ -90,15 +126,14 @@ async function requestForm<T>(
     });
 
     if (!response.ok) {
-      const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-      return { data: null, error: errorData.error ?? `HTTP ${response.status}` };
+      const errorData = (await response.json().catch(() => ({}))) as { error?: string; limit?: string };
+      raisePaywallOnLimit(response.status, errorData);
+      return { data: null, error: errorMessage(response.status, errorData) };
     }
 
     const data = (await response.json()) as T;
 
-    const segments = path.split('?')[0].split('/');
-    const basePath = '/' + segments[1];
-    invalidatePrefix(basePath);
+    afterMutation(path);
 
     return { data, error: null };
   } catch (err) {

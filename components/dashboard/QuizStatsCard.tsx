@@ -93,15 +93,12 @@ function QuizRow({ documentTitle, latestScore, attempts, improvement }: {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
-      style={{ backgroundColor: 'var(--bg-card)' }}
-      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
     >
       <div className="relative shrink-0 w-11 h-11">
         <Ring value={latestScore} stroke={4} color={color} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[10px] font-bold" style={{ color }}>{latestScore}%</span>
+          <span className="text-2xs font-bold" style={{ color }}>{latestScore}%</span>
         </div>
       </div>
 
@@ -173,10 +170,8 @@ export default function QuizStatsCard({ avgScore: avgProp, totalQuizzesTaken: to
         <div className="mt-2">
           <button
             onClick={() => setQuizzesOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
             style={{ backgroundColor: 'var(--bg-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
           >
             <span className="text-xs font-semibold text-[var(--text-1)]">
               Quizzes <span className="font-normal text-[var(--text-3)]">· {history.length}</span>

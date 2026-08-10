@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { auth } from '@/lib/firebase';
+import { emitContentChanged } from '@/lib/contentEvents';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4001';
 
@@ -77,7 +78,6 @@ export interface QuizAttempt {
 }
 
 export const documentsApi = {
-  getCount: () => api.get<{ count: number }>('/documents/count'),
   uploadFile: (formData: FormData) => api.postForm<Document>('/documents/upload', formData),
   uploadVideo: (data: { url: string; title: string; folderId?: string }) =>
     api.post<Document>('/documents/video', data),
@@ -106,6 +106,9 @@ export const documentsApi = {
   },
   getById: (id: string) => api.get<Document>(`/documents/${id}`),
   rename: (id: string, title: string) => api.patch<Document>(`/documents/${id}/title`, { title }),
+  // Short-lived signed URL for the original upload, so viewing doesn't rely on
+  // the storage bucket being publicly readable.
+  getFileUrl: (id: string) => api.get<{ url: string }>(`/documents/${id}/file`),
   delete: (id: string) => api.delete<void>(`/documents/${id}`),
   setFolder: (id: string, folderId: string | null) =>
     api.patch<Document>(`/documents/${id}/folder`, { folderId }),
@@ -127,6 +130,7 @@ export const notesApi = {
 };
 
 export const flashcardsApi = {
+  getDecks: () => api.get<{ documentId: string; count: number }[]>('/flashcards/decks'),
   getByDocument: (documentId: string) => api.get<Flashcard[]>(`/flashcards/${documentId}`),
   generate: (documentId: string) => api.post<Flashcard[]>(`/flashcards/${documentId}/generate`, {}),
 };
@@ -139,40 +143,43 @@ export const quizzesApi = {
     api.post<QuizAttempt>(`/quizzes/${id}/attempt`, { score, answers }),
 };
 
-// SSE watcher — opens a stream and calls onStatus when the doc reaches complete or failed.
-// Returns a cancel function. Falls back gracefully if the connection drops.
-const WATCH_TIMEOUT_MS = 5 * 60 * 1000;
+const STATUS_POLL_INTERVAL_MS = 10_000;
 
+// Watches a document until it reaches complete or failed, via SSE with a polling
+// backstop. The stream can die without ever delivering an event — dropped
+// connection, server restart — and on its own that leaves the caller waiting
+// forever. Polling runs alongside it so the status always lands.
 export function watchDocumentStatus(
   docId: string,
   onStatus: (status: 'complete' | 'failed', errorMessage?: string) => void,
   onTimeout?: () => void,
 ): () => void {
   let cancelled = false;
+  let settled = false;
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
-  const stop = () => {
-    cancelled = true;
-    reader?.cancel().catch(() => {});
+  const settle = (status: 'complete' | 'failed', errorMessage?: string) => {
+    if (settled || cancelled) return;
+    settled = true;
+    // Processing generates notes, flashcards and a quiz server-side, so this is
+    // a content change no client-side mutation ever announces.
+    if (status === 'complete') emitContentChanged();
+    onStatus(status, errorMessage);
   };
 
-  // Only arm the watchdog when the caller wants timeout handling (e.g. the upload dialog's
-  // blocking spinner). The library page passes none and keeps watching in the background.
-  const timer = onTimeout
-    ? setTimeout(() => { if (!cancelled) { stop(); onTimeout?.(); } }, WATCH_TIMEOUT_MS)
-    : null;
+  const authHeader = async (): Promise<Record<string, string> | null> => {
+    const user = auth.currentUser;
+    if (!user) return null;
+    return { Authorization: `Bearer ${await user.getIdToken()}` };
+  };
 
-  const start = async () => {
+  const watchStream = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
+      const headers = await authHeader();
+      if (!headers || cancelled) return;
 
-      const response = await fetch(`${API_URL}/documents/${docId}/status-stream`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok || !response.body) return;
-      if (cancelled) return;
+      const response = await fetch(`${API_URL}/documents/${docId}/status-stream`, { headers });
+      if (!response.ok || !response.body || cancelled) return;
 
       reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -185,12 +192,12 @@ export function watchDocumentStatus(
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
         for (const line of lines) {
+          // ": ping" heartbeats keep the connection alive and carry no data
           if (!line.startsWith('data: ')) continue;
           try {
             const data = JSON.parse(line.slice(6)) as { status: string; errorMessage?: string };
             if (data.status === 'complete' || data.status === 'failed') {
-              if (timer) clearTimeout(timer);
-              onStatus(data.status, data.errorMessage);
+              settle(data.status, data.errorMessage);
             }
           } catch {
             // malformed line — ignore
@@ -198,11 +205,33 @@ export function watchDocumentStatus(
         }
       }
     } catch {
-      // connection dropped — caller handles via onStatus not being called
+      // connection dropped — polling below covers it
     }
   };
 
-  start();
+  // Bypasses the shared api client because its GET cache would replay the same
+  // `processing` response for the life of the poll.
+  const pollUntilSettled = async () => {
+    while (!cancelled && !settled) {
+      await new Promise((resolve) => setTimeout(resolve, STATUS_POLL_INTERVAL_MS));
+      if (cancelled || settled) return;
+      try {
+        const headers = await authHeader();
+        if (!headers) return;
+        const res = await fetch(`${API_URL}/documents/${docId}`, { headers });
+        if (!res.ok) continue;
+        const doc = (await res.json()) as { status: string; errorMessage?: string };
+        if (doc.status === 'complete' || doc.status === 'failed') {
+          settle(doc.status, doc.errorMessage);
+        }
+      } catch {
+        // transient failure — retry on the next tick
+      }
+    }
+  };
+
+  watchStream();
+  pollUntilSettled();
 
   return () => {
     if (timer) clearTimeout(timer);

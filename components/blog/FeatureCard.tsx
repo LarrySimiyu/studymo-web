@@ -14,7 +14,9 @@ export default function FeatureCard({ title, description, href }: Props) {
       style={{ backgroundColor: 'rgba(255,101,0,0.06)', borderColor: 'rgba(255,101,0,0.2)' }}
     >
       <div>
-        <p className="text-sm font-semibold text-white mb-1">{title}</p>
+        <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}>
+          {title}
+        </p>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
           {description}
         </p>

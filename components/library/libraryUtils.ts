@@ -1,7 +1,5 @@
 import { Folder } from '@/lib/api/organization';
 
-export const TAG_COLORS = ['#9747FF', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#BB8FCE', '#F7DC6F'];
-
 export function timeAgo(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const secs = Math.floor(diffMs / 1000);

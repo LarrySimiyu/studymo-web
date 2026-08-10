@@ -35,7 +35,7 @@ export default function LandingCTA({
   return (
     <Button
       asChild
-      variant="brand"
+      variant="primary"
       size="lg"
       className={`rounded-full px-10 hover:scale-105 hover:opacity-100 transition-transform ${className}`}
       onClick={() => trackCTAClick(segment, position)}

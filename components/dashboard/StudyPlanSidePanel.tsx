@@ -1,25 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getPalette } from '@/components/dashboard/PlanCard';
 import { studyPlansApi, StudyPlan, StudyPlanDay } from '@/lib/api/studyPlan';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarDays, Check } from 'lucide-react';
 import Link from 'next/link';
 
-const PALETTE: [string, string][] = [
-  ['#FF6500', 'rgba(255,101,0,0.12)'],
-  ['#22C55E', 'rgba(34,197,94,0.12)'],
-  ['#3B82F6', 'rgba(59,130,246,0.12)'],
-  ['#F59E0B', 'rgba(245,158,11,0.12)'],
-  ['#EC4899', 'rgba(236,72,153,0.12)'],
-  ['#8B5CF6', 'rgba(139,92,246,0.12)'],
-  ['#14B8A6', 'rgba(20,184,166,0.12)'],
-];
-
-function getPalette(id: string): [string, string] {
-  const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return PALETTE[hash % PALETTE.length];
-}
 
 interface EntryWithPlan extends StudyPlanDay {
   planTitle: string;
@@ -101,7 +88,7 @@ export default function StudyPlanSidePanel() {
                 <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: entry.planColor }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[var(--text-1)] truncate">{entry.title}</p>
-                  <p className="text-[10px] text-[var(--text-3)]">{entry.planTitle}</p>
+                  <p className="text-2xs text-[var(--text-3)]">{entry.planTitle}</p>
                 </div>
                 {entry.completed && <Check size={12} color="#22C55E" />}
               </div>
@@ -111,10 +98,10 @@ export default function StudyPlanSidePanel() {
 
         {/* Legend */}
         <div className="flex items-center gap-4 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--text-3)' }}>
+          <div className="flex items-center gap-1.5 text-2xs" style={{ color: 'var(--text-3)' }}>
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--brand)' }} /> Scheduled
           </div>
-          <div className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--text-3)' }}>
+          <div className="flex items-center gap-1.5 text-2xs" style={{ color: 'var(--text-3)' }}>
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#22C55E' }} /> Completed
           </div>
         </div>
@@ -149,17 +136,14 @@ export default function StudyPlanSidePanel() {
               return (
                 <div
                   key={entry.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-                  style={{ backgroundColor: 'var(--bg-card)' }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]"
                 >
                   {/* Date badge */}
                   <div
                     className="w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0"
                     style={{ backgroundColor: entry.planColorBg }}
                   >
-                    <span className="text-[10px] font-semibold uppercase leading-none" style={{ color: entry.planColor }}>
+                    <span className="text-2xs font-semibold uppercase leading-none" style={{ color: entry.planColor }}>
                       {date.toLocaleDateString('en-US', { month: 'short' })}
                     </span>
                     <span className="text-sm font-bold leading-tight" style={{ color: entry.planColor }}>
@@ -170,12 +154,12 @@ export default function StudyPlanSidePanel() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-[var(--text-1)] truncate">{entry.title}</p>
-                    <p className="text-[10px] text-[var(--text-3)] truncate">{entry.planTitle}</p>
+                    <p className="text-2xs text-[var(--text-3)] truncate">{entry.planTitle}</p>
                   </div>
 
                   {/* Today badge */}
                   {isToday && (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
+                    <span className="text-2xs font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ backgroundColor: 'rgba(255,101,0,0.12)', color: 'var(--brand)' }}>
                       Today
                     </span>
                   )}

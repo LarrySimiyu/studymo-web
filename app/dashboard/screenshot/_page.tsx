@@ -108,10 +108,6 @@ function StaticSidebar() {
             <span className="truncate flex-1">All Notes</span>
             <span className="text-[10px] font-medium text-[var(--text-3)]">28</span>
           </div>
-          <div className="flex items-center gap-2 px-2 py-1 rounded-md text-xs text-[var(--text-2)]">
-            <span className="truncate flex-1">No Collection</span>
-            <span className="text-[10px] font-medium text-[var(--text-3)]">6</span>
-          </div>
           {COLLECTIONS.map(c => (
             <div key={c.name} className="flex items-center gap-2 px-2 py-1 rounded-md text-xs text-[var(--text-2)]">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
