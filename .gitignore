@@ -34,3 +34,7 @@ lib/docs/
 
 # Logs
 *.log
+
+# Claude Code instructions (kept local, not published)
+CLAUDE.md
+CODEBASE.md
